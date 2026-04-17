@@ -9,6 +9,10 @@
     {
       "url": "http://localhost:8080",
       "description": "Local development server"
+    },
+    {
+      "url": "http://http://20.205.14.27:8080",
+      "description": "Production server"
     }
   ],
   "tags": [
