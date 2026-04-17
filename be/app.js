@@ -15,6 +15,7 @@ import usersRouter from './routes/users.js';
 
 const app = express();
 const port = environment.port;
+const api_url = environment.api_url;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const swaggerSpecPath = process.env.SWAGGER_SPEC_PATH || './docs/swagger.json';
@@ -73,7 +74,7 @@ const startServer = async () => {
     app.listen(port, () => {
       logger.info(`✓ Server is running on port ${port} in ${environment.node_env} mode`);
       logger.info(`✓ CORS enabled for ${environment.frontend_url}`);
-      logger.info(`✓ Swagger UI available at http://localhost:${port}/api-docs`);
+      logger.info(`✓ Swagger UI available at ${api_url}:${port}/api-docs`);
     });
   } catch (error) {
     logger.error('Failed to start server', error);
