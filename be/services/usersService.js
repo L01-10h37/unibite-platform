@@ -1,20 +1,30 @@
 import { logger } from '../utils/logger.js';
-
-// Mock database - Replace with actual database queries
-const users = [
-  { id: 1, name: 'John Doe', email: 'john@example.com' },
-  { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
-];
-
-let nextId = 3;
+import User from '../models/User.js';
 
 /**
  * Get all users
  */
-export const getAllUsers = async () => {
+export const getAllUsers = async (page = 1, limit = 10) => {
   try {
     logger.info('Service: Getting all users');
-    return users;
+    const skip = (page - 1) * limit;
+
+    const users = await User.find()
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const total = await User.countDocuments();
+
+    return {
+      users: users.map(user => user.getFormattedData?.() || user),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
   } catch (error) {
     logger.error('Service: Error getting all users', error);
     throw error;
@@ -27,8 +37,9 @@ export const getAllUsers = async () => {
 export const getUserById = async (id) => {
   try {
     logger.info(`Service: Getting user by ID: ${id}`);
-    const user = users.find(u => u.id === parseInt(id));
-    return user || null;
+
+    const user = await User.findById(id);
+    return user ? user.getFormattedData?.() || user : null;
   } catch (error) {
     logger.error('Service: Error getting user by ID', error);
     throw error;
@@ -41,12 +52,17 @@ export const getUserById = async (id) => {
 export const createUser = async (userData) => {
   try {
     logger.info('Service: Creating new user', userData);
-    const newUser = {
-      id: nextId++,
-      ...userData,
-    };
-    users.push(newUser);
-    return newUser;
+
+    // Kiểm tra email đã tồn tại
+    const existingUser = await User.findOne({ email: userData.email });
+    if (existingUser) {
+      const error = new Error('Email already exists');
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const newUser = await User.create(userData);
+    return newUser.getFormattedData?.() || newUser;
   } catch (error) {
     logger.error('Service: Error creating user', error);
     throw error;
@@ -59,14 +75,21 @@ export const createUser = async (userData) => {
 export const updateUser = async (id, userData) => {
   try {
     logger.info(`Service: Updating user with ID: ${id}`);
-    const userIndex = users.findIndex(u => u.id === parseInt(id));
-    
-    if (userIndex === -1) {
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      userData,
+      {
+        new: true, // Trả về document sau khi update
+        runValidators: true, // Chạy validators
+      }
+    );
+
+    if (!updatedUser) {
       return null;
     }
-    
-    users[userIndex] = { ...users[userIndex], ...userData };
-    return users[userIndex];
+
+    return updatedUser.getFormattedData?.() || updatedUser;
   } catch (error) {
     logger.error('Service: Error updating user', error);
     throw error;
@@ -79,13 +102,13 @@ export const updateUser = async (id, userData) => {
 export const deleteUser = async (id) => {
   try {
     logger.info(`Service: Deleting user with ID: ${id}`);
-    const userIndex = users.findIndex(u => u.id === parseInt(id));
-    
-    if (userIndex === -1) {
+
+    const deletedUser = await User.findByIdAndDelete(id);
+
+    if (!deletedUser) {
       return null;
     }
-    
-    users.splice(userIndex, 1);
+
     return true;
   } catch (error) {
     logger.error('Service: Error deleting user', error);
