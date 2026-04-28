@@ -1,21 +1,19 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import environment from './environment.js';
 import { logger } from '../utils/logger.js';
 
-dotenv.config();
-
-const DATABASE_URL = process.env.DATABASE_URL;
+const database_url = environment.database_url;
 
 /**
  * Kết nối MongoDB
  */
 export const connectDB = async () => {
   try {
-    if (!DATABASE_URL) {
+    if (!database_url) {
       throw new Error('DATABASE_URL is not defined in .env');
     }
 
-    await mongoose.connect(DATABASE_URL, {
+    await mongoose.connect(database_url, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
