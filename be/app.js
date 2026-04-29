@@ -6,12 +6,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
 import environment from './config/environment.js';
+import cookieParser from "cookie-parser";
 import { connectDB } from './config/database.js';
 import { corsMiddleware } from './middleware/corsMiddleware.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 import indexRouter from './routes/index.js';
 import usersRouter from './routes/users.js';
+import authRouter from './routes/auth.js';
 
 const app = express();
 const port = environment.port;
@@ -42,16 +44,19 @@ const loadSwaggerSpec = () => {
 const swaggerDocument = loadSwaggerSpec();
 
 // Middleware
-app.use(morgan('combined'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(corsMiddleware);
+app.use(morgan('combined')); // Thêm middleware morgan để log HTTP requests
+app.use(express.json()); // Thêm middleware để parse JSON request body
+app.use(express.urlencoded({ extended: true })); // Thêm middleware để parse URL-encoded request body
+app.use(corsMiddleware); // Thêm middleware CORS tùy chỉnh
+app.use(cookieParser()); // Thêm middleware để parse cookies
 
 // Routes
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/auth', authRouter);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+// Get raw Swagger JSON
 app.get('/api-docs.json', (req, res) => {
   res.json(swaggerDocument);
 });
