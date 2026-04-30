@@ -60,11 +60,13 @@ pipeline {
                 echo 'Waiting for container to start...'
                 sleep(time: 5, unit: 'SECONDS')
 
-                def containerStatus = sh(
-                    script: "docker ps --filter name=${CONTAINER_NAME} --format '{{.Status}}'", returnStdout: true
-                ).trim()
+                script {
+                    def containerStatus = sh(
+                        script: "docker ps --filter name=${CONTAINER_NAME} --format '{{.Status}}'", returnStdout: true
+                    ).trim()
 
-                echo "Container status: ${containerStatus}"
+                    echo "Container status: ${containerStatus}"
+                }
             }
         }
     }
