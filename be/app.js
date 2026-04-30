@@ -43,7 +43,7 @@ const loadSwaggerSpec = () => {
 
 const swaggerDocument = loadSwaggerSpec();
 
-// Middleware
+// Middlewares
 app.use(morgan('combined')); // Thêm middleware morgan để log HTTP requests
 app.use(express.json()); // Thêm middleware để parse JSON request body
 app.use(express.urlencoded({ extended: true })); // Thêm middleware để parse URL-encoded request body
