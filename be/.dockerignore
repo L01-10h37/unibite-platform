@@ -1,0 +1,63 @@
+# Dependencies
+node_modules
+
+# Environment
+.env
+.env.*
+.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage
+.nyc_output
+test
+__tests__
+*.test.js
+*.spec.js
+
+# CI/CD
+.github
+.gitlab
+circle.yml
+.travis.yml
+jenkins*
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+.docker
+
+# Documentation
+README*.md
+QUICKSTART.md
+docs/api-docs.md
+
+# Temp files
+tmp
+temp
+*.tmp
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
