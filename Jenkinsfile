@@ -11,7 +11,7 @@ pipeline {
         DOCKER_TAG = "v0.0.1"
         IMAGE_NAME = "${DOCKER_HUB}/${NAME_BACKEND}:${DOCKER_TAG}"
         ENV_ID = 'unibite-env-file'
-        PATH_PROJECT = "/var/lib/jenkins/workspace/Unibite/Unibite"
+        BE_PATH = "Unibite/be"
     }
     stages {
         stage('Stop & Remove Old Container') {
@@ -35,8 +35,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                sh "cd ${PATH_PROJECT}/be"
-                sh "docker build -t ${IMAGE_NAME} ."
+                sh "docker build -t ${IMAGE_NAME} ${BE_PATH}/Dockerfile ${BE_PATH}"
             }
         }
 
