@@ -11,7 +11,6 @@ pipeline {
         DOCKER_TAG = "v0.0.1"
         IMAGE_NAME = "${DOCKER_HUB}/${NAME_BACKEND}:${DOCKER_TAG}"
         ENV_ID = 'unibite-env-file'
-        BE_PATH = "Unibite/be"
     }
     stages {
         stage('Stop & Remove Old Container') {
@@ -35,14 +34,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                script {
-                    def dockerfilePath = sh(script: 'find . -name Dockerfile', returnStdout: true).trim()
-                    echo "Tìm thấy Dockerfile tại: ${dockerfilePath}"
-                    def dockerDir = dockerfilePath.replace('/Dockerfile', '')
-                    dir(dockerDir) {
-                        sh 'docker build -t luchanvu/unibite-backend:v0.0.1 .'
-                    }
-                }
+                sh 'docker build -t luchanvu/unibite-backend:v0.0.1 -f be/Dockerfile be'
             }
         }
 
@@ -70,7 +62,7 @@ pipeline {
 
                 script {
                     def containerStatus = sh(
-                        script: "docker ps --filter name=${CONTAINER_NAME} --format '{{.Status}}'", returnStdout: true
+                        script: "docker ps --filter name=${NAME_BACKEND} --format '{{.Status}}'", returnStdout: true
                     ).trim()
 
                     echo "Container status: ${containerStatus}"
