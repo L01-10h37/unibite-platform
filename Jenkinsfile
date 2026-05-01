@@ -35,7 +35,9 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                sh "docker build -t ${IMAGE_NAME} -f ${BE_PATH}/Dockerfile ${BE_PATH}"
+                dir("${env.BE_PATH}") {
+                    sh 'docker build -t luchanvu/unibite-backend:v0.0.1 .'
+                }
             }
         }
 
