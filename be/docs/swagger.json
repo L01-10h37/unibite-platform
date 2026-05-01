@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-    "url": "http://20.205.14.27:8080",
+    "url": "http://20.255.57.186:8080",
     "description": "Production server"
     },
     {
