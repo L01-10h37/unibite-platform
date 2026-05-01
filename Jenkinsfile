@@ -35,11 +35,13 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                def dockerfilePath = sh(script: 'find . -name Dockerfile', returnStdout: true).trim()
-                echo "Tìm thấy Dockerfile tại: ${dockerfilePath}"
-                def dockerDir = dockerfilePath.replace('/Dockerfile', '')
-                dir(dockerDir) {
-                    sh 'docker build -t luchanvu/unibite-backend:v0.0.1 .'
+                script {
+                    def dockerfilePath = sh(script: 'find . -name Dockerfile', returnStdout: true).trim()
+                    echo "Tìm thấy Dockerfile tại: ${dockerfilePath}"
+                    def dockerDir = dockerfilePath.replace('/Dockerfile', '')
+                    dir(dockerDir) {
+                        sh 'docker build -t luchanvu/unibite-backend:v0.0.1 .'
+                    }
                 }
             }
         }
