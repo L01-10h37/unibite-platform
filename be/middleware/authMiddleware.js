@@ -1,10 +1,11 @@
 import { errorResponse } from '../utils/responseHandler.js';
 import { logger } from '../utils/logger.js';
 import environment from '../config/environment.js';
+import jwt from 'jsonwebtoken';
 
 /**
- * Authentication middleware
- * Check if the request has a valid JWT token
+ * Authentication middleware (Xác thực)
+ * Kiểm tra xem request có chứa token JWT hợp lệ hay không (Đăng nhập chưa)
  */
 export const authenticate = (req, res, next) => {
   try {
@@ -15,10 +16,11 @@ export const authenticate = (req, res, next) => {
       return errorResponse(res, null, 'No token provided', 401);
     }
 
-    // TODO: Verify JWT token here
-    // Example: const decoded = jwt.verify(token, environment.jwt_secret);
-    // req.user = decoded;
+    // Xác thực token và lấy thông tin người dùng cho các bước tiếp theo
+    const decoded = jwt.verify(token, environment.jwt_access_secret);
+    req.user = decoded;
 
+    // Log thông tin người dùng đã được xác thực và sang bước tiếp theo
     logger.info('User authenticated');
     next();
   } catch (error) {
@@ -28,17 +30,19 @@ export const authenticate = (req, res, next) => {
 };
 
 /**
- * Authorization middleware
- * Check if the user has specific roles
+ * Authorization middleware (Ủy quyền)
+ * Kiểm tra liệu người dùng có quyền truy cập không
  */
 export const authorize = (...roles) => {
   return (req, res, next) => {
     try {
-      // TODO: Check user role from req.user
-      // if (!roles.includes(req.user.role)) {
-      //   return errorResponse(res, null, 'Forbidden', 403);
-      // }
+      // Kiểm tra nếu user role không nằm trong danh sách roles được phép truy cập
+      if (!roles.includes(req.user.role)) {
+        throw new Error('User role not authorized');
+      }
 
+      // Log thông tin về quyền truy cập của người dùng và sang bước tiếp theo
+      logger.info('User authorized with roles:', roles);
       next();
     } catch (error) {
       logger.error('Authorization error', error);
