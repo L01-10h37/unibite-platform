@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import swaggerAutogen from 'swagger-autogen';
 import swaggerUi from 'swagger-ui-express';
 import environment from './config/environment.js';
 import cookieParser from "cookie-parser";
@@ -23,6 +24,10 @@ const api_url = environment.api_url;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const swaggerSpecPath = process.env.SWAGGER_SPEC_PATH || './docs/swagger.json';
+const endpointsFile = ['./routes/index.js', './routes/users.js', './routes/auth.js', './routes/order.js', './routes/comments.js'];
+
+// Tự động tạo endpoints cho swagger.json
+// swaggerAutogen()(swaggerSpecPath, endpointsFile)
 
 const loadSwaggerSpec = () => {
   const resolvedPath = path.resolve(__dirname, swaggerSpecPath);
