@@ -5,12 +5,12 @@ import mongoose from 'mongoose';
 */
 const orderItemSchema = new mongoose.Schema(
 	{
-		food: { // Sẽ sửa sau khi có bảng Food
+		foodId: { // Sẽ sửa sau khi có bảng Food
 			type: String,
 			default: "Bún bò",
 		},
 
-		// food: {
+		// foodId: {
 		// 	type: mongoose.Schema.Types.ObjectId,
 		// 	ref: "Food",
 		// 	required: true,
@@ -53,12 +53,17 @@ const orderSchema = new mongoose.Schema(
 			enum: [
 				"PENDING",
 				"CONFIRMED",
-				"PREPAIRING",
+				"PREPARING",
 				"DELIVERING",
 				"COMPLETED",
 				"CANCELLED",
 			],
 			default: "PENDING",
+		},
+
+		isPaid: {
+			type: Boolean,
+			default: false,
 		},
 
 		deliveryAddress: {
@@ -91,12 +96,25 @@ const orderSchema = new mongoose.Schema(
 orderSchema.index({ userId: 1, createdAt: -1});
 orderSchema.index({ status: 1});
 
-orderSchema.methods.getFormattedData = function () {
-	return {
-		id: this._id,
-		totalPrice: this.totalPrice,
-		status: this.status,
-		createdAt: this.createdAt,
+orderSchema.methods.getFormattedData = function (type = "basic") {
+	if (type === "basic") {
+		return {
+			id: this._id,
+			totalPrice: this.totalPrice,
+			status: this.status,
+		};
+	};
+
+	if (type === "detail") {
+		return {
+			id: this._id,
+			items: this.items,
+			totalPrice: this.totalPrice,
+			status: this.status,
+			phone: this.phone,
+			deliveryAddress: this.deliveryAddress,
+			statusHistory: this.statusHistory,
+		};
 	};
 };
 
