@@ -47,29 +47,6 @@ export const getUserById = async (id) => {
 };
 
 /**
- * Create new user
- */
-export const createUser = async (userData) => {
-  try {
-    logger.info('Service: Creating new user', userData);
-
-    // Kiểm tra email đã tồn tại
-    const existingUser = await User.findOne({ email: userData.email });
-    if (existingUser) {
-      const error = new Error('Email already exists');
-      error.statusCode = 409;
-      throw error;
-    }
-
-    const newUser = await User.create(userData);
-    return newUser.getFormattedData?.() || newUser;
-  } catch (error) {
-    logger.error('Service: Error creating user', error);
-    throw error;
-  }
-};
-
-/**
  * Update user
  */
 export const updateUser = async (id, userData) => {

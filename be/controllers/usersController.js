@@ -49,22 +49,6 @@ export const getUserById = async (req, res, next) => {
 };
 
 /**
- * Create new user
- */
-export const createUser = async (req, res, next) => {
-  try {
-    const userData = req.body;
-    logger.info('Creating new user', userData);
-    const user = await usersService.createUser(userData);
-    successResponse(res, user, 'User created successfully', 201);
-  } catch (error) {
-    logger.error('Error creating user', error);
-    const statusCode = error.statusCode || 500;
-    errorResponse(res, error, 'Failed to create user', statusCode);
-  }
-};
-
-/**
  * Update user
  */
 export const updateUser = async (req, res, next) => {
