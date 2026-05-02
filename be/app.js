@@ -14,6 +14,7 @@ import { logger } from './utils/logger.js';
 import indexRouter from './routes/index.js';
 import usersRouter from './routes/users.js';
 import authRouter from './routes/auth.js';
+import ordersRouter from './routes/order.js';
 import commentRouter from './routes/comments.js';
 import shopRouter from './routes/shops.js';
 import categoriesRouter from './routes/categories.js';
@@ -57,6 +58,7 @@ app.use(cookieParser()); // Thêm middleware để parse cookies
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/orders', ordersRouter);
 app.use('/api/comment', commentRouter);
 app.use('/api/shops', shopRouter);
 app.use('/api/categories', categoriesRouter);
