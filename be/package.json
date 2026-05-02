@@ -17,11 +17,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^7.0.0",
     "morgan": "^1.10.0",
-<<<<<<< HEAD
     "swagger-autogen": "^2.23.7",
-=======
     "swagger-jsdoc": "^6.2.8",
->>>>>>> d5d6cc6a2efcceb1731b471a923fc2df5415299a
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {

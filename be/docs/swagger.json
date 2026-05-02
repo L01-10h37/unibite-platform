@@ -43,6 +43,10 @@
     {
       "name": "categories",
       "description": "Category operations (get all, create, update, delete)"
+    },
+    {
+      "name": "foods",
+      "description": "Food operations (get all, get detail, create, update, delete)"
     }
   ],
   "paths": {
@@ -1121,6 +1125,329 @@
         }
       }
     }
+    ,
+    "/api/foods": {
+      "get": {
+        "tags": ["foods"],
+        "summary": "Get all foods with pagination",
+        "operationId": "getAllFoods",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Foods per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated foods",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodListSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["foods"],
+        "summary": "Create a food",
+        "operationId": "createFood",
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FoodCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Food created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - User has no shop or invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Seller role required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/foods/{id}": {
+      "get": {
+        "tags": ["foods"],
+        "summary": "Get food by id",
+        "operationId": "getFoodById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId of food",
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Food found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodSuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Food not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Invalid id format or server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["foods"],
+        "summary": "Update a food",
+        "operationId": "updateFood",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId of food",
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FoodUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Food updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not owner of this food",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Food not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["foods"],
+        "summary": "Delete a food",
+        "operationId": "deleteFood",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId of food",
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Food deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not owner of this food",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Food not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   },
   "components": {
     "schemas": {
@@ -1629,6 +1956,253 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Shop"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "pagination",
+          "timestamp"
+        ]
+      },
+      "Food": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b1"
+          },
+          "name": {
+            "type": "string",
+            "example": "Banh Mi Cha"
+          },
+          "description": {
+            "type": "string",
+            "example": "Banh mi cha nong gion"
+          },
+          "category": {
+            "type": "object",
+            "nullable": true,
+            "description": "Category object when populated"
+          },
+          "shop": {
+            "type": "object",
+            "nullable": true,
+            "description": "Shop object when populated"
+          },
+          "listUrlImg": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "https://example.com/food-1.png",
+              "https://example.com/food-2.png"
+            ]
+          },
+          "isAvailble": {
+            "type": "boolean",
+            "example": true
+          },
+          "isDraft": {
+            "type": "boolean",
+            "example": false
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "example": 35000
+          },
+          "specialPrice": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "example": 30000
+          },
+          "specialtime": {
+            "type": "string",
+            "nullable": true,
+            "example": "11:00-14:00"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "shop",
+          "listUrlImg",
+          "isAvailble",
+          "isDraft",
+          "price",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "FoodCreateInput": {
+        "type": "object",
+        "required": [
+          "name",
+          "price",
+          "category"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Banh Mi Cha"
+          },
+          "description": {
+            "type": "string",
+            "example": "Banh mi cha nong gion"
+          },
+          "category": {
+            "type": "string",
+            "description": "MongoDB ObjectId of category",
+            "example": "661fb4e9680c5e2a86f9f7b3"
+          },
+          "listUrlImg": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "https://example.com/food-1.png"
+            ]
+          },
+          "isAvailble": {
+            "type": "boolean",
+            "default": true
+          },
+          "isDraft": {
+            "type": "boolean",
+            "default": false
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "example": 35000
+          },
+          "specialPrice": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "example": 30000
+          },
+          "specialtime": {
+            "type": "string",
+            "nullable": true,
+            "example": "11:00-14:00"
+          }
+        },
+        "description": "shop is inferred from authenticated seller's shop"
+      },
+      "FoodUpdateInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Banh Mi Cha Dac Biet"
+          },
+          "description": {
+            "type": "string",
+            "example": "Cap nhat mo ta mon an"
+          },
+          "category": {
+            "type": "string",
+            "description": "MongoDB ObjectId of category",
+            "example": "661fb4e9680c5e2a86f9f7b3"
+          },
+          "listUrlImg": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "https://example.com/food-updated.png"
+            ]
+          },
+          "isAvailble": {
+            "type": "boolean"
+          },
+          "isDraft": {
+            "type": "boolean"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "example": 39000
+          },
+          "specialPrice": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "example": 32000
+          },
+          "specialtime": {
+            "type": "string",
+            "nullable": true,
+            "example": "17:00-20:00"
+          }
+        },
+        "description": "All fields are optional for update. Only food owner can update"
+      },
+      "FoodSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Food retrieved successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Food"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
+      },
+      "FoodListSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Foods retrieved successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Food"
             }
           },
           "pagination": {
