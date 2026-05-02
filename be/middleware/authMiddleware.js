@@ -4,11 +4,11 @@ import environment from '../config/environment.js';
 import jwt from 'jsonwebtoken';
 
 /**
- * Authentication middleware (Xác thực)
- * Xác thực JWT access token từ Authorization header.
+ * Middleware xác thực
+ * Xác thực JWT access token từ header Authorization.
  * Gắn thông tin user vào req.user để các controller sử dụng.
  *
- * Header format: Authorization: Bearer <accessToken>
+ * Định dạng header: Authorization: Bearer <accessToken>
  */
 export const authenticate = (req, res, next) => {
   try {
@@ -55,7 +55,7 @@ export const authorize = (...roles) => {
       }
 
       // Log thông tin về quyền truy cập của người dùng và sang bước tiếp theo
-      logger.info('User authorized with roles:', roles);
+      logger.debug('User authorized with roles:', roles);
       next();
     } catch (error) {
       logger.error('Authorization error', error);
