@@ -31,6 +31,14 @@
     {
       "name": "comments",
       "description": "Comment operations (get, add, delete, like/unlike)"
+    },
+    {
+      "name": "auth",
+      "description": "Authentication operations (register, login, logout, refresh)"
+    },
+    {
+      "name": "shops",
+      "description": "Shop operations (get all, create)"
     }
   ],
   "paths": {
@@ -69,6 +77,180 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Register new user",
+        "operationId": "register",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthRegisterInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthRegisterResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Phone number or username already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login user",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthLoginInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User logged in successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid username or password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout user",
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "User logged out successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthLogoutResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Refresh access token",
+        "operationId": "refreshToken",
+        "responses": {
+          "200": {
+            "description": "Access token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refresh token is missing, invalid, or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -492,6 +674,127 @@
           "409": {"description": "Conflict - Đã like hoặc chưa like"}
         }
       }
+    },
+    "/api/shops": {
+      "get": {
+        "tags": ["shops"],
+        "summary": "Get all shops with pagination",
+        "operationId": "getAllShops",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Shops per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated shops",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopListSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["shops"],
+        "summary": "Create a shop",
+        "operationId": "createShop",
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShopCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Shop created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Only seller can create shop",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - Each user can only create one shop",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -673,6 +976,10 @@
                 "type": "string",
                 "example": "/api/users"
               },
+              "shops": {
+                "type": "string",
+                "example": "/api/shops"
+              },
               "health": {
                 "type": "string",
                 "example": "/health"
@@ -680,6 +987,7 @@
             },
             "required": [
               "users",
+              "shops",
               "health"
             ]
           }
@@ -775,6 +1083,148 @@
           "timestamp"
         ]
       },
+      "Shop": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b1"
+          },
+          "name": {
+            "type": "string",
+            "example": "Bun Cha Ha Noi"
+          },
+          "userId": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b2"
+          },
+          "avatar": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://example.com/shop.png"
+          },
+          "address": {
+            "type": "string",
+            "example": "12 Nguyen Trai, Ha Noi"
+          },
+          "about": {
+            "type": "string",
+            "example": "Specialized in Vietnamese street food"
+          },
+          "average_rating": {
+            "type": "number",
+            "example": 4.8
+          },
+          "rating_count": {
+            "type": "integer",
+            "example": 120
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "userId",
+          "average_rating",
+          "rating_count",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ShopCreateInput": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Bun Cha Ha Noi"
+          },
+          "avatar": {
+            "type": "string",
+            "example": "https://example.com/shop.png"
+          },
+          "address": {
+            "type": "string",
+            "example": "12 Nguyen Trai, Ha Noi"
+          },
+          "about": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Specialized in Vietnamese street food"
+          }
+        },
+        "description": "userId is taken from the authenticated seller token"
+      },
+      "ShopSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Shop created successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Shop"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
+      },
+      "ShopListSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Shops retrieved successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Shop"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "pagination",
+          "timestamp"
+        ]
+      },
       "DeleteSuccessResponse": {
         "type": "object",
         "properties": {
@@ -815,6 +1265,132 @@
           "error": {
             "nullable": true,
             "example": "Cast to ObjectId failed for value \"abc\""
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "timestamp"
+        ]
+      },
+      "AuthRegisterInput": {
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Nguyen Van A"
+          },
+          "username": {
+            "type": "string",
+            "example": "nguyenvana"
+          },
+          "password": {
+            "type": "string",
+            "example": "12345678"
+          },
+          "phone": {
+            "type": "string",
+            "example": "0909123456"
+          }
+        }
+      },
+      "AuthLoginInput": {
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "nguyenvana"
+          },
+          "password": {
+            "type": "string",
+            "example": "12345678"
+          }
+        }
+      },
+      "AuthRegisterResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "User registered successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
+      },
+      "AuthTokenResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "User logged in successfully"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "accessToken": {
+                "type": "string",
+                "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              }
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
+      },
+      "AuthLogoutResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "User logged out successfully"
+          },
+          "data": {
+            "nullable": true,
+            "example": null
           },
           "timestamp": {
             "type": "string",

@@ -14,6 +14,7 @@ router.get('/', (req, res, next) => {
     version: '1.0.0',
     endpoints: {
       users: '/api/users',
+      shops: '/api/shops',
       health: '/health'
     }
   }, 'API is running');
