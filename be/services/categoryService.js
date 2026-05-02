@@ -2,15 +2,15 @@ import { logger } from "../utils/logger.js";
 import Category from "../models/Category.js";
 
 /**
- * Get all categories (flat list)
+ * Get root categories (parentId = null)
  */
-export const getAllCategories = async () => {
+export const getRoot = async () => {
   try {
-    logger.info("Service: Getting all categories");
-    const categories = await Category.find().sort({ name: 1 });
+    logger.info("Service: Getting root categories");
+    const categories = await Category.find({ parentId: null }).sort({ name: 1 });
     return categories.map((c) => c.getFormattedData?.() || c);
   } catch (error) {
-    logger.error("Service: Error getting categories", error);
+    logger.error("Service: Error getting root categories", error);
     throw error;
   }
 };
@@ -53,6 +53,49 @@ export const updateCategory = async (id, data) => {
     return updated.getFormattedData?.() || updated;
   } catch (error) {
     logger.error("Service: Error updating category", error);
+    throw error;
+  }
+};
+
+/**
+ * Get all categories in hierarchical structure (tree format)
+ */
+export const getAllCategoriesHierarchy = async () => {
+  try {
+    logger.info("Service: Getting all categories hierarchy");
+    const all = await Category.find().sort({ name: 1 });
+
+    const buildTree = (categories, parentId = null) => {
+      return categories
+        .filter((c) => {
+          const cParentId = c.parentId ? c.parentId.toString() : null;
+          const compareId = parentId ? parentId.toString() : null;
+          return cParentId === compareId;
+        })
+        .map((c) => ({
+          id: c._id,
+          name: c.name,
+          child: buildTree(categories, c._id),
+        }));
+    };
+
+    return buildTree(all);
+  } catch (error) {
+    logger.error("Service: Error getting categories hierarchy", error);
+    throw error;
+  }
+};
+
+/**
+ * Get child categories by parent ID
+ */
+export const getChildCategories = async (parentId) => {
+  try {
+    logger.info(`Service: Getting child categories for parent ${parentId}`);
+    const children = await Category.find({ parentId }).sort({ name: 1 });
+    return children.map((c) => c.getFormattedData?.() || c);
+  } catch (error) {
+    logger.error("Service: Error getting child categories", error);
     throw error;
   }
 };
