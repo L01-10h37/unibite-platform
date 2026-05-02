@@ -54,8 +54,7 @@ export const authorize = (...roles) => {
         throw new Error('User role not authorized');
       }
 
-      // Log thông tin về quyền truy cập của người dùng và sang bước tiếp theo
-      logger.debug('User authorized with roles:', roles);
+      // Sang bước tiếp theo
       next();
     } catch (error) {
       logger.error('Authorization error', error);
