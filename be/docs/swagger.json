@@ -682,11 +682,11 @@
     "/api/categories": {
       "get": {
         "tags": ["categories"],
-        "summary": "Get all categories",
-        "operationId": "getAllCategories",
+        "summary": "Get root categories",
+        "operationId": "getRoot",
         "responses": {
           "200": {
-            "description": "Categories retrieved successfully",
+            "description": "Root categories retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -729,6 +729,143 @@
           "403": {"description": "Forbidden - Admin only"},
           "409": {"description": "Conflict - Duplicate category"},
           "500": {"description": "Internal server error"}
+        }
+      }
+    },
+    "/api/categories/hierarchy": {
+      "get": {
+        "tags": ["categories"],
+        "summary": "Get all categories in hierarchical tree structure",
+        "operationId": "getAllCategoriesHierarchy",
+        "responses": {
+          "200": {
+            "description": "Categories hierarchy retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryHierarchyResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/categories/{id}": {
+      "put": {
+        "tags": ["categories"],
+        "summary": "Update a category",
+        "operationId": "updateCategory",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId of category",
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/CategoryCreateInput"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CategorySuccessResponse"}}}
+          },
+          "401": {"description": "Unauthorized - Missing or invalid token"},
+          "403": {"description": "Forbidden - Admin only"},
+          "404": {"description": "Category not found"},
+          "500": {"description": "Internal server error"}
+        }
+      },
+      "delete": {
+        "tags": ["categories"],
+        "summary": "Delete a category",
+        "operationId": "deleteCategory",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId of category",
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category deleted",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CategoryDeleteResponse"}}}
+          },
+          "401": {"description": "Unauthorized - Missing or invalid token"},
+          "403": {"description": "Forbidden - Admin only"},
+          "404": {"description": "Category not found"},
+          "409": {"description": "Conflict - Cannot delete category with child categories"},
+          "500": {"description": "Internal server error"}
+        }
+      }
+    },
+    "/api/categories/{id}/children": {
+      "get": {
+        "tags": ["categories"],
+        "summary": "Get child categories",
+        "operationId": "getChildCategories",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId of parent category",
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Child categories retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryListSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1421,6 +1558,32 @@
           "success": {"type": "boolean", "example": true},
           "message": {"type": "string", "example": "Categories retrieved successfully"},
           "data": {"type": "array", "items": {"$ref": "#/components/schemas/Category"}},
+          "timestamp": {"type": "string", "format": "date-time"}
+        }
+      },
+      "CategoryDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean", "example": true},
+          "message": {"type": "string", "example": "Category deleted successfully"},
+          "data": {"type": "object", "properties": {"id": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"}}},
+                "CategoryNode": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"},
+                    "name": {"type": "string", "example": "Cơm"},
+                    "child": {"type": "array", "items": {"$ref": "#/components/schemas/CategoryNode"}, "example": []}
+                  }
+                },
+                "CategoryHierarchyResponse": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean", "example": true},
+                    "message": {"type": "string", "example": "Categories hierarchy retrieved successfully"},
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/CategoryNode"}},
+                    "timestamp": {"type": "string", "format": "date-time"}
+                  }
+                },
           "timestamp": {"type": "string", "format": "date-time"}
         }
       },
