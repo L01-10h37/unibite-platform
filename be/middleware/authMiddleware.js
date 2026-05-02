@@ -1,31 +1,46 @@
 import { errorResponse } from '../utils/responseHandler.js';
 import { logger } from '../utils/logger.js';
 import environment from '../config/environment.js';
+import jwt from 'jsonwebtoken';
 
 /**
  * Authentication middleware
- * Check if the request has a valid JWT token
+ * Xác thực JWT access token từ Authorization header.
+ * Gắn thông tin user vào req.user để các controller sử dụng.
+ *
+ * Header format: Authorization: Bearer <accessToken>
  */
 export const authenticate = (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const authHeader = req.headers.authorization;
 
-    if (!token) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       logger.warn('No token provided');
       return errorResponse(res, null, 'No token provided', 401);
     }
 
-    // TODO: Verify JWT token here
-    // Example: const decoded = jwt.verify(token, environment.jwt_secret);
-    // req.user = decoded;
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, environment.jwt_access_secret);
 
-    logger.info('User authenticated');
+    // Gắn user vào request để controller dùng (vd: req.user.id, req.user.username)
+    req.user = decoded;
+
+    logger.info(`User authenticated: ${decoded.username}`);
     next();
   } catch (error) {
     logger.error('Authentication error', error);
+
+    if (error.name === 'TokenExpiredError') {
+      return errorResponse(res, null, 'Token has expired', 401);
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return errorResponse(res, null, 'Invalid token', 401);
+    }
+
     errorResponse(res, error, 'Authentication failed', 401);
   }
 };
+
 
 /**
  * Authorization middleware
