@@ -64,8 +64,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Index email
-userSchema.index({ email: 1 });
+
 
 /**
  * Timestamps helper

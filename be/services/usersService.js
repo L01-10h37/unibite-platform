@@ -1,5 +1,6 @@
 import { logger } from '../utils/logger.js';
 import User from '../models/User.js';
+import bcrypt from 'bcryptjs';
 
 /**
  * Get all users
@@ -42,6 +43,27 @@ export const getUserById = async (id) => {
     return user ? user.getFormattedData?.() || user : null;
   } catch (error) {
     logger.error('Service: Error getting user by ID', error);
+    throw error;
+  }
+};
+
+/**
+ * Create new user
+ */
+export const createUser = async (userData) => {
+  try {
+    logger.info('Service: Creating new user', userData);
+
+    // Hash password nếu có
+    if (userData.password) {
+      const salt = await bcrypt.genSalt(10);
+      userData.password = await bcrypt.hash(userData.password, salt);
+    }
+
+    const newUser = await User.create(userData);
+    return newUser.getFormattedData?.() || newUser;
+  } catch (error) {
+    logger.error('Service: Error creating user', error);
     throw error;
   }
 };
