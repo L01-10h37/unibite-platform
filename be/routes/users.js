@@ -14,11 +14,6 @@ router.get('/', usersController.getAllUsers);
 router.get('/:id', usersController.getUserById);
 
 /**
- * POST create new user
- */
-router.post('/', usersController.createUser);
-
-/**
  * PUT update user
  */
 router.put('/:id', usersController.updateUser);

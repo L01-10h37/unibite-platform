@@ -4,7 +4,7 @@ import environment from '../config/environment.js';
 import jwt from 'jsonwebtoken';
 
 /**
- * Authentication middleware
+ * Authentication middleware (Xác thực)
  * Xác thực JWT access token từ Authorization header.
  * Gắn thông tin user vào req.user để các controller sử dụng.
  *
@@ -43,17 +43,19 @@ export const authenticate = (req, res, next) => {
 
 
 /**
- * Authorization middleware
- * Check if the user has specific roles
+ * Authorization middleware (Ủy quyền)
+ * Kiểm tra liệu người dùng có quyền truy cập không
  */
 export const authorize = (...roles) => {
   return (req, res, next) => {
     try {
-      // TODO: Check user role from req.user
-      // if (!roles.includes(req.user.role)) {
-      //   return errorResponse(res, null, 'Forbidden', 403);
-      // }
+      // Kiểm tra nếu user role không nằm trong danh sách roles được phép truy cập
+      if (!roles.includes(req.user.role)) {
+        throw new Error('User role not authorized');
+      }
 
+      // Log thông tin về quyền truy cập của người dùng và sang bước tiếp theo
+      logger.info('User authorized with roles:', roles);
       next();
     } catch (error) {
       logger.error('Authorization error', error);
