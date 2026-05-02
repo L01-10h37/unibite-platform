@@ -16,6 +16,7 @@ import usersRouter from './routes/users.js';
 import authRouter from './routes/auth.js';
 import commentRouter from './routes/comments.js';
 import shopRouter from './routes/shops.js';
+import categoriesRouter from './routes/categories.js';
 
 const app = express();
 const port = environment.port;
@@ -58,6 +59,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/comment', commentRouter);
 app.use('/api/shops', shopRouter);
+app.use('/api/categories', categoriesRouter);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Get raw Swagger JSON

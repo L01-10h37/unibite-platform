@@ -2,6 +2,28 @@ import { logger } from "../utils/logger.js";
 import Shop from "../models/Shop.js";
 
 /**
+ * Get shop by id
+ */
+export const getShopById = async (shopId) => {
+    try {
+        logger.info(`Service: Getting shop by id: ${shopId}`);
+
+        const shop = await Shop.findById(shopId);
+
+        if (!shop) {
+            const error = new Error("Shop not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return shop.getFormattedData?.() || shop;
+    } catch (error) {
+        logger.error("Service: Error getting shop by id", error);
+        throw error;
+    }
+};
+
+/**
  * Get all shops
  */
 export const getAllShops = async (page = 1, limit = 10) => {

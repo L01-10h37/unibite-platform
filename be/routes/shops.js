@@ -10,6 +10,11 @@ const router = express.Router();
 router.get('/', shopController.getAllShops);
 
 /**
+ * GET shop by id
+ */
+router.get('/:id', shopController.getShopById);
+
+/**
  * POST create shop
  */
 router.post(

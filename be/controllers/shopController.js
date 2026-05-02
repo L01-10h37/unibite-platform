@@ -29,6 +29,22 @@ export const getAllShops = async (req, res, next) => {
 };
 
 /**
+ * Get shop by id
+ */
+export const getShopById = async (req, res, next) => {
+    try {
+        const shopId = req.params.id;
+        logger.info(`Getting shop: ${shopId}`);
+        const shop = await shopService.getShopById(shopId);
+        successResponse(res, shop, "Shop retrieved successfully", 200);
+    } catch (error) {
+        logger.error("Error getting shop", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to get shop", statusCode);
+    }
+};
+
+/**
  * Create shop
  */
 export const createShop = async (req, res, next) => {
