@@ -5,7 +5,7 @@ import { authenticate, authorize } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 /**
- * GET all shops
+ * GET all shops (with optional search and filter)
  */
 router.get('/', shopController.getAllShops);
 

@@ -9,9 +9,12 @@ export const getAllShops = async (req, res, next) => {
 	try {
 		const page = parseInt(req.query.page) || 1;
 		const limit = parseInt(req.query.limit) || 10;
+		const search = req.query.search || "";
+		const minRating = parseFloat(req.query.minRating) || 0;
+		const order = req.query.order || "desc";
 
-		logger.info(`Fetching shops - Page: ${page}, Limit: ${limit}`);
-		const result = await shopService.getAllShops(page, limit);
+		logger.info(`Fetching shops - Page: ${page}, Limit: ${limit}, Search: ${search}, MinRating: ${minRating}, Order: ${order}`);
+		const result = await shopService.getAllShops(page, limit, search, minRating, order);
 
 		paginatedResponse(
 			res,

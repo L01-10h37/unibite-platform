@@ -1,5 +1,6 @@
 import { logger } from "../utils/logger.js";
 import Category from "../models/Category.js";
+import Food from "../models/Food.js";
 
 /**
  * Get root categories (parentId = null)
@@ -177,9 +178,15 @@ export const deleteCategory = async (id) => {
       logger.info(`Service: Moved ${childCategories.length} child categories to parent ${targetParentId}`);
     }
 
-    // 4. TODO: Move all food items with deleted category to target parent category
-    // This should be handled in the food/order service to reassign all orders/comments
-    // that reference this category to the target parent category
+    // 4. Move all food items with deleted category to target parent category
+    const foodItems = await Food.find({ category: id });
+    if (foodItems.length > 0) {
+      await Food.updateMany(
+        { category: id },
+        { $set: { category: targetParentId } }
+      );
+      logger.info(`Service: Reassigned ${foodItems.length} food items from category ${id} to ${targetParentId}`);
+    }
 
     // 5. Delete the category
     await Category.findByIdAndDelete(id);

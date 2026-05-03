@@ -1463,6 +1463,90 @@
         }
       }
     },
+    "/api/foods/my-menu": {
+      "get": {
+        "tags": ["foods"],
+        "summary": "Get my menu",
+        "operationId": "getMyMenu",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Foods per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "My menu retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodListSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - seller role required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/foods/{id}": {
       "get": {
         "tags": ["foods"],
@@ -1647,9 +1731,44 @@
     "/api/shops": {
       "get": {
         "tags": ["shops"],
-        "summary": "Get all shops with pagination",
+        "summary": "Get all shops with optional search and filter",
         "operationId": "getAllShops",
         "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Search shops by name (case-insensitive)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "pizza"
+            }
+          },
+          {
+            "name": "minRating",
+            "in": "query",
+            "description": "Minimum average rating (0-5)",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 5,
+              "default": 0,
+              "example": 3.5
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "Sort rating order: desc (high to low), asc (low to high)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["desc", "asc"],
+              "default": "desc",
+              "example": "desc"
+            }
+          },
           {
             "name": "page",
             "in": "query",

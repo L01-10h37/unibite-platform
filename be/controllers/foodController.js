@@ -45,6 +45,38 @@ export const getFood = async (req, res, next) => {
 };
 
 /**
+ * Get seller's own menu
+ */
+export const getMyMenu = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    if (!userId) {
+      return errorResponse(res, null, "User is required to get my menu", 401);
+    }
+
+    logger.info(`Getting my menu for user: ${userId} - Page: ${page}, Limit: ${limit}`);
+    const result = await foodService.getMyMenu(userId, page, limit);
+
+    paginatedResponse(
+      res,
+      result.foods,
+      result.pagination.page,
+      result.pagination.limit,
+      result.pagination.total,
+      "My menu retrieved successfully",
+      200
+    );
+  } catch (error) {
+    logger.error("Error getting my menu", error);
+    const statusCode = error.statusCode || 500;
+    errorResponse(res, error, error.message || "Failed to get my menu", statusCode);
+  }
+};
+
+/**
  * Create food (shop owner only)
  */
 export const createFood = async (req, res, next) => {

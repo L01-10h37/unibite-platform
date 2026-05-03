@@ -46,19 +46,36 @@ export const getShopByUserId = async (userId) => {
 };
 
 /**
- * Get all shops
+ * Get all shops with optional search, filter, and rating sort
  */
-export const getAllShops = async (page = 1, limit = 10) => {
+export const getAllShops = async (page = 1, limit = 10, search = "", minRating = 0, order = "desc") => {
     try {
-        logger.info("Service: Getting all shops");
+        logger.info(`Service: Getting all shops - search: ${search}, minRating: ${minRating}, order: ${order}`);
+        
+        const query = {};
+        
+        // Search by shop name (case-insensitive)
+        if (search && search.trim()) {
+            query.name = { $regex: search.trim(), $options: "i" };
+        }
+        
+        // Filter by minimum rating
+        if (minRating > 0) {
+            query.average_rating = { $gte: minRating };
+        }
+        
         const skip = (page - 1) * limit;
+        
+        // Sort by rating: desc (high to low, default) or asc (low to high)
+        const ratingSort = order === "asc" ? 1 : -1;
+        const sortOrder = { average_rating: ratingSort, createdAt: -1 };
 
-        const shops = await Shop.find()
+        const shops = await Shop.find(query)
             .skip(skip)
             .limit(limit)
-            .sort({ createdAt: -1 });
+            .sort(sortOrder);
 
-        const total = await Shop.countDocuments();
+        const total = await Shop.countDocuments(query);
 
         return {
             shops: shops.map((shop) => shop.getFormattedData?.() || shop),

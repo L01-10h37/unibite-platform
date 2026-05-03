@@ -60,6 +60,46 @@ export const getFood = async (foodId) => {
 };
 
 /**
+ * Get current seller's menu
+ */
+export const getMyMenu = async (userId, page = 1, limit = 10) => {
+  try {
+    logger.info(`Service: Getting my menu for user ${userId}`);
+
+    const shop = await Shop.findOne({ userId });
+    if (!shop) {
+      const error = new Error("Shop not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const foods = await Food.find({ shop: shop._id })
+      .populate("category")
+      .populate("shop")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const total = await Food.countDocuments({ shop: shop._id });
+
+    return {
+      foods: foods.map((food) => food.getFormattedData?.() || food),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    logger.error("Service: Error getting my menu", error);
+    throw error;
+  }
+};
+
+/**
  * Create new food (shop owner)
  */
 export const createFood = async (userId, foodData) => {
@@ -125,6 +165,23 @@ export const updateFood = async (foodId, userId, updateData) => {
     if (food.shop.userId.toString() !== userId.toString()) {
       const error = new Error("You do not have permission to update this food");
       error.statusCode = 403;
+      throw error;
+    }
+
+    // Prevent immutable fields from being updated
+    if (updateData.shop) {
+      const error = new Error("Cannot change the shop for this food");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (updateData.average_rating || updateData.rating_count) {
+      const error = new Error("Cannot change rating fields");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (updateData.sold_count) {
+      const error = new Error("Cannot change sold count");
+      error.statusCode = 400;
       throw error;
     }
 

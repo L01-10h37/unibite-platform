@@ -54,6 +54,20 @@ const foodSchema = new mongoose.Schema(
       default: null,
       trim: true,
     },
+    average_rating: {
+      type: Number,
+      min: [0, 'Rating must be at least 0'],
+      max: [5, 'Rating must not exceed 5'],
+      default: 0,
+    },
+    rating_count: {
+      type: Number,
+      default: 0,
+    },
+    sold_count: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
@@ -79,6 +93,9 @@ foodSchema.methods.getFormattedData = function () {
     specialPrice: this.specialPrice,
     startTime: this.startTime,
     endTime: this.endTime,
+    average_rating: this.average_rating,
+    rating_count: this.rating_count,
+    sold_count: this.sold_count,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };

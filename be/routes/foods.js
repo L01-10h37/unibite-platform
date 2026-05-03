@@ -55,40 +55,57 @@ const router = express.Router();
 router.get("/", foodController.getAllFood);
 
 /**
- * GET /foods/:id
+ * GET /foods/my-menu
  * #swagger.tags = ['Foods']
- * #swagger.summary = 'Get food detail'
- * #swagger.description = 'Retrieve food details by ID. No authentication required.'
- * #swagger.parameters['id'] = { in: 'path', type: 'string', required: true, description: 'Food ID' }
+ * #swagger.summary = 'Get my menu'
+ * #swagger.description = "Get foods from the authenticated seller's shop. Requires seller authentication."
+ * #swagger.security = [{ bearerAuth: [] }]
+ * #swagger.parameters['authorization'] = { in: 'header', type: 'string', required: true, description: 'Bearer token' }
+ * #swagger.parameters['page'] = { in: 'query', type: 'integer', description: 'Page number (default: 1)' }
+ * #swagger.parameters['limit'] = { in: 'query', type: 'integer', description: 'Items per page (default: 10)' }
  * #swagger.responses[200] = {
- *   description: 'Food retrieved successfully',
+ *   description: 'My menu retrieved successfully',
  *   schema: {
  *     type: 'object',
  *     properties: {
  *       data: {
+ *         type: 'array',
+ *         items: {
+ *           type: 'object',
+ *           properties: {
+ *             id: { type: 'string' },
+ *             name: { type: 'string' },
+ *             description: { type: 'string' },
+ *             price: { type: 'number' },
+ *             specialPrice: { type: 'number' },
+ *             categoryId: { type: 'string' },
+ *             categoryName: { type: 'string' },
+ *             shopId: { type: 'string' },
+ *             shopName: { type: 'string' },
+ *             listUrlImg: { type: 'array', items: { type: 'string' } },
+ *             isAvailble: { type: 'boolean' },
+ *             isDraft: { type: 'boolean' },
+ *             startTime: { type: 'string' },
+ *             endTime: { type: 'string' },
+ *             createdAt: { type: 'string', format: 'date-time' },
+ *             updatedAt: { type: 'string', format: 'date-time' }
+ *           }
+ *         }
+ *       },
+ *       pagination: {
  *         type: 'object',
  *         properties: {
- *           id: { type: 'string' },
- *           name: { type: 'string' },
- *           description: { type: 'string' },
- *           price: { type: 'number' },
- *           specialPrice: { type: 'number' },
- *           category: { type: 'string' },
- *           shop: { type: 'string' },
- *           listUrlImg: { type: 'array', items: { type: 'string' } },
- *           isAvailble: { type: 'boolean' },
- *           isDraft: { type: 'boolean' },
- *           startTime: { type: 'string' },
- *           endTime: { type: 'string' },
- *           createdAt: { type: 'string', format: 'date-time' },
- *           updatedAt: { type: 'string', format: 'date-time' }
+ *           page: { type: 'integer' },
+ *           limit: { type: 'integer' },
+ *           total: { type: 'integer' }
  *         }
  *       }
  *     }
  *   }
  * }
- * #swagger.responses[404] = { description: 'Food not found' }
  */
+router.get("/my-menu", authenticate, authorize("seller"), foodController.getMyMenu);
+
 router.get("/:id", foodController.getFood);
 
 /**
