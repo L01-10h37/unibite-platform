@@ -35,11 +35,6 @@ router.get('/', authMiddleware.authenticate, usersController.getAllUsers);
 router.get('/:id', authMiddleware.authenticate, usersController.getUserById);
 
 /**
- * POST create new user
- */
-router.post('/', authMiddleware.authenticate, usersController.createUser);
-
-/**
  * PUT update user
  */
 router.put('/:id', authMiddleware.authenticate, usersController.updateUser);
