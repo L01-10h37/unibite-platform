@@ -62,7 +62,7 @@ export const getAllCategoriesHierarchy = async (req, res, next) => {
 export const getChildCategories = async (req, res, next) => {
   try {
     const parentId = req.params.id;
-    const children = await categoryService.getChildCategories(parentId);
+    const children = await categoryService.getDeepChild(parentId);
     successResponse(res, children, "Child categories retrieved successfully", 200);
   } catch (error) {
     logger.error("Error fetching child categories", error);

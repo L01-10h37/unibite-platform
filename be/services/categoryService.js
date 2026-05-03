@@ -101,6 +101,32 @@ export const getChildCategories = async (parentId) => {
 };
 
 /**
+ * Get all child categories (descendants) recursively
+ * Lấy tất cả category con, cháu, chắt, ... của một category
+ */
+export const getDeepChild = async (parentId) => {
+  try {
+    logger.info(`Service: Getting all child categories (descendants) for parent ${parentId}`);
+
+    const getAllDescendants = async (id, allResults = []) => {
+      const children = await Category.find({ parentId: id }).sort({ name: 1 });
+
+      for (const child of children) {
+        allResults.push(child.getFormattedData?.() || child);
+        await getAllDescendants(child._id, allResults);
+      }
+
+      return allResults;
+    };
+
+    return await getAllDescendants(parentId);
+  } catch (error) {
+    logger.error("Service: Error getting all child categories", error);
+    throw error;
+  }
+};
+
+/**
  * Delete category
  * When deleting a category:
  * 1. Get parent category

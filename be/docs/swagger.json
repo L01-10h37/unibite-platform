@@ -45,6 +45,10 @@
       "description": "Shop operations (get all, create, update)"
     },
     {
+      "name": "foods",
+      "description": "Food operations (get all, get by id, create, update, delete)"
+    },
+    {
       "name": "categories",
       "description": "Category operations (get all, create, update, delete)"
     }
@@ -290,53 +294,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserListSuccessResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": ["users"],
-        "summary": "Create a user",
-        "operationId": "createUser",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UserCreateInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "User created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserSuccessResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Email already exists",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1395,6 +1352,298 @@
         }
       }
     },
+    "/api/foods": {
+      "get": {
+        "tags": ["foods"],
+        "summary": "Get all foods",
+        "operationId": "getAllFood",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Foods per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Foods retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodListSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["foods"],
+        "summary": "Create a food",
+        "operationId": "createFood",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FoodCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Food created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - seller role required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "You do not have a shop or invalid food data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/foods/{id}": {
+      "get": {
+        "tags": ["foods"],
+        "summary": "Get food detail",
+        "operationId": "getFood",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Food ID",
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Food retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodSuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Food not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["foods"],
+        "summary": "Update food",
+        "operationId": "updateFood",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Food ID",
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FoodUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Food updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - not owner of this shop",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Food not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["foods"],
+        "summary": "Delete food",
+        "operationId": "deleteFood",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Food ID",
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Food deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - not owner of this shop",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Food not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/shops": {
       "get": {
         "tags": ["shops"],
@@ -2019,6 +2268,93 @@
           "data": {"type": "array", "items": {"$ref": "#/components/schemas/CategoryNode"}},
           "timestamp": {"type": "string", "format": "date-time"}
         }
+      },
+      "Food": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"},
+          "name": {"type": "string", "example": "Bún bò Huế"},
+          "description": {"type": "string", "example": "Món bún bò đậm vị"},
+          "category": {
+            "oneOf": [
+              {"type": "string", "example": "661fb4e9680c5e2a86f9f7b3"},
+              {"$ref": "#/components/schemas/Category"}
+            ]
+          },
+          "shop": {
+            "oneOf": [
+              {"type": "string", "example": "661fb4e9680c5e2a86f9f7b2"},
+              {"$ref": "#/components/schemas/Shop"}
+            ]
+          },
+          "listUrlImg": {
+            "type": "array",
+            "items": {"type": "string"},
+            "example": ["https://example.com/food1.jpg"]
+          },
+          "isAvailble": {"type": "boolean", "example": true},
+          "isDraft": {"type": "boolean", "example": false},
+          "price": {"type": "number", "example": 45000},
+          "specialPrice": {"type": "number", "nullable": true, "example": 39000},
+          "startTime": {"type": "string", "nullable": true, "example": "08:00"},
+          "endTime": {"type": "string", "nullable": true, "example": "22:00"},
+          "createdAt": {"type": "string", "format": "date-time"},
+          "updatedAt": {"type": "string", "format": "date-time"}
+        },
+        "required": ["id", "name", "category", "shop", "price", "createdAt", "updatedAt"]
+      },
+      "FoodCreateInput": {
+        "type": "object",
+        "required": ["name", "category", "price"],
+        "properties": {
+          "name": {"type": "string", "example": "Bún bò Huế"},
+          "description": {"type": "string", "example": "Món bún bò đậm vị"},
+          "category": {"type": "string", "description": "Category ID", "example": "661fb4e9680c5e2a86f9f7b3"},
+          "price": {"type": "number", "example": 45000},
+          "specialPrice": {"type": "number", "nullable": true, "example": 39000},
+          "startTime": {"type": "string", "nullable": true, "example": "08:00"},
+          "endTime": {"type": "string", "nullable": true, "example": "22:00"},
+          "listUrlImg": {"type": "array", "items": {"type": "string"}, "example": ["https://example.com/food1.jpg"]},
+          "isAvailble": {"type": "boolean", "default": true},
+          "isDraft": {"type": "boolean", "default": false}
+        },
+        "description": "The shop is inferred from the authenticated seller account"
+      },
+      "FoodUpdateInput": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string", "example": "Bún bò Huế đặc biệt"},
+          "description": {"type": "string", "example": "Món bún bò đậm vị"},
+          "category": {"type": "string", "description": "Category ID", "example": "661fb4e9680c5e2a86f9f7b3"},
+          "price": {"type": "number", "example": 45000},
+          "specialPrice": {"type": "number", "nullable": true, "example": 39000},
+          "startTime": {"type": "string", "nullable": true, "example": "08:00"},
+          "endTime": {"type": "string", "nullable": true, "example": "22:00"},
+          "listUrlImg": {"type": "array", "items": {"type": "string"}, "example": ["https://example.com/food1.jpg"]},
+          "isAvailble": {"type": "boolean", "example": true},
+          "isDraft": {"type": "boolean", "example": false}
+        }
+      },
+      "FoodSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean", "example": true},
+          "message": {"type": "string", "example": "Food retrieved successfully"},
+          "data": {"$ref": "#/components/schemas/Food"},
+          "timestamp": {"type": "string", "format": "date-time"}
+        },
+        "required": ["success", "message", "data", "timestamp"]
+      },
+      "FoodListSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {"type": "boolean", "example": true},
+          "message": {"type": "string", "example": "Foods retrieved successfully"},
+          "data": {"type": "array", "items": {"$ref": "#/components/schemas/Food"}},
+          "pagination": {"$ref": "#/components/schemas/Pagination"},
+          "timestamp": {"type": "string", "format": "date-time"}
+        },
+        "required": ["success", "message", "data", "pagination", "timestamp"]
       },
       "ShopSuccessResponse": {
         "type": "object",

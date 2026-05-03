@@ -1,0 +1,221 @@
+import express from "express";
+import * as foodController from "../controllers/foodController.js";
+import { authenticate, authorize } from "../middleware/authMiddleware.js";
+
+const router = express.Router();
+
+/**
+ * GET /foods
+ * #swagger.tags = ['Foods']
+ * #swagger.path = '/api/foods'
+ * #swagger.method = 'get'
+ * #swagger.summary = 'Get all foods'
+ * #swagger.description = 'Retrieve all foods with pagination. No authentication required.'
+ * #swagger.parameters['page'] = { in: 'query', type: 'integer', description: 'Page number (default: 1)' }
+ * #swagger.parameters['limit'] = { in: 'query', type: 'integer', description: 'Items per page (default: 10)' }
+ * #swagger.responses[200] = {
+ *   description: 'Foods retrieved successfully',
+ *   schema: {
+ *     type: 'object',
+ *     properties: {
+ *       data: {
+ *         type: 'array',
+ *         items: {
+ *           type: 'object',
+ *           properties: {
+ *             id: { type: 'string' },
+ *             name: { type: 'string' },
+ *             description: { type: 'string' },
+ *             price: { type: 'number' },
+ *             specialPrice: { type: 'number' },
+ *             category: { type: 'string' },
+ *             shop: { type: 'string' },
+ *             listUrlImg: { type: 'array', items: { type: 'string' } },
+ *             isAvailble: { type: 'boolean' },
+ *             isDraft: { type: 'boolean' },
+ *             startTime: { type: 'string' },
+ *             endTime: { type: 'string' },
+ *             createdAt: { type: 'string', format: 'date-time' },
+ *             updatedAt: { type: 'string', format: 'date-time' }
+ *           }
+ *         }
+ *       },
+ *       pagination: {
+ *         type: 'object',
+ *         properties: {
+ *           page: { type: 'integer' },
+ *           limit: { type: 'integer' },
+ *           total: { type: 'integer' }
+ *         }
+ *       }
+ *     }
+ *   }
+ * }
+ */
+router.get("/", foodController.getAllFood);
+
+/**
+ * GET /foods/:id
+ * #swagger.tags = ['Foods']
+ * #swagger.summary = 'Get food detail'
+ * #swagger.description = 'Retrieve food details by ID. No authentication required.'
+ * #swagger.parameters['id'] = { in: 'path', type: 'string', required: true, description: 'Food ID' }
+ * #swagger.responses[200] = {
+ *   description: 'Food retrieved successfully',
+ *   schema: {
+ *     type: 'object',
+ *     properties: {
+ *       data: {
+ *         type: 'object',
+ *         properties: {
+ *           id: { type: 'string' },
+ *           name: { type: 'string' },
+ *           description: { type: 'string' },
+ *           price: { type: 'number' },
+ *           specialPrice: { type: 'number' },
+ *           category: { type: 'string' },
+ *           shop: { type: 'string' },
+ *           listUrlImg: { type: 'array', items: { type: 'string' } },
+ *           isAvailble: { type: 'boolean' },
+ *           isDraft: { type: 'boolean' },
+ *           startTime: { type: 'string' },
+ *           endTime: { type: 'string' },
+ *           createdAt: { type: 'string', format: 'date-time' },
+ *           updatedAt: { type: 'string', format: 'date-time' }
+ *         }
+ *       }
+ *     }
+ *   }
+ * }
+ * #swagger.responses[404] = { description: 'Food not found' }
+ */
+router.get("/:id", foodController.getFood);
+
+/**
+ * POST /foods
+ * #swagger.tags = ['Foods']
+ * #swagger.summary = 'Create food'
+ * #swagger.description = 'Create a new food item. Requires authentication as seller.'
+ * #swagger.security = [{ bearerAuth: [] }]
+ * #swagger.parameters['authorization'] = { in: 'header', type: 'string', required: true, description: 'Bearer token' }
+ * #swagger.requestBody = {
+ *   required: true,
+ *   content: {
+ *     'application/json': {
+ *       schema: {
+ *         type: 'object',
+ *         required: ['name', 'price', 'category'],
+ *         properties: {
+ *           name: { type: 'string', description: 'Food name' },
+ *           description: { type: 'string', description: 'Food description' },
+ *           price: { type: 'number', description: 'Food price' },
+ *           specialPrice: { type: 'number', description: 'Special discounted price' },
+ *           startTime: { type: 'string', description: 'Start time for special price' },
+ *           endTime: { type: 'string', description: 'End time for special price' },
+ *           category: { type: 'string', description: 'Category ID' },
+ *           listUrlImg: { type: 'array', items: { type: 'string' }, description: 'List of image URLs' },
+ *           isAvailble: { type: 'boolean', description: 'Availability status' },
+ *           isDraft: { type: 'boolean', description: 'Draft status' }
+ *         }
+ *       }
+ *     }
+ *   }
+ * }
+ * #swagger.responses[201] = {
+ *   description: 'Food created successfully',
+ *   schema: {
+ *     type: 'object',
+ *     properties: {
+ *       data: { type: 'object' },
+ *       message: { type: 'string' }
+ *     }
+ *   }
+ * }
+ * #swagger.responses[401] = { description: 'Unauthorized' }
+ * #swagger.responses[403] = { description: 'Forbidden - seller role required' }
+ */
+router.post(
+  "/",
+  authenticate,
+  authorize("seller"),
+  foodController.createFood
+);
+
+/**
+ * PUT /foods/:id
+ * #swagger.tags = ['Foods']
+ * #swagger.summary = 'Update food'
+ * #swagger.description = 'Update a food item. Requires authentication as seller.'
+ * #swagger.security = [{ bearerAuth: [] }]
+ * #swagger.parameters['id'] = { in: 'path', type: 'string', required: true, description: 'Food ID' }
+ * #swagger.parameters['authorization'] = { in: 'header', type: 'string', required: true, description: 'Bearer token' }
+ * #swagger.requestBody = {
+ *   required: true,
+ *   content: {
+ *     'application/json': {
+ *       schema: {
+ *         type: 'object',
+ *         properties: {
+ *           name: { type: 'string', description: 'Food name' },
+ *           description: { type: 'string', description: 'Food description' },
+ *           price: { type: 'number', description: 'Food price' },
+ *           specialPrice: { type: 'number', description: 'Special discounted price' },
+ *           startTime: { type: 'string', description: 'Start time for special price' },
+ *           endTime: { type: 'string', description: 'End time for special price' },
+ *           category: { type: 'string', description: 'Category ID' },
+ *           listUrlImg: { type: 'array', items: { type: 'string' }, description: 'List of image URLs' },
+ *           isAvailble: { type: 'boolean', description: 'Availability status' },
+ *           isDraft: { type: 'boolean', description: 'Draft status' }
+ *         }
+ *       }
+ *     }
+ *   }
+ * }
+ * #swagger.responses[200] = {
+ *   description: 'Food updated successfully',
+ *   schema: {
+ *     type: 'object',
+ *     properties: {
+ *       data: { type: 'object' },
+ *       message: { type: 'string' }
+ *     }
+ *   }
+ * }
+ * #swagger.responses[401] = { description: 'Unauthorized' }
+ * #swagger.responses[403] = { description: 'Forbidden - seller role required' }
+ * #swagger.responses[404] = { description: 'Food not found' }
+ */
+router.put(
+  "/:id",
+  authenticate,
+  authorize("seller"),
+  foodController.updateFood
+);
+
+/**
+ * DELETE /foods/:id
+ * #swagger.tags = ['Foods']
+ * #swagger.summary = 'Delete food'
+ * #swagger.description = 'Delete a food item. Requires authentication.'
+ * #swagger.security = [{ bearerAuth: [] }]
+ * #swagger.parameters['id'] = { in: 'path', type: 'string', required: true, description: 'Food ID' }
+ * #swagger.parameters['authorization'] = { in: 'header', type: 'string', required: true, description: 'Bearer token' }
+ * #swagger.responses[200] = {
+ *   description: 'Food deleted successfully',
+ *   schema: {
+ *     type: 'object',
+ *     properties: {
+ *       message: { type: 'string' }
+ *     }
+ *   }
+ * }
+ * #swagger.responses[401] = { description: 'Unauthorized' }
+ * #swagger.responses[404] = { description: 'Food not found' }
+ */
+router.delete(
+  "/:id",
+  authenticate,
+  foodController.deleteFood
+);
+
+export default router;
