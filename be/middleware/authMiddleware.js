@@ -4,30 +4,43 @@ import environment from '../config/environment.js';
 import jwt from 'jsonwebtoken';
 
 /**
- * Authentication middleware (Xác thực)
- * Kiểm tra xem request có chứa token JWT hợp lệ hay không (Đăng nhập chưa)
+ * Middleware xác thực
+ * Xác thực JWT access token từ header Authorization.
+ * Gắn thông tin user vào req.user để các controller sử dụng.
+ *
+ * Định dạng header: Authorization: Bearer <accessToken>
  */
 export const authenticate = (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const authHeader = req.headers.authorization;
 
-    if (!token) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       logger.warn('No token provided');
       return errorResponse(res, null, 'No token provided', 401);
     }
 
-    // Xác thực token và lấy thông tin người dùng cho các bước tiếp theo
+    const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, environment.jwt_access_secret);
+
+    // Gắn user vào request để controller dùng (vd: req.user.id, req.user.username)
     req.user = decoded;
 
-    // Log thông tin người dùng đã được xác thực và sang bước tiếp theo
-    logger.info('User authenticated');
+    logger.info(`User authenticated: ${decoded.username}`);
     next();
   } catch (error) {
     logger.error('Authentication error', error);
+
+    if (error.name === 'TokenExpiredError') {
+      return errorResponse(res, null, 'Token has expired', 401);
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return errorResponse(res, null, 'Invalid token', 401);
+    }
+
     errorResponse(res, error, 'Authentication failed', 401);
   }
 };
+
 
 /**
  * Authorization middleware (Ủy quyền)
@@ -41,8 +54,7 @@ export const authorize = (...roles) => {
         throw new Error('User role not authorized');
       }
 
-      // Log thông tin về quyền truy cập của người dùng và sang bước tiếp theo
-      logger.info('User authorized with roles:', roles);
+      // Sang bước tiếp theo
       next();
     } catch (error) {
       logger.error('Authorization error', error);

@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import swaggerAutogen from 'swagger-autogen';
 import swaggerUi from 'swagger-ui-express';
 import environment from './config/environment.js';
 import cookieParser from "cookie-parser";
@@ -14,6 +15,10 @@ import { logger } from './utils/logger.js';
 import indexRouter from './routes/index.js';
 import usersRouter from './routes/users.js';
 import authRouter from './routes/auth.js';
+import ordersRouter from './routes/order.js';
+import commentRouter from './routes/comments.js';
+import shopRouter from './routes/shops.js';
+import categoriesRouter from './routes/categories.js';
 
 const app = express();
 const port = environment.port;
@@ -21,6 +26,10 @@ const api_url = environment.api_url;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const swaggerSpecPath = process.env.SWAGGER_SPEC_PATH || './docs/swagger.json';
+const endpointsFile = ['./routes/index.js', './routes/users.js', './routes/auth.js', './routes/order.js', './routes/comments.js'];
+
+// Tự động tạo endpoints cho swagger.json
+// swaggerAutogen()(swaggerSpecPath, endpointsFile)
 
 const loadSwaggerSpec = () => {
   const resolvedPath = path.resolve(__dirname, swaggerSpecPath);
@@ -54,6 +63,10 @@ app.use(cookieParser()); // Thêm middleware để parse cookies
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/orders', ordersRouter);
+app.use('/api/comment', commentRouter);
+app.use('/api/shops', shopRouter);
+app.use('/api/categories', categoriesRouter);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Get raw Swagger JSON

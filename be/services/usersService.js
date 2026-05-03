@@ -1,6 +1,7 @@
 import { logger } from '../utils/logger.js';
 import User from '../models/User.js';
 import { deleteAvatarFromS3 } from '../utils/s3Upload.js';
+import bcrypt from 'bcryptjs';
 
 /**
  * Get all users
@@ -54,12 +55,10 @@ export const createUser = async (userData) => {
   try {
     logger.info('Service: Creating new user', userData);
 
-    // Kiểm tra email đã tồn tại
-    const existingUser = await User.findOne({ email: userData.email });
-    if (existingUser) {
-      const error = new Error('Email already exists');
-      error.statusCode = 409;
-      throw error;
+    // Hash password nếu có
+    if (userData.password) {
+      const salt = await bcrypt.genSalt(10);
+      userData.password = await bcrypt.hash(userData.password, salt);
     }
 
     const newUser = await User.create(userData);

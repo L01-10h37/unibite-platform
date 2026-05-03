@@ -70,7 +70,7 @@ export const refreshToken = async (refreshToken) => {
 	try {
 		logger.info('Service: Refreshing access token');
 		const decoded = jwt.verify(refreshToken, environment.jwt_refresh_secret);
-		const payload = { id: decoded.id, username: decoded.username };
+		const payload = { id: decoded.id, username: decoded.username, role: decoded.role };
 		const accessToken = jwt.sign(payload, environment.jwt_access_secret, { expiresIn: '15m' });
 		return { accessToken };
 	} catch (error) {
