@@ -1355,9 +1355,64 @@
     "/api/foods": {
       "get": {
         "tags": ["foods"],
-        "summary": "Get all foods",
+        "summary": "Get all foods with search, category filter, rating filter, and sorting",
         "operationId": "getAllFood",
         "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Search foods by name (case-insensitive)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "pizza"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "description": "Filter by category (includes all descendant categories)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "69f72e988e9eba44a1463f4b"
+            }
+          },
+          {
+            "name": "shopId",
+            "in": "query",
+            "description": "Filter by shop ID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "69f72e988e9eba44a1463f4b"
+            }
+          },
+          {
+            "name": "minRating",
+            "in": "query",
+            "description": "Minimum average rating (0-5)",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 5,
+              "default": 0,
+              "example": 3.5
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "Sort rating order: desc (high to low), asc (low to high)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["desc", "asc"],
+              "default": "desc",
+              "example": "desc"
+            }
+          },
           {
             "name": "page",
             "in": "query",

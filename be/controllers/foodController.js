@@ -9,9 +9,16 @@ export const getAllFood = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || "";
+    const categoryId = req.query.categoryId || null;
+    const shopId = req.query.shopId || null;
+    const minRating = parseFloat(req.query.minRating) || 0;
+    const order = req.query.order || "desc";
 
-    logger.info(`Fetching foods - Page: ${page}, Limit: ${limit}`);
-    const result = await foodService.getAllFood(page, limit);
+    logger.info(
+      `Fetching foods - Page: ${page}, Limit: ${limit}, Search: ${search}, CategoryId: ${categoryId}, ShopId: ${shopId}, MinRating: ${minRating}, Order: ${order}`
+    );
+    const result = await foodService.getAllFood(page, limit, search, categoryId, shopId, minRating, order);
 
     paginatedResponse(
       res,

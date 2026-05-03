@@ -2,23 +2,67 @@ import { logger } from "../utils/logger.js";
 import Food from "../models/Food.js";
 import Shop from "../models/Shop.js";
 import Category from "../models/Category.js";
+import * as categoryService from "./categoryService.js";
 
 /**
- * Get all foods with pagination
+ * Get all foods with search, category filter, shop filter, rating filter, and sorting
  */
-export const getAllFood = async (page = 1, limit = 10) => {
+export const getAllFood = async (
+  page = 1,
+  limit = 10,
+  search = "",
+  categoryId = null,
+  shopId = null,
+  minRating = 0,
+  order = "desc"
+) => {
   try {
-    logger.info("Service: Getting all foods");
+    logger.info(
+      `Service: Getting all foods - search: ${search}, categoryId: ${categoryId}, shopId: ${shopId}, minRating: ${minRating}, order: ${order}`
+    );
     const skip = (page - 1) * limit;
 
-    const foods = await Food.find({ isDraft: false })
+    const query = { isDraft: false };
+
+    // Search by food name (case-insensitive)
+    if (search && search.trim()) {
+      query.name = { $regex: search.trim(), $options: "i" };
+    }
+
+    // Filter by shop
+    if (shopId) {
+      query.shop = shopId;
+    }
+
+    // Filter by category and its descendants
+    if (categoryId) {
+      try {
+        const deepChildren = await categoryService.getDeepChild(categoryId);
+        const categoryIds = [categoryId, ...deepChildren.map((cat) => cat.id)];
+        query.category = { $in: categoryIds };
+      } catch (error) {
+        logger.warn(`Service: Error getting deep children for category ${categoryId}`, error);
+        query.category = categoryId;
+      }
+    }
+
+    // Filter by minimum rating
+    if (minRating > 0) {
+      query.average_rating = { $gte: minRating };
+    }
+
+    // Sort by rating: desc (high to low, default) or asc (low to high)
+    const ratingSort = order === "asc" ? 1 : -1;
+    const sortOrder = { average_rating: ratingSort, createdAt: -1 };
+
+    const foods = await Food.find(query)
       .populate("category")
       .populate("shop")
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort(sortOrder);
 
-    const total = await Food.countDocuments({ isDraft: false });
+    const total = await Food.countDocuments(query);
 
     return {
       foods: foods.map((food) => food.getFormattedData?.() || food),
