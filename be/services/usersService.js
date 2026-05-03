@@ -1,5 +1,6 @@
 import { logger } from '../utils/logger.js';
 import User from '../models/User.js';
+import { deleteAvatarFromS3 } from '../utils/s3Upload.js';
 
 /**
  * Get all users
@@ -115,3 +116,93 @@ export const deleteUser = async (id) => {
     throw error;
   }
 };
+
+/**
+ * Get user by ID (for profile - excludes sensitive data)
+ */
+export const getUserProfile = async (id) => {
+  try {
+    logger.info(`Service: Getting user profile by ID: ${id}`);
+
+    const user = await User.findById(id).select('-password');
+    return user ? user.getFormattedData?.() || user : null;
+  } catch (error) {
+    logger.error('Service: Error getting user profile', error);
+    throw error;
+  }
+};
+
+/**
+ * Update user profile (name, phone only)
+ */
+export const updateUserProfile = async (userId, profileData) => {
+  try {
+    logger.info(`Service: Updating user profile for ID: ${userId}`);
+
+    // Only allow name and phone to be updated
+    const allowedUpdates = {};
+    if (profileData.name) {
+      allowedUpdates.name = profileData.name;
+    }
+    if (profileData.phone) {
+      allowedUpdates.phone = profileData.phone;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      allowedUpdates,
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return null;
+    }
+
+    return updatedUser.getFormattedData?.() || updatedUser;
+  } catch (error) {
+    logger.error('Service: Error updating user profile', error);
+    throw error;
+  }
+};
+
+/**
+ * Update user avatar
+ */
+export const updateAvatar = async (userId, avatarUrl) => {
+  try {
+    logger.info(`Service: Updating avatar for user ID: ${userId}`);
+
+    // Get current user to delete old avatar if exists
+    const currentUser = await User.findById(userId);
+    if (currentUser && currentUser.avatar) {
+      await deleteAvatarFromS3(currentUser.avatar);
+    }
+
+    // Update avatar URL
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { avatar: avatarUrl },
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return null;
+    }
+
+    return {
+      message: 'Avatar updated successfully',
+      avatarURL: updatedUser.avatar,
+      user: updatedUser.getFormattedData?.() || updatedUser,
+    };
+  } catch (error) {
+    logger.error('Service: Error updating avatar', error);
+    throw error;
+  }
+};
+

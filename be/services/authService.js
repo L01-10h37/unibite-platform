@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import environment from '../config/environment.js';
+import { validatePasswordStrength } from '../utils/validators.js';
 
 /**
  * Register new user
@@ -52,7 +53,7 @@ export const login = async (username, password) => {
 			error.statusCode = 401;
 			throw error;
 		}
-		const payload = { id: user._id, username: user.username };
+		const payload = { id: user._id, username: user.username, role: user.role };
 		const accessToken = jwt.sign(payload, environment.jwt_access_secret, { expiresIn: '15m' });
 		const refreshToken = jwt.sign(payload, environment.jwt_refresh_secret, { expiresIn: '7d' });
 		return { accessToken, refreshToken };
@@ -77,5 +78,52 @@ export const refreshToken = async (refreshToken) => {
 		const err = new Error('Invalid refresh token');
 		err.statusCode = 401;
 		throw err;
+	}
+};
+
+/**
+ * Change user password
+ */
+export const changePassword = async (userId, oldPassword, newPassword) => {
+	try {
+		logger.info(`Service: Changing password for user: ${userId}`);
+
+		// Find user by ID
+		const user = await User.findById(userId);
+		if (!user) {
+			const error = new Error('User not found');
+			error.statusCode = 404;
+			throw error;
+		}
+
+		// Verify old password
+		const isMatch = await bcrypt.compare(oldPassword, user.password);
+		if (!isMatch) {
+			const error = new Error('Old password is incorrect');
+			error.statusCode = 401;
+			throw error;
+		}
+
+		// Validate new password strength
+		const strengthValidation = validatePasswordStrength(newPassword);
+		if (!strengthValidation.valid) {
+			const error = new Error(strengthValidation.message);
+			error.statusCode = 400;
+			throw error;
+		}
+
+		// Hash new password
+		const salt = await bcrypt.genSalt(10);
+		const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+		// Update password
+		user.password = hashedPassword;
+		await user.save();
+
+		logger.info(`Service: Password changed successfully for user: ${userId}`);
+		return { message: 'Password changed successfully' };
+	} catch (error) {
+		logger.error('Service: Error changing password', error);
+		throw error;
 	}
 };
