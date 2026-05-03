@@ -13,7 +13,9 @@ router.get('/', (req, res, next) => {
     message: 'Welcome to Mobile App Backend',
     version: '1.0.0',
     endpoints: {
+      auth: '/api/auth',
       users: '/api/users',
+      profile: '/api/users/me',
       shops: '/api/shops',
       health: '/health'
     }

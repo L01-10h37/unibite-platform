@@ -11,6 +11,10 @@ const environment = {
   jwt_refresh_secret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
   database_url: process.env.DATABASE_URL,
   log_level: process.env.LOG_LEVEL || 'info',
+  // Cloudinary Configuration
+  cloudinary_cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  cloudinary_api_key: process.env.CLOUDINARY_API_KEY,
+  cloudinary_api_secret: process.env.CLOUDINARY_API_SECRET,
 };
 
 export default environment;

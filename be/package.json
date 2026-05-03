@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "axios": "^1.4.0",
+    "cloudinary": "^2.7.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -17,11 +18,9 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^7.0.0",
     "morgan": "^1.10.0",
-<<<<<<< HEAD
+    "multer": "^2.0.2",
     "swagger-autogen": "^2.23.7",
-=======
     "swagger-jsdoc": "^6.2.8",
->>>>>>> d5d6cc6a2efcceb1731b471a923fc2df5415299a
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
