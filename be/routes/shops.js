@@ -12,7 +12,12 @@ router.get('/', shopController.getAllShops);
 /**
  * GET shop by id
  */
-router.get('/:id', shopController.getShopById);
+router.get('/my-shop', authenticate, authorize('seller'), shopController.getMyShop);
+
+/**
+ * GET shop by id
+ */
+router.get('/:id([0-9a-fA-F]{24})', shopController.getShopById);
 
 /**
  * POST create shop
@@ -28,7 +33,7 @@ router.post(
  * PUT update shop
  */
 router.put(
-    '/:id',
+    '/:id([0-9a-fA-F]{24})',
     authenticate,
     authorize('seller'),
     shopController.updateShop

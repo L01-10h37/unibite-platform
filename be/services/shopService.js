@@ -24,6 +24,28 @@ export const getShopById = async (shopId) => {
 };
 
 /**
+ * Get shop by owner user id
+ */
+export const getShopByUserId = async (userId) => {
+    try {
+        logger.info(`Service: Getting shop by user id: ${userId}`);
+
+        const shop = await Shop.findOne({ userId });
+
+        if (!shop) {
+            const error = new Error("Shop not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return shop.getFormattedData?.() || shop;
+    } catch (error) {
+        logger.error("Service: Error getting shop by user id", error);
+        throw error;
+    }
+};
+
+/**
  * Get all shops
  */
 export const getAllShops = async (page = 1, limit = 10) => {
@@ -60,6 +82,14 @@ export const createShop = async (shopData) => {
     try {
         logger.info("Service: Creating new shop", shopData);
 
+        const allowedShopData = {
+            name: shopData.name,
+            avatar: shopData.avatar,
+            address: shopData.address,
+            about: shopData.about,
+            userId: shopData.userId,
+        };
+
         const existingShop = await Shop.findOne({ userId: shopData.userId });
 
         if (existingShop) {
@@ -68,7 +98,7 @@ export const createShop = async (shopData) => {
             throw error;
         }
 
-        const newShop = await Shop.create(shopData);
+        const newShop = await Shop.create(allowedShopData);
         return newShop.getFormattedData?.() || newShop;
     } catch (error) {
         logger.error("Service: Error creating shop", error);
@@ -82,6 +112,24 @@ export const createShop = async (shopData) => {
 export const updateShop = async (shopId, userId, updateData) => {
     try {
         logger.info(`Service: Updating shop ${shopId}`);
+
+        const allowedUpdateData = {};
+
+        if (updateData.name !== undefined) {
+            allowedUpdateData.name = updateData.name;
+        }
+
+        if (updateData.avatar !== undefined) {
+            allowedUpdateData.avatar = updateData.avatar;
+        }
+
+        if (updateData.address !== undefined) {
+            allowedUpdateData.address = updateData.address;
+        }
+
+        if (updateData.about !== undefined) {
+            allowedUpdateData.about = updateData.about;
+        }
 
         const shop = await Shop.findById(shopId);
 
@@ -100,7 +148,7 @@ export const updateShop = async (shopId, userId, updateData) => {
 
         const updatedShop = await Shop.findByIdAndUpdate(
             shopId,
-            { $set: updateData },
+            { $set: allowedUpdateData },
             { new: true, runValidators: true }
         );
 

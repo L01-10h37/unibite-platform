@@ -45,6 +45,27 @@ export const getShopById = async (req, res, next) => {
 };
 
 /**
+ * Get my shop
+ */
+export const getMyShop = async (req, res, next) => {
+    try {
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return errorResponse(res, null, "User is required to get my shop", 401);
+        }
+
+        logger.info(`Getting shop for user: ${userId}`);
+        const shop = await shopService.getShopByUserId(userId);
+        successResponse(res, shop, "My shop retrieved successfully", 200);
+    } catch (error) {
+        logger.error("Error getting my shop", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to get my shop", statusCode);
+    }
+};
+
+/**
  * Create shop
  */
 export const createShop = async (req, res, next) => {
