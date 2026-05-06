@@ -41,6 +41,12 @@ const upload = multer({
 export const uploadSingleFile = upload.single('avatar');
 
 /**
+ * Middleware for multiple file upload
+ * Usage: uploadMiddleware.array('images', 5)(req, res, next) - max 5 files
+ */
+export const uploadMultipleFiles = upload.array('images', 5);
+
+/**
  * Error handling for multer
  */
 export const handleUploadError = (err, req, res, next) => {

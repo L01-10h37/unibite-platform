@@ -3,6 +3,7 @@ import Food from "../models/Food.js";
 import Shop from "../models/Shop.js";
 import Category from "../models/Category.js";
 import * as categoryService from "./categoryService.js";
+import { uploadAvatarToS3, deleteAvatarFromS3, validateImageFile, validateFileSize } from '../utils/s3Upload.js';
 
 /**
  * Get all foods with search, category filter, shop filter, rating filter, and sorting
@@ -268,6 +269,57 @@ export const deleteFood = async (foodId, userId) => {
     return { id: foodId };
   } catch (error) {
     logger.error("Service: Error deleting food", error);
+    throw error;
+  }
+};
+
+/**
+ * Upload food images (shop owner only)
+ */
+export const uploadFoodImages = async (foodId, userId, files) => {
+  try {
+    logger.info(`Service: Uploading images for food ${foodId}`);
+
+    // Validate files
+    for (const file of files) {
+      if (!validateImageFile(file.mimetype)) {
+        const error = new Error("Invalid file type. Only image files are allowed.");
+        error.statusCode = 400;
+        throw error;
+      }
+      if (!validateFileSize(file.size)) {
+        const error = new Error("File size exceeds the limit of 5MB.");
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    // Kiểm tra xem food có tồn tại không và lấy thông tin shop
+    const food = await Food.findById(foodId).populate("shop");
+    if (!food) {
+      const error = new Error("Food not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Kiểm tra xem user có phải là chủ shop không
+    if (food.shop.userId.toString() !== userId.toString()) {
+      const error = new Error("You do not have permission to upload images for this food");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    // Tải tất cả ảnh lên S3 và lấy URL của chúng
+    const uploadPromises = files.map((file) => uploadAvatarToS3(file.buffer, file.originalname));
+    const imageUrls = await Promise.all(uploadPromises);
+
+    // Thêm URL của các ảnh mới vào mảng listUrlImg của food
+    food.listUrlImg = [...(food.listUrlImg || []), ...imageUrls];
+    await food.save();
+
+    return imageUrls;
+  } catch (error) {
+    logger.error("Service: Error uploading food images", error);
     throw error;
   }
 };

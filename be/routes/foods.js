@@ -1,7 +1,7 @@
 import express from "express";
 import * as foodController from "../controllers/foodController.js";
 import { authenticate, authorize } from "../middleware/authMiddleware.js";
-
+import { uploadMultipleFiles } from "../middleware/uploadMiddleware.js";
 const router = express.Router();
 
 /**
@@ -233,6 +233,19 @@ router.delete(
   "/:id",
   authenticate,
   foodController.deleteFood
+);
+
+/**
+ * PATCH /foods/:id/images
+ * Upload 1 or more images for a food item.
+ * Requires authentication as seller.
+ */
+router.patch(
+  "/:id/images",
+  authenticate,
+  authorize("seller"),
+  uploadMultipleFiles,
+  foodController.uploadFoodImages
 );
 
 export default router;

@@ -154,3 +154,32 @@ export const deleteFood = async (req, res, next) => {
     errorResponse(res, error, error.message || "Failed to delete food", statusCode);
   }
 };
+
+/**
+ * Upload food images (shop owner only)
+ * Cho phép upload nhiều ảnh cùng lúc, lưu trữ URL của các ảnh này trong mảng `listUrlImg` của food.
+ */
+export const uploadFoodImages = async (req, res, next) => {
+  try {
+    const foodId = req.params.id;
+    const userId = req.user.id;
+    const files = req.files; // Multer sẽ lưu thông tin các file đã upload vào `req.files`
+    
+    if (!files || files.length === 0) {
+      return errorResponse(res, null, "At least one image file is required", 400);
+    }
+
+    if (files.length > 5) {
+      return errorResponse(res, null, "You can upload a maximum of 5 images", 400);
+    }
+
+    logger.info(`Uploading images for food: ${foodId} by user: ${userId} - Number of files: ${files.length}`);
+
+    const imageUrls = await foodService.uploadFoodImages(foodId, userId, files);
+    successResponse(res, { imageUrls }, "Food images uploaded successfully", 200);
+  } catch (error) {
+    logger.error("Error uploading food images", error);
+    const statusCode = error.statusCode || 500;
+    errorResponse(res, error, error.message || "Failed to upload food images", statusCode);
+  }
+};
