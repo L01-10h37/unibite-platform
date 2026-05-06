@@ -183,3 +183,28 @@ export const uploadFoodImages = async (req, res, next) => {
     errorResponse(res, error, error.message || "Failed to upload food images", statusCode);
   }
 };
+
+/**
+ * Delete food image (shop owner only)
+ * Xóa URL của ảnh khỏi mảng `listUrlImg` của food và xóa ảnh khỏi S3.
+ */
+export const deleteFoodImage = async (req, res, next) => {
+  try {
+    const foodId = req.params.id;
+    const imageUrl = req.body.imageUrl;
+    const userId = req.user.id;
+    
+    if (!imageUrl) {
+      return errorResponse(res, null, "Image URL is required", 400);
+    }
+
+    logger.info(`Deleting image for food: ${foodId} by user: ${userId} - Image URL: ${imageUrl}`);
+
+    await foodService.deleteFoodImage(foodId, userId, imageUrl);
+    successResponse(res, null, "Food image deleted successfully", 200);
+  } catch (error) {
+    logger.error("Error deleting food image", error);
+    const statusCode = error.statusCode || 500;
+    errorResponse(res, error, error.message || "Failed to delete food image", statusCode);
+  }
+};

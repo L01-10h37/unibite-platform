@@ -248,4 +248,16 @@ router.patch(
   foodController.uploadFoodImages
 );
 
+/**
+ * DELETE /foods/:id/images/:imageId
+ * Delete an image from a food item.
+ * Requires authentication as seller.
+ */
+router.delete(
+  "/:id/images",
+  authenticate,
+  authorize("seller"),
+  foodController.deleteFoodImage
+);
+
 export default router;

@@ -323,3 +323,37 @@ export const uploadFoodImages = async (foodId, userId, files) => {
     throw error;
   }
 };
+
+/**
+ * Delete food image (shop owner only)
+ */
+export const deleteFoodImage = async (foodId, userId, imageUrl) => {
+  try {
+    logger.info(`Service: Deleting image for food ${foodId} - Image URL: ${imageUrl}`);
+    
+    // Kiểm tra xem food có tồn tại không và lấy thông tin shop
+    const food = await Food.findById(foodId).populate("shop");
+    if (!food) {
+      const error = new Error("Food not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Kiểm tra xem user có phải là chủ shop không
+    if (food.shop.userId.toString() !== userId.toString()) {
+      const error = new Error("You do not have permission to delete images for this food");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    // Xóa URL của ảnh khỏi mảng listUrlImg của food
+    food.listUrlImg = (food.listUrlImg || []).filter((url) => url !== imageUrl);
+    await food.save();
+
+    // Xóa ảnh khỏi S3
+    await deleteAvatarFromS3(imageUrl);
+  } catch (error) {
+    logger.error("Service: Error deleting food image", error);
+    throw error;
+  }
+};
