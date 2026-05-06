@@ -1,7 +1,7 @@
 import express from "express";
 import * as shopController from "../controllers/shopController.js";
 import { authenticate, authorize } from "../middleware/authMiddleware.js";
-
+import { uploadSingleFile, handleUploadError } from "../middleware/uploadMiddleware.js";
 const router = express.Router();
 
 /**
@@ -37,6 +37,18 @@ router.put(
     authenticate,
     authorize('seller'),
     shopController.updateShop
+);
+
+/**
+ * PATCH upload shop avatar
+ */
+router.patch(
+    '/:id([0-9a-fA-F]{24})/avatar',
+    authenticate,
+    authorize('seller'),
+    uploadSingleFile,
+    handleUploadError,
+    shopController.updateShopAvatar
 );
 
 export default router;

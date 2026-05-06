@@ -1,5 +1,6 @@
 import { logger } from "../utils/logger.js";
 import Shop from "../models/Shop.js";
+import { uploadAvatarToS3, deleteAvatarFromS3, validateImageFile, validateFileSize } from '../utils/s3Upload.js';
 
 /**
  * Get shop by id
@@ -125,6 +126,8 @@ export const createShop = async (shopData) => {
 
 /**
  * Update shop
+ * Không cho phép cập nhật avatar trong hàm này, vì avatar cần xử lý riêng với upload lên S3.
+ * Nếu muốn cập nhật avatar, nên gọi hàm uploadAvatarToS3 trước để lấy URL mới và sau đó cập nhật shop với URL đó.
  */
 export const updateShop = async (shopId, userId, updateData) => {
     try {
@@ -134,10 +137,6 @@ export const updateShop = async (shopId, userId, updateData) => {
 
         if (updateData.name !== undefined) {
             allowedUpdateData.name = updateData.name;
-        }
-
-        if (updateData.avatar !== undefined) {
-            allowedUpdateData.avatar = updateData.avatar;
         }
 
         if (updateData.address !== undefined) {
@@ -175,3 +174,58 @@ export const updateShop = async (shopId, userId, updateData) => {
         throw error;
     }
 };
+
+/**
+ * Update shop avatar
+ */
+export const updateShopAvatar = async (shopId, userId, file) => {
+    try {
+        logger.info(`Service: Updating shop avatar ${shopId}`);
+
+        // Validate file type (chỉ cho phép file ảnh)
+        if (!validateImageFile(file.mimetype)) {
+            const error = new Error("Invalid file type. Only image files are allowed.");
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Validate file size (giới hạn 5MB)
+        if (!validateFileSize(file.size)) {
+            const error = new Error("File size exceeds the limit of 5MB.");
+            error.statusCode = 400;
+            throw error;
+        }
+        
+        // Kiểm tra xem shop có tồn tại không
+        const shop = await Shop.findById(shopId);
+        if (!shop) {
+            const error = new Error("Shop not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        // Kiểm tra xem user có phải là chủ shop không
+        if (shop.userId.toString() !== userId.toString()) {
+            const error = new Error("You do not have permission to update this shop");
+            error.statusCode = 403;
+            throw error;
+        }
+
+        // Xóa avatar cũ trên S3 nếu có
+        if (shop.avatar) {
+            await deleteAvatarFromS3(shop.avatar);
+        }
+
+        // Upload file lên S3 và lấy URL mới
+        const avatarUrl = await uploadAvatarToS3(file.buffer, file.originalname);
+
+        // Cập nhật URL avatar mới vào shop
+        shop.avatar = avatarUrl;
+        const updatedShop = await shop.save();
+
+        return avatarUrl;
+    } catch (error) {
+        logger.error("Service: Error updating shop avatar", error);
+        throw error;
+    }
+}; 

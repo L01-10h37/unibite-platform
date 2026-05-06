@@ -76,7 +76,7 @@ export const deleteAvatarFromS3 = async (fileUrl) => {
  * Validate file type (only allow images)
  */
 export const validateImageFile = (mimeType) => {
-  const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
   return allowedMimes.includes(mimeType);
 };
 

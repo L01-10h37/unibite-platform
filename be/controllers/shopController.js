@@ -112,3 +112,26 @@ export const updateShop = async (req, res, next) => {
         errorResponse(res, error, error.message || "Failed to update shop", statusCode);
     }
 };
+
+/**
+ * Update shop avatar
+ */
+export const updateShopAvatar = async (req, res, next) => {
+    try {
+        const shopId = req.params.id;
+        const userId = req.user.id;
+        const file = req.file;
+        logger.info(`Updating shop avatar: ${shopId} by user: ${userId}`);
+
+        if (!file) {
+            return errorResponse(res, null, "Avatar file is required", 400);
+        }
+
+        const avatarUrl = await shopService.updateShopAvatar(shopId, userId, file);
+        successResponse(res, { avatar: avatarUrl }, "Shop avatar updated successfully", 200);
+    } catch (error) {
+        logger.error("Error updating shop avatar", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to update shop avatar", statusCode);
+    }
+};
