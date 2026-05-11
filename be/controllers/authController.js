@@ -23,13 +23,7 @@ export const login = async (req, res, next) => {
     try {
         const { username, password } = req.body;
         const result = await authService.login(username, password);
-        res.cookie("refreshToken", result.refreshToken, {
-            httpOnly: true,
-            secure: false,
-            sameSite: "lax",
-        });
         logger.info("Login successful:", { refreshToken: result.refreshToken });
-        delete result.refreshToken; // Không trả về refresh token trong response
         successResponse(res, result, "User logged in successfully", 200);
     } catch (error) {
         logger.error("Error logging in user", error);
@@ -42,11 +36,6 @@ export const login = async (req, res, next) => {
  */
 export const logout = async (req, res, next) => {
     try {
-        res.clearCookie("refreshToken", {
-            httpOnly: true,
-            secure: false,
-            sameSite: "lax"
-        });
         successResponse(res, null, "User logged out successfully", 200);
     } catch (error) {
         logger.error("Error logging out user", error);
