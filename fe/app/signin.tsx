@@ -33,7 +33,7 @@ export default function SignInScreen() {
   const { width } = Dimensions.get('window'); // Dùng để vẽ background
 
   const validateUsername = (username: string) => {
-    return username.length >= 3 && username.length <= 20;
+    return username.length >= 6 && username.length <= 20;
   };
 
   const handleSubmit = async () => {
@@ -42,7 +42,7 @@ export default function SignInScreen() {
     if (!username) {
       newErrors.username = 'Tên tài khoản là bắt buộc';
     } else if (!validateUsername(username)) {
-      newErrors.username = 'Tên tài khoản phải có từ 3 đến 20 ký tự';
+      newErrors.username = 'Tên tài khoản phải có từ 6 đến 20 ký tự';
     }
 
     if (!password) {

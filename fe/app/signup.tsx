@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import {
 	Image,
@@ -40,7 +40,7 @@ export default function SignUpScreen() {
 	const { width } = Dimensions.get('window'); // Dùng để vẽ background
 
 	const validateUsername = (username: string) => {
-		return username.length >= 3 && username.length <= 20;
+		return username.length >= 6 && username.length <= 20;
 	};
 
 	const validatePhone = (phone: string) => {
@@ -59,7 +59,7 @@ export default function SignUpScreen() {
 		if (!username) {
 			newErrors.username = 'Tên tài khoản là bắt buộc';
 		} else if (!validateUsername(username)) {
-			newErrors.username = 'Tên tài khoản phải có từ 3 đến 20 ký tự';
+			newErrors.username = 'Tên tài khoản phải có từ 6 đến 20 ký tự';
 		}
 
 		if (!phoneNumber) {
@@ -83,22 +83,27 @@ export default function SignUpScreen() {
 		setErrors(newErrors);
 
 		if (Object.keys(newErrors).length === 0) {
-			const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/register`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ username, phoneNumber, password }),
-			});
-			const data = await res.json();
-			console.log('Sign up response:', data);
+			try {
+				const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/register`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Accept': 'application/json',
+					},
+					body: JSON.stringify({ username, phoneNumber, password }),
+				});
+				
+				if (!res.ok) {
+					const text = await res.text().catch(() => '');
+					throw new Error(`Registration failed: ${res.status} ${res.statusText} ${text}`);
+				}
 
-			if (!data.accessToken) {
-				setErrors({ username: 'Đăng ký thất bại. Vui lòng thử lại.' });
-				return;
+				router.replace('/signin');
+			} catch (error) {
+				console.error('Error during sign up:', error);
+				setErrors({ username: 'Có lỗi xảy ra. Vui lòng thử lại.' });
 			}
-
-		}
+		};
 	};
 
 	return (
