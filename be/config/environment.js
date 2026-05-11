@@ -4,8 +4,10 @@ dotenv.config();
 
 const environment = {
   node_env: process.env.NODE_ENV || 'development',
-  port: process.env.PORT || 8080,
   api_url: process.env.API_URL || 'http://localhost',
+  frontend_url: process.env.FRONTEND_URL || 'http://localhost',
+  port: process.env.PORT || 8080,
+  frontend_port: process.env.FRONTEND_PORT || 8081,
   api_key: process.env.API_KEY,
   jwt_access_secret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret',
   jwt_refresh_secret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',

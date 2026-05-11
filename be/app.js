@@ -93,7 +93,7 @@ const startServer = async () => {
 
     app.listen(port, "0.0.0.0", () => {
       logger.info(`✓ Server is running on port ${port} in ${environment.node_env} mode`);
-      logger.info(`✓ CORS enabled for ${environment.frontend_url}`);
+      logger.info(`✓ CORS enabled for ${environment.frontend_url}:${environment.frontend_port}`);
       logger.info(`✓ Swagger UI available at ${api_url}:${port}/api-docs`);
     });
   } catch (error) {
