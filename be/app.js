@@ -20,6 +20,7 @@ import commentRouter from './routes/comments.js';
 import shopRouter from './routes/shops.js';
 import categoriesRouter from './routes/categories.js';
 import foodsRouter from './routes/foods.js';
+import { checkElasticsearchConnection } from './config/elasticsearch.js';
 
 const app = express();
 const port = environment.port;
@@ -79,6 +80,25 @@ app.get('/api-docs.json', (req, res) => {
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+app.get('/health/elasticsearch', async (req, res) => {
+  try {
+    const info = await checkElasticsearchConnection();
+    res.json({
+      status: 'OK',
+      clusterName: info.cluster_name,
+      version: info.version?.number,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error('Elasticsearch health check failed', error);
+    res.status(500).json({
+      status: 'ERROR',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // Error handling middleware

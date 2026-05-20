@@ -3,6 +3,7 @@ import Food from "../models/Food.js";
 import Shop from "../models/Shop.js";
 import Category from "../models/Category.js";
 import * as categoryService from "./categoryService.js";
+import * as foodSearchService from "./foodSearchService.js";
 import { uploadAvatarToS3, deleteAvatarFromS3, validateImageFile, validateFileSize } from '../utils/s3Upload.js';
 
 /**
@@ -76,6 +77,41 @@ export const getAllFood = async (
     };
   } catch (error) {
     logger.error("Service: Error getting all foods", error);
+    throw error;
+  }
+};
+
+export const syncFoodSearchIndex = async () => {
+  try {
+    logger.info("Service: Syncing food search index");
+    return await foodSearchService.syncFoodSearchIndex();
+  } catch (error) {
+    logger.error("Service: Error syncing food search index", error);
+    throw error;
+  }
+};
+
+export const searchFoods = async (
+  page = 1,
+  limit = 10,
+  search = "",
+  minRating = 0,
+  order = "desc"
+) => {
+  try {
+    logger.info(
+      `Service: Searching foods in Elasticsearch - search: ${search}, minRating: ${minRating}, order: ${order}`
+    );
+
+    return await foodSearchService.searchFoodDocuments({
+      search,
+      page,
+      limit,
+      minRating,
+      order,
+    });
+  } catch (error) {
+    logger.error("Service: Error searching foods in Elasticsearch", error);
     throw error;
   }
 };
@@ -174,6 +210,7 @@ export const createFood = async (userId, foodData) => {
 
     const newFood = await Food.create(newFoodData);
     await newFood.populate(["category", "shop"]);
+    await foodSearchService.safeIndexFoodSearchDocument(newFood, logger);
 
     return newFood.getFormattedData?.() || newFood;
   } catch (error) {
@@ -235,6 +272,7 @@ export const updateFood = async (foodId, userId, updateData) => {
       { $set: updateData },
       { new: true, runValidators: true }
     ).populate(["category", "shop"]);
+    await foodSearchService.safeIndexFoodSearchDocument(updatedFood, logger);
 
     return updatedFood.getFormattedData?.() || updatedFood;
   } catch (error) {
@@ -266,6 +304,7 @@ export const deleteFood = async (foodId, userId) => {
     }
 
     await Food.findByIdAndDelete(foodId);
+    await foodSearchService.safeDeleteFoodSearchDocument(foodId, logger);
     return { id: foodId };
   } catch (error) {
     logger.error("Service: Error deleting food", error);
@@ -316,6 +355,8 @@ export const uploadFoodImages = async (foodId, userId, files) => {
     // Thêm URL của các ảnh mới vào mảng listUrlImg của food
     food.listUrlImg = [...(food.listUrlImg || []), ...imageUrls];
     await food.save();
+    await food.populate(["category", "shop"]);
+    await foodSearchService.safeIndexFoodSearchDocument(food, logger);
 
     return imageUrls;
   } catch (error) {
@@ -349,6 +390,8 @@ export const deleteFoodImage = async (foodId, userId, imageUrl) => {
     // Xóa URL của ảnh khỏi mảng listUrlImg của food
     food.listUrlImg = (food.listUrlImg || []).filter((url) => url !== imageUrl);
     await food.save();
+    await food.populate(["category", "shop"]);
+    await foodSearchService.safeIndexFoodSearchDocument(food, logger);
 
     // Xóa ảnh khỏi S3
     await deleteAvatarFromS3(imageUrl);

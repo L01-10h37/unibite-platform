@@ -4,6 +4,9 @@ import { authenticate, authorize } from "../middleware/authMiddleware.js";
 import { uploadMultipleFiles } from "../middleware/uploadMiddleware.js";
 const router = express.Router();
 
+router.post("/search-index/sync", authenticate, authorize("admin"), foodController.syncFoodSearchIndex);
+router.get("/search", foodController.searchFoods);
+
 /**
  * GET /foods
  * #swagger.tags = ['Foods']
