@@ -1,4 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import {
   Dimensions,
   Image,
@@ -65,6 +66,8 @@ const POPULAR_FOODS = [
 ];
 
 export default function HomeScreen() {
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -132,6 +135,12 @@ export default function HomeScreen() {
               key={food.id}
               style={styles.card}
               activeOpacity={0.9}
+              onPress={() =>
+                router.push({
+                  pathname: "/food-detail",
+                  params: { id: "69f73f1b97a704ff41e13e32" },
+                })
+              }
             >
               <Image source={{ uri: food.image }} style={styles.cardImage} />
               <View style={styles.cardBody}>
