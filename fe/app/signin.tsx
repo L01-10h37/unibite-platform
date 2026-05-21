@@ -240,7 +240,7 @@ export default function SignInScreen() {
                 </View>
                 <Text style={styles.checkboxLabel}>Ghi nhớ mật khẩu</Text>
               </TouchableOpacity>
-              <Link href="/forgot-password" style={styles.forgotPassword}>
+              <Link href="#" style={styles.forgotPassword}>
                 Quên mật khẩu?
               </Link>
             </View>
