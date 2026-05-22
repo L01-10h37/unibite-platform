@@ -13,6 +13,8 @@ const environment = {
   jwt_refresh_secret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
   database_url: process.env.DATABASE_URL,
   log_level: process.env.LOG_LEVEL || 'info',
+  elasticsearch_url: process.env.ELASTICSEARCH_URL,
+  elastic_api_key: process.env.ELASTIC_API_KEY,
   // Cloudinary Configuration
   cloudinary_cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   cloudinary_api_key: process.env.CLOUDINARY_API_KEY,

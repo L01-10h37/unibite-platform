@@ -1,0 +1,207 @@
+import { elasticsearchRequest } from "../config/elasticsearch.js";
+import Food from "../models/Food.js";
+
+const FOOD_INDEX = "foods";
+
+const foodIndexMapping = {
+  mappings: {
+    properties: {
+      id: { type: "keyword" },
+      name: {
+        type: "text",
+        fields: {
+          keyword: { type: "keyword" },
+        },
+      },
+      category: {
+        type: "text",
+        fields: {
+          keyword: { type: "keyword" },
+        },
+      },
+      shop: {
+        type: "text",
+        fields: {
+          keyword: { type: "keyword" },
+        },
+      },
+      UrlImg: { type: "keyword" },
+      isAvailble: { type: "boolean" },
+      price: { type: "double" },
+      average_rating: { type: "double" },
+    },
+  },
+};
+
+export const mapFoodToSearchDocument = (food) => {
+  const formattedFood = food.getFormattedData?.() || food;
+
+  return {
+    id: formattedFood.id?.toString(),
+    name: formattedFood.name,
+    category: formattedFood.categoryName || formattedFood.categoryId?.toString() || null,
+    shop: formattedFood.shopName || formattedFood.shopId?.toString() || null,
+    UrlImg: formattedFood.listUrlImg?.[0] || null,
+    isAvailble: formattedFood.isAvailble,
+    price: formattedFood.price,
+    average_rating: formattedFood.average_rating,
+  };
+};
+
+export const createFoodSearchIndex = async () => {
+  try {
+    return await elasticsearchRequest(`/${FOOD_INDEX}`, {
+      method: "PUT",
+      body: JSON.stringify(foodIndexMapping),
+    });
+  } catch (error) {
+    if (
+      error.type === "resource_already_exists_exception" ||
+      error.message.includes("already exists")
+    ) {
+      return { acknowledged: true, alreadyExists: true };
+    }
+
+    throw error;
+  }
+};
+
+export const indexFoodSearchDocument = async (food) => {
+  const formattedFood = food.getFormattedData?.() || food;
+
+  if (formattedFood.isDraft) {
+    return deleteFoodSearchDocument(formattedFood.id);
+  }
+
+  const document = mapFoodToSearchDocument(food);
+
+  return elasticsearchRequest(`/${FOOD_INDEX}/_doc/${document.id}`, {
+    method: "PUT",
+    body: JSON.stringify(document),
+  });
+};
+
+export const deleteFoodSearchDocument = async (foodId) => {
+  if (!foodId) {
+    return;
+  }
+
+  try {
+    await elasticsearchRequest(`/${FOOD_INDEX}/_doc/${foodId}`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    if (error.message !== "document_missing_exception" && error.message !== "not_found") {
+      throw error;
+    }
+  }
+};
+
+export const safeIndexFoodSearchDocument = async (food, logger) => {
+  try {
+    await createFoodSearchIndex();
+    await indexFoodSearchDocument(food);
+  } catch (error) {
+    logger?.warn(`Elasticsearch: Failed to index food ${food?.id || food?._id}`, error);
+  }
+};
+
+export const safeDeleteFoodSearchDocument = async (foodId, logger) => {
+  try {
+    await deleteFoodSearchDocument(foodId);
+  } catch (error) {
+    logger?.warn(`Elasticsearch: Failed to delete food ${foodId}`, error);
+  }
+};
+
+export const syncFoodSearchIndex = async () => {
+  await createFoodSearchIndex();
+
+  const foods = await Food.find({ isDraft: false })
+    .populate("category")
+    .populate("shop");
+
+  if (!foods.length) {
+    return { indexed: 0 };
+  }
+
+  const body = foods
+    .flatMap((food) => {
+      const document = mapFoodToSearchDocument(food);
+
+      return [
+        JSON.stringify({ index: { _index: FOOD_INDEX, _id: document.id } }),
+        JSON.stringify(document),
+      ];
+    })
+    .join("\n");
+
+  const result = await elasticsearchRequest("/_bulk", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-ndjson",
+    },
+    body: `${body}\n`,
+  });
+
+  return {
+    indexed: foods.length,
+    errors: result.errors,
+  };
+};
+
+
+export const searchFoodDocuments = async ({
+  search = "",
+  page = 1,
+  limit = 10,
+  minRating = 0,
+  order = "desc",
+} = {}) => {
+  const from = (page - 1) * limit;
+  const must = search.trim()
+    ? [
+        {
+          multi_match: {
+            query: search.trim(),
+            fields: ["name^3"],
+            fuzziness: "AUTO",
+          },
+        },
+      ]
+    : [{ match_all: {} }];
+
+  const filter = [{ term: { isAvailble: true } }];
+
+  if (minRating > 0) {
+    filter.push({ range: { average_rating: { gte: minRating } } });
+  }
+
+  const result = await elasticsearchRequest(`/${FOOD_INDEX}/_search`, {
+    method: "POST",
+    body: JSON.stringify({
+      from,
+      size: limit,
+      query: {
+        bool: {
+          must,
+          filter,
+        },
+      },
+      sort: [
+        { average_rating: { order: order === "asc" ? "asc" : "desc" } },
+        { price: { order: "asc" } },
+      ],
+    }),
+  });
+
+  return {
+    foods: result.hits.hits.map((hit) => hit._source),
+    pagination: {
+      page,
+      limit,
+      total: result.hits.total?.value || 0,
+      pages: Math.ceil((result.hits.total?.value || 0) / limit),
+    },
+  };
+};
