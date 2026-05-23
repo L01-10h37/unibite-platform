@@ -42,6 +42,7 @@ type UserProfile = {
   role?: string;
   createdAt?: string;
   updatedAt?: string;
+  completedOrders: number; // Số lượng đơn hàng đã hoàn thành
 };
 
 type ProfileResponse = {
@@ -65,7 +66,6 @@ export default function ProfileScreen() {
     const loadProfile = async () => {
       setIsLoading(true);
 
-      let hasCachedProfile = false;
 
       try {
         const cached = await AsyncStorage.getItem(PROFILE_CACHE_KEY);
@@ -73,7 +73,6 @@ export default function ProfileScreen() {
           const parsed = JSON.parse(cached) as CachedProfile;
           if (parsed?.profile && isMounted) {
             setProfile(parsed.profile);
-            hasCachedProfile = true;
           }
         }
       } catch (error) {
@@ -185,7 +184,7 @@ export default function ProfileScreen() {
           <View style={styles.completedBadge}>
             <ShoppingBasket size={18} stroke="#176A21" />
             <Text style={styles.completedText}>
-              <Text style={styles.completedNumber}>2</Text>
+              <Text style={styles.completedNumber}>{profile?.completedOrders || 0}</Text>
               <Text style={styles.completedLabel}> đơn hàng đã hoàn tất</Text>
             </Text>
           </View>
