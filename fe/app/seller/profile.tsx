@@ -1,8 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import * as SecureStore from "expo-secure-store";
+import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   ImageSourcePropType,
   ScrollView,
@@ -12,23 +16,22 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
 import {
   ChevronRight,
+  Clock3,
+  FileText,
+  LogOut,
   MapPin,
   Settings,
   Store,
   Wallet,
-  FileText,
-  Clock3,
-  LogOut,
 } from "lucide-react-native";
 
 import { SellerBottomTabBar } from "@/components/seller-bottom-tab-bar";
 import {
   getMySellerShop,
   parseSellerTokens,
+  uploadSellerShopAvatar,
   type SellerShop,
 } from "@/services/seller-shop";
 
@@ -37,6 +40,7 @@ const SHOP_AVATAR_FALLBACK = require("@/assets/images/seller/shop-avatar.png");
 export default function SellerProfileScreen() {
   const [shop, setShop] = useState<SellerShop | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -87,6 +91,62 @@ export default function SellerProfileScreen() {
     return SHOP_AVATAR_FALLBACK;
   }, [shop?.avatar]);
 
+  const goToEditShop = () => {
+    router.push("/seller/edit-shop" as any);
+  };
+
+  const handlePickAvatar = async () => {
+    if (!shop) {
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert("Thiếu quyền", "Vui lòng cấp quyền truy cập ảnh để đổi avatar shop.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      mediaTypes: ["images"],
+      quality: 0.85,
+    });
+
+    if (result.canceled) {
+      return;
+    }
+
+    try {
+      setIsUploadingAvatar(true);
+      const tokens = parseSellerTokens(
+        await SecureStore.getItemAsync("sellerTokens"),
+      );
+
+      if (!tokens) {
+        router.replace("/seller/signin" as any);
+        return;
+      }
+
+      const asset = result.assets[0];
+      const avatar = await uploadSellerShopAvatar(tokens.accessToken, shop.id, {
+        uri: asset.uri,
+        fileName: asset.fileName,
+        mimeType: asset.mimeType,
+      });
+
+      if (avatar) {
+        setShop({ ...shop, avatar });
+      }
+    } catch (error) {
+      console.error("Failed to upload shop avatar:", error);
+      Alert.alert("Lỗi", "Cập nhật avatar thất bại. Vui lòng thử lại.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   const handleLogout = async () => {
     await SecureStore.deleteItemAsync("sellerTokens");
     router.replace("/seller/signin" as any);
@@ -108,7 +168,7 @@ export default function SellerProfileScreen() {
           <ChevronRight size={26} color="#000000" style={styles.backIcon} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Hồ sơ</Text>
-        <TouchableOpacity style={styles.headerButton}>
+        <TouchableOpacity style={styles.headerButton} onPress={goToEditShop}>
           <Settings size={24} color="#000000" />
         </TouchableOpacity>
       </View>
@@ -119,12 +179,21 @@ export default function SellerProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.profileCard}>
-          <View style={styles.avatarWrap}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            disabled={isUploadingAvatar}
+            onPress={handlePickAvatar}
+            style={styles.avatarWrap}
+          >
             <Image source={avatarSource} style={styles.avatar} />
             <View style={styles.avatarBadge}>
-              <Ionicons name="storefront-outline" size={17} color="#FFFFFF" />
+              {isUploadingAvatar ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Ionicons name="camera-outline" size={17} color="#FFFFFF" />
+              )}
             </View>
-          </View>
+          </TouchableOpacity>
 
           <Text style={styles.shopName}>{shop?.name || "Gian hàng của tôi"}</Text>
           <Text style={styles.shopAddress} numberOfLines={2}>
@@ -144,19 +213,22 @@ export default function SellerProfileScreen() {
           <View style={styles.menuCard}>
             <MenuItem
               icon={<Store size={22} color="#536161" />}
+              onPress={goToEditShop}
               title="Chỉnh sửa gian hàng"
             />
             <View style={styles.divider} />
             <MenuItem
               icon={<MapPin size={22} color="#536161" />}
+              onPress={goToEditShop}
+              subtitle={shop?.address || "Chưa cập nhật"}
               title="Địa chỉ cửa hàng"
-              subtitle={shop?.address}
             />
             <View style={styles.divider} />
             <MenuItem
               icon={<Clock3 size={22} color="#536161" />}
+              onPress={goToEditShop}
+              subtitle={shop?.openingHours || "Chưa cập nhật"}
               title="Giờ mở cửa"
-              subtitle="6:00 am - 01:20 pm"
             />
           </View>
         </View>
@@ -183,15 +255,22 @@ export default function SellerProfileScreen() {
 
 function MenuItem({
   icon,
-  title,
+  onPress,
   subtitle,
+  title,
 }: {
   icon: ReactNode;
-  title: string;
+  onPress?: () => void;
   subtitle?: string;
+  title: string;
 }) {
   return (
-    <TouchableOpacity style={styles.menuItem} activeOpacity={0.75}>
+    <TouchableOpacity
+      activeOpacity={0.75}
+      disabled={!onPress}
+      onPress={onPress}
+      style={styles.menuItem}
+    >
       <View style={styles.menuLeft}>
         {icon}
         <View style={styles.menuTextWrap}>
