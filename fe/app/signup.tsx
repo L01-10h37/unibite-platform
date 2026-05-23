@@ -13,9 +13,14 @@ import {
 
 import Svg, { ClipPath, Defs, Image as ImageSVG, Path } from "react-native-svg";
 
-import { Eye, EyeOff, KeyRound, Phone, User } from "lucide-react-native";
+import { Eye, EyeOff, KeyRound, Phone, Store, User } from "lucide-react-native";
 
-import imgLogo from "../assets/images/logo.png";
+const imgLogo = require("../assets/images/logo.png");
+
+const noFontScale = {
+  allowFontScaling: false,
+  maxFontSizeMultiplier: 1,
+} as const;
 
 export default function SignUpScreen() {
   const [username, setUsername] = useState("");
@@ -159,8 +164,30 @@ export default function SignUpScreen() {
           <View style={styles.formContainer}>
             {/* Title */}
             <View style={styles.titleContainer}>
-              <Text style={styles.title}>Đăng ký</Text>
+              <Text {...noFontScale} style={styles.title}>Đăng ký</Text>
               <View style={styles.titleUnderline} />
+            </View>
+
+            <View style={styles.roleSwitchContainer}>
+              <TouchableOpacity
+                style={[styles.roleSwitchButton, styles.roleSwitchButtonActive]}
+                activeOpacity={0.85}
+              >
+                <User color="#FFFFFF" size={16} />
+                <Text {...noFontScale} style={styles.roleSwitchTextActive}>
+                  Người mua
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.roleSwitchButton}
+                activeOpacity={0.85}
+                onPress={() => router.push("/seller/signup" as any)}
+              >
+                <Store color="#459B5E" size={16} />
+                <Text {...noFontScale} style={styles.roleSwitchText}>
+                  Người bán
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Username Field */}
@@ -279,7 +306,9 @@ export default function SignUpScreen() {
                   >
                     {showConfirmPassword ? (
                       <Eye color="#BDBDBD" size={20} />
+                      <Eye color="#BDBDBD" size={20} />
                     ) : (
+                      <EyeOff color="#BDBDBD" size={20} />
                       <EyeOff color="#BDBDBD" size={20} />
                     )}
                   </TouchableOpacity>
@@ -301,13 +330,15 @@ export default function SignUpScreen() {
               style={styles.submitButton}
               onPress={handleSubmit}
             >
-              <Text style={styles.submitButtonText}>Đăng ký</Text>
+              <Text {...noFontScale} style={styles.submitButtonText}>Đăng ký</Text>
             </TouchableOpacity>
 
             {/* Switch to Sign In */}
             <View style={styles.switchContainer}>
-              <Text style={styles.switchText}>Đã có tài khoản? </Text>
-              <Link href="/signin" style={styles.switchLink}>
+              <Text {...noFontScale} style={styles.switchText}>
+                Đã có tài khoản?{" "}
+              </Text>
+              <Link {...noFontScale} href="/signin" style={styles.switchLink}>
                 Đăng nhập
               </Link>
             </View>
@@ -388,6 +419,44 @@ const styles = StyleSheet.create({
     height: 3,
     backgroundColor: "#459B5E",
     borderRadius: 100,
+  },
+  roleSwitchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EFF7F2",
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 24,
+    gap: 4,
+  },
+  roleSwitchButton: {
+    flex: 1,
+    minHeight: 46,
+    borderRadius: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 10,
+  },
+  roleSwitchButtonActive: {
+    backgroundColor: "#459B5E",
+  },
+  roleSwitchText: {
+    fontFamily: "Montserrat-SemiBold",
+    fontSize: 13,
+    lineHeight: 18,
+    flexShrink: 0,
+    textAlign: "center",
+    color: "#459B5E",
+  },
+  roleSwitchTextActive: {
+    fontFamily: "Montserrat-SemiBold",
+    fontSize: 13,
+    lineHeight: 18,
+    flexShrink: 0,
+    textAlign: "center",
+    color: "#FFFFFF",
   },
   fieldContainer: {
     marginBottom: 24,
@@ -488,15 +557,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 24,
+    gap: 2,
   },
   switchText: {
     fontFamily: "Montserrat-Medium",
     fontSize: 14,
+    lineHeight: 20,
     color: "#9E9E9E",
+    flexShrink: 1,
   },
   switchLink: {
     fontFamily: "Montserrat-SemiBold",
     fontSize: 14,
+    lineHeight: 20,
     color: "#459B5E",
   },
 });

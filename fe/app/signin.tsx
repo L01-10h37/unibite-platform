@@ -14,9 +14,14 @@ import {
 
 import Svg, { ClipPath, Defs, Image as ImageSVG, Path } from "react-native-svg";
 
-import { Eye, EyeOff, KeyRound, User } from "lucide-react-native";
+import { Eye, EyeOff, KeyRound, Store, User } from "lucide-react-native";
 
-import imgLogo from "../assets/images/logo.png";
+const imgLogo = require("../assets/images/logo.png");
+
+const noFontScale = {
+  allowFontScaling: false,
+  maxFontSizeMultiplier: 1,
+} as const;
 
 export default function SignInScreen() {
   const [username, setUsername] = useState("");
@@ -153,8 +158,30 @@ export default function SignInScreen() {
           <View style={styles.formContainer}>
             {/* Title */}
             <View style={styles.titleContainer}>
-              <Text style={styles.title}>Đăng nhập</Text>
+              <Text {...noFontScale} style={styles.title}>Đăng nhập</Text>
               <View style={styles.titleUnderline} />
+            </View>
+
+            <View style={styles.roleSwitchContainer}>
+              <TouchableOpacity
+                style={[styles.roleSwitchButton, styles.roleSwitchButtonActive]}
+                activeOpacity={0.85}
+              >
+                <User color="#FFFFFF" size={16} />
+                <Text {...noFontScale} style={styles.roleSwitchTextActive}>
+                  Người mua
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.roleSwitchButton}
+                activeOpacity={0.85}
+                onPress={() => router.push("/seller/signin" as any)}
+              >
+                <Store color="#459B5E" size={16} />
+                <Text {...noFontScale} style={styles.roleSwitchText}>
+                  Người bán
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Username Field */}
@@ -238,9 +265,15 @@ export default function SignInScreen() {
                 >
                   {rememberPassword && <View style={styles.innerSquare} />}
                 </View>
-                <Text style={styles.checkboxLabel}>Ghi nhớ mật khẩu</Text>
+                <Text {...noFontScale} style={styles.checkboxLabel}>
+                  Ghi nhớ mật khẩu
+                </Text>
               </TouchableOpacity>
-              <Link href="/signin" style={styles.forgotPassword}>
+              <Link
+                {...noFontScale}
+                href={"/forgot-password" as any}
+                style={styles.forgotPassword}
+              >
                 Quên mật khẩu?
               </Link>
             </View>
@@ -250,13 +283,15 @@ export default function SignInScreen() {
               style={styles.submitButton}
               onPress={handleSubmit}
             >
-              <Text style={styles.submitButtonText}>Đăng nhập</Text>
+              <Text {...noFontScale} style={styles.submitButtonText}>Đăng nhập</Text>
             </TouchableOpacity>
 
             {/* Switch to Sign Up */}
             <View style={styles.switchContainer}>
-              <Text style={styles.switchText}>Chưa có tài khoản? </Text>
-              <Link href="/signup" style={styles.switchLink}>
+              <Text {...noFontScale} style={styles.switchText}>
+                Chưa có tài khoản?{" "}
+              </Text>
+              <Link {...noFontScale} href="/signup" style={styles.switchLink}>
                 Đăng ký
               </Link>
             </View>
@@ -338,6 +373,44 @@ const styles = StyleSheet.create({
     backgroundColor: "#459B5E",
     borderRadius: 100,
   },
+  roleSwitchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EFF7F2",
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 24,
+    gap: 4,
+  },
+  roleSwitchButton: {
+    flex: 1,
+    minHeight: 46,
+    borderRadius: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 10,
+  },
+  roleSwitchButtonActive: {
+    backgroundColor: "#459B5E",
+  },
+  roleSwitchText: {
+    fontFamily: "Montserrat-SemiBold",
+    fontSize: 13,
+    lineHeight: 18,
+    flexShrink: 0,
+    textAlign: "center",
+    color: "#459B5E",
+  },
+  roleSwitchTextActive: {
+    fontFamily: "Montserrat-SemiBold",
+    fontSize: 13,
+    lineHeight: 18,
+    flexShrink: 0,
+    textAlign: "center",
+    color: "#FFFFFF",
+  },
   fieldContainer: {
     marginBottom: 24,
   },
@@ -410,11 +483,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 24,
+    gap: 8,
   },
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
+    flex: 1,
   },
   checkbox: {
     width: 12,
@@ -437,12 +512,16 @@ const styles = StyleSheet.create({
   checkboxLabel: {
     fontFamily: "Montserrat-Medium",
     fontSize: 12,
+    lineHeight: 18,
     color: "#424242",
+    flexShrink: 1,
   },
   forgotPassword: {
     fontFamily: "Montserrat-Medium",
     fontSize: 12,
+    lineHeight: 18,
     color: "#459B5E",
+    flexShrink: 0,
   },
   submitButton: {
     width: "100%",
@@ -467,15 +546,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 24,
+    gap: 2,
   },
   switchText: {
     fontFamily: "Montserrat-Medium",
     fontSize: 14,
+    lineHeight: 20,
     color: "#9E9E9E",
+    flexShrink: 1,
   },
   switchLink: {
     fontFamily: "Montserrat-SemiBold",
     fontSize: 14,
+    lineHeight: 20,
     color: "#459B5E",
   },
 });
