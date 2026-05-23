@@ -12,7 +12,8 @@ export const register = async (req, res, next) => {
         successResponse(res, user, "User registered successfully", 201);
     } catch (error) {
         logger.error("Error registering user", error);
-        errorResponse(res, error, "Failed to register user", 500);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to register user", statusCode);
     }
 };
 
