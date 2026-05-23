@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -48,6 +48,22 @@ export default function SellerEditFoodScreen() {
   const [isAvailable, setIsAvailable] = useState(Boolean(initialFood?.isAvailble));
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    if (!initialFood) {
+      return;
+    }
+
+    setName(initialFood.name || "");
+    setDescription(initialFood.description || "");
+    setPrice(formatInputPrice(initialFood.price));
+    setSpecialPrice(
+      initialFood.specialPrice ? formatInputPrice(initialFood.specialPrice) : "",
+    );
+    setStartTime(initialFood.startTime || "");
+    setEndTime(initialFood.endTime || "");
+    setIsAvailable(Boolean(initialFood.isAvailble));
+  }, [initialFood?.id]);
 
   const imageSource: ImageSourcePropType = initialFood?.listUrlImg?.[0]
     ? { uri: initialFood.listUrlImg[0] }
