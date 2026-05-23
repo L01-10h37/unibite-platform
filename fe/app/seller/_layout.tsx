@@ -86,6 +86,7 @@ export default function SellerLayout() {
       <Tabs.Screen name="edit-shop" options={HIDDEN_TAB_OPTIONS} />
       <Tabs.Screen name="create-food" options={HIDDEN_TAB_OPTIONS} />
       <Tabs.Screen name="edit-food" options={HIDDEN_TAB_OPTIONS} />
+      <Tabs.Screen name="order-detail" options={HIDDEN_TAB_OPTIONS} />
     </Tabs>
   );
 }
