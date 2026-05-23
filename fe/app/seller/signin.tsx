@@ -159,7 +159,12 @@ export default function SellerSignInScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Svg
             height="100%"
@@ -209,10 +214,14 @@ export default function SellerSignInScreen() {
               <TouchableOpacity
                 style={styles.roleSwitchButton}
                 activeOpacity={0.85}
-                onPress={() => router.push("/signin")}
+                onPress={() => router.replace("/signin")}
               >
                 <User color={SELLER_COLOR} size={16} />
-                <Text {...noFontScale} style={styles.roleSwitchText}>
+                <Text
+                  {...noFontScale}
+                  numberOfLines={1}
+                  style={styles.roleSwitchText}
+                >
                   Người mua
                 </Text>
               </TouchableOpacity>
@@ -221,7 +230,11 @@ export default function SellerSignInScreen() {
                 activeOpacity={0.85}
               >
                 <Store color="#FFFFFF" size={16} />
-                <Text {...noFontScale} style={styles.roleSwitchTextActive}>
+                <Text
+                  {...noFontScale}
+                  numberOfLines={1}
+                  style={styles.roleSwitchTextActive}
+                >
                   Người bán
                 </Text>
               </TouchableOpacity>
@@ -303,13 +316,18 @@ export default function SellerSignInScreen() {
                 >
                   {rememberPassword && <View style={styles.innerSquare} />}
                 </View>
-                <Text {...noFontScale} style={styles.checkboxLabel}>
+                <Text
+                  {...noFontScale}
+                  numberOfLines={1}
+                  style={styles.checkboxLabel}
+                >
                   Ghi nhớ mật khẩu
                 </Text>
               </TouchableOpacity>
               <Link
                 {...noFontScale}
                 href={"/forgot-password" as any}
+                numberOfLines={1}
                 style={styles.forgotPassword}
               >
                 Quên mật khẩu?
@@ -317,18 +335,23 @@ export default function SellerSignInScreen() {
             </View>
 
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text {...noFontScale} style={styles.submitButtonText}>
+              <Text
+                {...noFontScale}
+                numberOfLines={1}
+                style={styles.submitButtonText}
+              >
                 Đăng nhập
               </Text>
             </TouchableOpacity>
 
             <View style={styles.switchContainer}>
-              <Text {...noFontScale} style={styles.switchText}>
+              <Text {...noFontScale} numberOfLines={1} style={styles.switchText}>
                 Chưa có tài khoản?{" "}
               </Text>
               <Link
                 {...noFontScale}
                 href={"/seller/signup" as any}
+                numberOfLines={1}
                 style={styles.switchLink}
               >
                 Đăng ký
@@ -348,6 +371,10 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 32,
   },
   svg: {
     backgroundColor: "transparent",
@@ -382,7 +409,9 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   formContainer: {
+    width: "100%",
     maxWidth: 448,
+    alignSelf: "center",
   },
   titleContainer: {
     marginBottom: 24,
@@ -426,6 +455,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     flexShrink: 0,
+    minWidth: 74,
     textAlign: "center",
     color: SELLER_COLOR,
   },
@@ -434,6 +464,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     flexShrink: 0,
+    minWidth: 74,
     textAlign: "center",
     color: "#FFFFFF",
   },
@@ -528,7 +559,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     color: "#424242",
-    flexShrink: 1,
+    minWidth: 112,
   },
   forgotPassword: {
     fontFamily: "Montserrat-Medium",
@@ -536,6 +567,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: SELLER_COLOR,
     flexShrink: 0,
+    minWidth: 106,
+    textAlign: "right",
   },
   submitButton: {
     width: "100%",
@@ -553,7 +586,10 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontFamily: "Montserrat-Bold",
     fontSize: 18,
+    lineHeight: 24,
     color: "#F8F8FF",
+    minWidth: 128,
+    textAlign: "center",
   },
   switchContainer: {
     flexDirection: "row",
@@ -567,12 +603,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: "#9E9E9E",
-    flexShrink: 1,
+    flexShrink: 0,
+    minWidth: 142,
+    textAlign: "right",
   },
   switchLink: {
     fontFamily: "Montserrat-SemiBold",
     fontSize: 14,
     lineHeight: 20,
     color: SELLER_COLOR,
+    flexShrink: 0,
+    minWidth: 62,
   },
 });

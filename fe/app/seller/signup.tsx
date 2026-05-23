@@ -183,7 +183,7 @@ export default function SellerSignUpScreen() {
               style={styles.roleSwitchButton}
             >
               <User color={COLORS.blueStrong} size={16} />
-              <Text {...noFontScale} style={styles.roleSwitchText}>
+              <Text {...noFontScale} numberOfLines={1} style={styles.roleSwitchText}>
                 Người mua
               </Text>
             </TouchableOpacity>
@@ -192,7 +192,7 @@ export default function SellerSignUpScreen() {
               style={[styles.roleSwitchButton, styles.roleSwitchButtonActive]}
             >
               <Store color="#FFFFFF" size={16} />
-              <Text {...noFontScale} style={styles.roleSwitchTextActive}>
+              <Text {...noFontScale} numberOfLines={1} style={styles.roleSwitchTextActive}>
                 Người bán
               </Text>
             </TouchableOpacity>
@@ -354,18 +354,19 @@ export default function SellerSignUpScreen() {
             style={styles.submitButton}
             onPress={handleSubmit}
           >
-            <Text {...noFontScale} style={styles.submitButtonText}>
+            <Text {...noFontScale} numberOfLines={1} style={styles.submitButtonText}>
               Đăng ký
             </Text>
           </TouchableOpacity>
 
           <View style={styles.switchContainer}>
-            <Text {...noFontScale} style={styles.switchText}>
+            <Text {...noFontScale} numberOfLines={1} style={styles.switchText}>
               Đã có tài khoản?{" "}
             </Text>
             <Link
               {...noFontScale}
               href={"/seller/signin" as any}
+              numberOfLines={1}
               style={styles.switchLink}
             >
               Đăng nhập
@@ -457,6 +458,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     flexShrink: 0,
+    minWidth: 74,
     textAlign: "center",
   },
   roleSwitchTextActive: {
@@ -465,6 +467,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     flexShrink: 0,
+    minWidth: 74,
     textAlign: "center",
   },
   fieldContainer: {
@@ -542,6 +545,8 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat-ExtraBold",
     fontSize: 18,
     lineHeight: 24,
+    minWidth: 78,
+    textAlign: "center",
   },
   switchContainer: {
     alignItems: "center",
@@ -556,11 +561,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     flexShrink: 0,
+    minWidth: 124,
+    textAlign: "right",
   },
   switchLink: {
     color: COLORS.blueStrong,
     fontFamily: "Montserrat-ExtraBold",
     fontSize: 14,
     lineHeight: 20,
+    flexShrink: 0,
+    minWidth: 82,
   },
 });
