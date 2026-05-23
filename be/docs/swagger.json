@@ -1069,6 +1069,137 @@
         }
       }
     },
+    "/api/orders/seller/my": {
+      "get": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "Get current seller's orders with filters",
+        "description": "Retrieve orders assigned to the authenticated seller. Supports filtering by date range and status.",
+        "operationId": "getMySellerOrders",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Orders per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            }
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "description": "Start date filter. The API includes orders from 00:00:00 of this day.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-05-01"
+            }
+          },
+          {
+            "name": "toDate",
+            "in": "query",
+            "description": "End date filter. The API includes orders until 23:59:59 of this day.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-05-23"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by order status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "CONFIRMED",
+                "PREPARING",
+                "DELIVERING",
+                "COMPLETED",
+                "CANCELLED"
+              ],
+              "example": "PENDING"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Seller orders retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderListSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid date or status filter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - seller role required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/orders/{orderId}": {
       "get": {
         "tags": [
@@ -3911,6 +4042,11 @@
           "userId": {
             "type": "string",
             "example": "661fb4e9680c5e2a86f9f7b2"
+          },
+          "seller": {
+            "type": "string",
+            "description": "User ObjectId of the seller assigned to this order",
+            "example": "661fb4e9680c5e2a86f9f7b3"
           },
           "items": {
             "type": "array",

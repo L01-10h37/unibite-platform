@@ -130,6 +130,91 @@ export const getMyOrders = async (userId, page = 1, limit = 10) => {
 };
 
 /**
+ * Get orders assigned to current seller with optional date/status filters
+ */
+export const getMySellerOrders = async (
+    sellerUserId,
+    page = 1,
+    limit = 10,
+    filters = {}
+) => {
+    try {
+        logger.info('Service: Getting seller orders for seller id: ', sellerUserId);
+
+        const skip = (page - 1) * limit;
+        const query = { seller: sellerUserId };
+        const { fromDate, toDate, status } = filters;
+
+        if (status && status.trim()) {
+            const normalizedStatus = status.toUpperCase().trim();
+            const validStatuses = [
+                "PENDING",
+                "CONFIRMED",
+                "PREPARING",
+                "DELIVERING",
+                "COMPLETED",
+                "CANCELLED",
+            ];
+
+            if (!validStatuses.includes(normalizedStatus)) {
+                const error = new Error("Invalid status value");
+                error.statusCode = 400;
+                throw error;
+            }
+
+            query.status = normalizedStatus;
+        }
+
+        if (fromDate || toDate) {
+            query.createdAt = {};
+
+            if (fromDate) {
+                const startDate = new Date(fromDate);
+
+                if (Number.isNaN(startDate.getTime())) {
+                    const error = new Error("Invalid fromDate value");
+                    error.statusCode = 400;
+                    throw error;
+                }
+
+                startDate.setHours(0, 0, 0, 0);
+                query.createdAt.$gte = startDate;
+            }
+
+            if (toDate) {
+                const endDate = new Date(toDate);
+
+                if (Number.isNaN(endDate.getTime())) {
+                    const error = new Error("Invalid toDate value");
+                    error.statusCode = 400;
+                    throw error;
+                }
+
+                endDate.setHours(23, 59, 59, 999);
+                query.createdAt.$lte = endDate;
+            }
+        }
+
+        const [orders, total] = await Promise.all([
+            Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Order.countDocuments(query),
+        ]);
+
+        return {
+            orders: orders.map(o => o.getFormattedData?.("detail") || o),
+            pagination: {
+                page,
+                limit,
+                total,
+            },
+        };
+    } catch (error) {
+        logger.error('Service: Error getting seller orders', error);
+		throw error;
+    }
+};
+
+/**
  * Get order status by id
  */
 export const getOrderById = async (orderId, userId) => {

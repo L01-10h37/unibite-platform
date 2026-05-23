@@ -17,6 +17,17 @@ router.post('/', authenticate, ordersController.createOrder);
 router.get('/my', authenticate, ordersController.getMyOrders);
 
 /**
+ * Get all seller's orders
+ * GET api/orders/seller/my?fromDate=2026-05-01&toDate=2026-05-23&status=PENDING
+ */
+router.get(
+	'/seller/my',
+	authenticate,
+	authorize('seller'),
+	ordersController.getMySellerOrders
+);
+
+/**
  * Get order status by id
  * GET api/orders/:orderId
  */
