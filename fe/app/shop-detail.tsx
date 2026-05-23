@@ -48,6 +48,8 @@ type ApiResponse<T> = {
   message: string;
   data: T;
 };
+      <AppBottomTabBar />
+
 
 function formatPrice(value: number) {
   return `${value.toLocaleString("vi-VN")}đ`;

@@ -1,5 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
   Dimensions,
   Image,
@@ -67,6 +68,20 @@ const POPULAR_FOODS = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [searchText, setSearchText] = useState("");
+
+  const openSearch = () => {
+    const query = searchText.trim();
+
+    if (!query) {
+      return;
+    }
+
+    router.push({
+      pathname: "/search",
+      params: { query },
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -75,11 +90,18 @@ export default function HomeScreen() {
         contentContainerStyle={styles.contentContainer}
       >
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={24} color="#1A1A1A" />
+          <TouchableOpacity onPress={openSearch} activeOpacity={0.8} hitSlop={10} style={styles.searchIconButton}>
+            <Ionicons name="search" size={24} color="#1A1A1A" />
+          </TouchableOpacity>
           <TextInput
-            placeholder="Tìm kiếm món ăn, quán ăn,..."
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholder="Tìm kiếm món ăn"
             placeholderTextColor="#7A7A7A"
             style={styles.searchInput}
+            returnKeyType="search"
+            onSubmitEditing={openSearch}
+            blurOnSubmit={false}
           />
         </View>
 
@@ -201,6 +223,12 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     color: "#1A1A1A",
     fontFamily: "Montserrat-Medium",
+  },
+  searchIconButton: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
   },
   categoryList: {
     paddingTop: 14,

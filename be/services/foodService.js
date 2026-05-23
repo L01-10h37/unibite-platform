@@ -3,7 +3,108 @@ import Food from "../models/Food.js";
 import Shop from "../models/Shop.js";
 import Category from "../models/Category.js";
 import * as categoryService from "./categoryService.js";
+import * as foodSearchService from "./foodSearchService.js";
 import { uploadAvatarToS3, deleteAvatarFromS3, validateImageFile, validateFileSize } from '../utils/s3Upload.js';
+
+const buildFoodQuery = async ({
+  search = "",
+  categoryId = null,
+  shopId = null,
+  minRating = 0,
+  minPrice = null,
+  maxPrice = null,
+  area = "",
+}) => {
+  const query = { isDraft: false };
+
+  if (search && search.trim()) {
+    query.name = { $regex: search.trim(), $options: "i" };
+  }
+
+  if (minRating > 0) {
+    query.average_rating = { $gte: minRating };
+  }
+
+  if (minPrice != null || maxPrice != null) {
+    query.price = {};
+
+    if (minPrice != null && !Number.isNaN(minPrice)) {
+      query.price.$gte = minPrice;
+    }
+
+    if (maxPrice != null && !Number.isNaN(maxPrice)) {
+      query.price.$lte = maxPrice;
+    }
+
+    if (Object.keys(query.price).length === 0) {
+      delete query.price;
+    }
+  }
+
+  if (categoryId) {
+    try {
+      const deepChildren = await categoryService.getDeepChild(categoryId);
+      const categoryIds = [categoryId, ...deepChildren.map((cat) => cat.id)];
+      query.category = { $in: categoryIds };
+    } catch (error) {
+      logger.warn(`Service: Error getting deep children for category ${categoryId}`, error);
+      query.category = categoryId;
+    }
+  }
+
+  const shopFilters = [];
+
+  if (shopId) {
+    shopFilters.push(shopId);
+  }
+
+  if (area && area.trim()) {
+    const matchedShops = await Shop.find({
+      $or: [
+        { address: { $regex: area.trim(), $options: "i" } },
+        { name: { $regex: area.trim(), $options: "i" } },
+      ],
+    }).select("_id");
+
+    const areaShopIds = matchedShops.map((shop) => shop._id.toString());
+
+    if (shopFilters.length > 0) {
+      const matched = shopFilters.filter((id) => areaShopIds.includes(id.toString()));
+      query.shop = matched.length === 1 ? matched[0] : { $in: matched };
+      if (!matched.length) {
+        query.shop = { $in: [] };
+      }
+    } else {
+      query.shop = { $in: areaShopIds.length ? areaShopIds : [] };
+    }
+  } else if (shopFilters.length === 1) {
+    query.shop = shopFilters[0];
+  } else if (shopFilters.length > 1) {
+    query.shop = { $in: shopFilters };
+  }
+
+  return query;
+};
+
+const buildFoodSort = (order = "relevant") => {
+  switch (order) {
+    case "price_low":
+    case "price_asc":
+      return { price: 1, createdAt: -1 };
+    case "price_high":
+    case "price_desc":
+      return { price: -1, createdAt: -1 };
+    case "rating_asc":
+      return { average_rating: 1, createdAt: -1 };
+    case "rating_desc":
+    case "rating":
+      return { average_rating: -1, createdAt: -1 };
+    case "recent":
+    case "relevant":
+    default:
+      return { createdAt: -1 };
+  }
+};
 
 /**
  * Get all foods with search, category filter, shop filter, rating filter, and sorting
@@ -15,46 +116,27 @@ export const getAllFood = async (
   categoryId = null,
   shopId = null,
   minRating = 0,
-  order = "desc"
+  order = "relevant",
+  minPrice = null,
+  maxPrice = null,
+  area = ""
 ) => {
   try {
     logger.info(
-      `Service: Getting all foods - search: ${search}, categoryId: ${categoryId}, shopId: ${shopId}, minRating: ${minRating}, order: ${order}`
+      `Service: Getting all foods - search: ${search}, categoryId: ${categoryId}, shopId: ${shopId}, minRating: ${minRating}, minPrice: ${minPrice}, maxPrice: ${maxPrice}, area: ${area}, order: ${order}`
     );
     const skip = (page - 1) * limit;
 
-    const query = { isDraft: false };
-
-    // Search by food name (case-insensitive)
-    if (search && search.trim()) {
-      query.name = { $regex: search.trim(), $options: "i" };
-    }
-
-    // Filter by shop
-    if (shopId) {
-      query.shop = shopId;
-    }
-
-    // Filter by category and its descendants
-    if (categoryId) {
-      try {
-        const deepChildren = await categoryService.getDeepChild(categoryId);
-        const categoryIds = [categoryId, ...deepChildren.map((cat) => cat.id)];
-        query.category = { $in: categoryIds };
-      } catch (error) {
-        logger.warn(`Service: Error getting deep children for category ${categoryId}`, error);
-        query.category = categoryId;
-      }
-    }
-
-    // Filter by minimum rating
-    if (minRating > 0) {
-      query.average_rating = { $gte: minRating };
-    }
-
-    // Sort by rating: desc (high to low, default) or asc (low to high)
-    const ratingSort = order === "asc" ? 1 : -1;
-    const sortOrder = { average_rating: ratingSort, createdAt: -1 };
+    const query = await buildFoodQuery({
+      search,
+      categoryId,
+      shopId,
+      minRating,
+      minPrice,
+      maxPrice,
+      area,
+    });
+    const sortOrder = buildFoodSort(order);
 
     const foods = await Food.find(query)
       .populate("category")
@@ -76,6 +158,49 @@ export const getAllFood = async (
     };
   } catch (error) {
     logger.error("Service: Error getting all foods", error);
+    throw error;
+  }
+};
+
+export const syncFoodSearchIndex = async () => {
+  try {
+    logger.info("Service: Syncing food search index");
+    return await foodSearchService.syncFoodSearchIndex();
+  } catch (error) {
+    logger.error("Service: Error syncing food search index", error);
+    throw error;
+  }
+};
+
+export const searchFoods = async (
+  page = 1,
+  limit = 10,
+  search = "",
+  minRating = 0,
+  order = "relevant",
+  minPrice = null,
+  maxPrice = null,
+  area = ""
+) => {
+  try {
+    logger.info(
+      `Service: Searching foods - search: ${search}, minRating: ${minRating}, minPrice: ${minPrice}, maxPrice: ${maxPrice}, area: ${area}, order: ${order}`
+    );
+
+    return await getAllFood(
+      page,
+      limit,
+      search,
+      null,
+      null,
+      minRating,
+      order,
+      minPrice,
+      maxPrice,
+      area
+    );
+  } catch (error) {
+    logger.error("Service: Error searching foods", error);
     throw error;
   }
 };
@@ -174,6 +299,7 @@ export const createFood = async (userId, foodData) => {
 
     const newFood = await Food.create(newFoodData);
     await newFood.populate(["category", "shop"]);
+    await foodSearchService.safeIndexFoodSearchDocument(newFood, logger);
 
     return newFood.getFormattedData?.() || newFood;
   } catch (error) {
@@ -235,6 +361,7 @@ export const updateFood = async (foodId, userId, updateData) => {
       { $set: updateData },
       { new: true, runValidators: true }
     ).populate(["category", "shop"]);
+    await foodSearchService.safeIndexFoodSearchDocument(updatedFood, logger);
 
     return updatedFood.getFormattedData?.() || updatedFood;
   } catch (error) {
@@ -266,6 +393,7 @@ export const deleteFood = async (foodId, userId) => {
     }
 
     await Food.findByIdAndDelete(foodId);
+    await foodSearchService.safeDeleteFoodSearchDocument(foodId, logger);
     return { id: foodId };
   } catch (error) {
     logger.error("Service: Error deleting food", error);
@@ -316,6 +444,8 @@ export const uploadFoodImages = async (foodId, userId, files) => {
     // Thêm URL của các ảnh mới vào mảng listUrlImg của food
     food.listUrlImg = [...(food.listUrlImg || []), ...imageUrls];
     await food.save();
+    await food.populate(["category", "shop"]);
+    await foodSearchService.safeIndexFoodSearchDocument(food, logger);
 
     return imageUrls;
   } catch (error) {
@@ -349,6 +479,8 @@ export const deleteFoodImage = async (foodId, userId, imageUrl) => {
     // Xóa URL của ảnh khỏi mảng listUrlImg của food
     food.listUrlImg = (food.listUrlImg || []).filter((url) => url !== imageUrl);
     await food.save();
+    await food.populate(["category", "shop"]);
+    await foodSearchService.safeIndexFoodSearchDocument(food, logger);
 
     // Xóa ảnh khỏi S3
     await deleteAvatarFromS3(imageUrl);

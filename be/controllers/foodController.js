@@ -13,12 +13,26 @@ export const getAllFood = async (req, res, next) => {
     const categoryId = req.query.categoryId || null;
     const shopId = req.query.shopId || null;
     const minRating = parseFloat(req.query.minRating) || 0;
-    const order = req.query.order || "desc";
+    const minPrice = req.query.minPrice != null ? parseFloat(req.query.minPrice) : null;
+    const maxPrice = req.query.maxPrice != null ? parseFloat(req.query.maxPrice) : null;
+    const area = req.query.area || "";
+    const order = req.query.order || "relevant";
 
     logger.info(
-      `Fetching foods - Page: ${page}, Limit: ${limit}, Search: ${search}, CategoryId: ${categoryId}, ShopId: ${shopId}, MinRating: ${minRating}, Order: ${order}`
+      `Fetching foods - Page: ${page}, Limit: ${limit}, Search: ${search}, CategoryId: ${categoryId}, ShopId: ${shopId}, MinRating: ${minRating}, MinPrice: ${minPrice}, MaxPrice: ${maxPrice}, Area: ${area}, Order: ${order}`
     );
-    const result = await foodService.getAllFood(page, limit, search, categoryId, shopId, minRating, order);
+    const result = await foodService.getAllFood(
+      page,
+      limit,
+      search,
+      categoryId,
+      shopId,
+      minRating,
+      order,
+      minPrice,
+      maxPrice,
+      area
+    );
 
     paginatedResponse(
       res,
@@ -206,5 +220,52 @@ export const deleteFoodImage = async (req, res, next) => {
     logger.error("Error deleting food image", error);
     const statusCode = error.statusCode || 500;
     errorResponse(res, error, error.message || "Failed to delete food image", statusCode);
+  }
+};
+
+export const syncFoodSearchIndex = async (req, res, next) => {
+  try {
+    const result = await foodService.syncFoodSearchIndex();
+    successResponse(res, result, "Food search index synced successfully", 200);
+  } catch (error) {
+    logger.error("Error syncing food search index", error);
+    errorResponse(res, error, "Failed to sync food search index", 500);
+  }
+};
+
+export const searchFoods = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || "";
+    const minRating = parseFloat(req.query.minRating) || 0;
+    const minPrice = req.query.minPrice != null ? parseFloat(req.query.minPrice) : null;
+    const maxPrice = req.query.maxPrice != null ? parseFloat(req.query.maxPrice) : null;
+    const area = req.query.area || "";
+    const order = req.query.order || "relevant";
+
+    const result = await foodService.searchFoods(
+      page,
+      limit,
+      search,
+      minRating,
+      order,
+      minPrice,
+      maxPrice,
+      area
+    );
+
+    paginatedResponse(
+      res,
+      result.foods,
+      result.pagination.page,
+      result.pagination.limit,
+      result.pagination.total,
+      "Foods searched successfully",
+      200
+    );
+  } catch (error) {
+    logger.error("Error searching foods", error);
+    errorResponse(res, error, "Failed to search foods", 500);
   }
 };

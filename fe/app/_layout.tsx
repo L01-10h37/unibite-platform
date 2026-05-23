@@ -2,7 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack, useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { Text, TextInput } from 'react-native';
 import 'react-native-reanimated';
@@ -107,6 +107,8 @@ export default function RootLayout() {
         <Stack.Screen name="signin" options={{ presentation: 'modal', headerShown: false, title: 'Sign In' }} />
         <Stack.Screen name="signup" options={{ presentation: 'modal', headerShown: false, title: 'Sign Up' }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="search" options={{ headerShown: false }} />
+        <Stack.Screen name="filter" options={{ headerShown: false }} />
         <Stack.Screen name="food-detail" options={{ headerShown: false }} />
         <Stack.Screen name="shop-detail" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false, title: 'Thông tin' }} />

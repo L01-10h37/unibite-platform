@@ -56,7 +56,9 @@
   "paths": {
     "/": {
       "get": {
-        "tags": ["root"],
+        "tags": [
+          "root"
+        ],
         "summary": "Get API metadata",
         "operationId": "getRoot",
         "responses": {
@@ -75,7 +77,9 @@
     },
     "/health": {
       "get": {
-        "tags": ["health"],
+        "tags": [
+          "health"
+        ],
         "summary": "Health check",
         "operationId": "getHealth",
         "responses": {
@@ -94,7 +98,9 @@
     },
     "/api/auth/register": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Register new user",
         "operationId": "register",
         "requestBody": {
@@ -143,7 +149,9 @@
     },
     "/api/auth/login": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Login user",
         "operationId": "login",
         "requestBody": {
@@ -192,7 +200,9 @@
     },
     "/api/auth/logout": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Logout user",
         "operationId": "logout",
         "responses": {
@@ -221,7 +231,9 @@
     },
     "/api/auth/refresh": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Refresh access token",
         "operationId": "refreshToken",
         "responses": {
@@ -260,7 +272,9 @@
     },
     "/api/users": {
       "get": {
-        "tags": ["users"],
+        "tags": [
+          "users"
+        ],
         "summary": "Get users with pagination",
         "operationId": "getAllUsers",
         "parameters": [
@@ -313,7 +327,9 @@
     },
     "/api/users/{id}": {
       "get": {
-        "tags": ["users"],
+        "tags": [
+          "users"
+        ],
         "summary": "Get user by id",
         "operationId": "getUserById",
         "parameters": [
@@ -362,7 +378,9 @@
         }
       },
       "put": {
-        "tags": ["users"],
+        "tags": [
+          "users"
+        ],
         "summary": "Update user by id",
         "operationId": "updateUser",
         "parameters": [
@@ -421,7 +439,9 @@
         }
       },
       "delete": {
-        "tags": ["users"],
+        "tags": [
+          "users"
+        ],
         "summary": "Delete user by id",
         "operationId": "deleteUser",
         "parameters": [
@@ -472,7 +492,9 @@
     },
     "/api/users/me": {
       "get": {
-        "tags": ["users"],
+        "tags": [
+          "users"
+        ],
         "summary": "Get authenticated user profile",
         "operationId": "getMe",
         "security": [
@@ -504,7 +526,9 @@
         }
       },
       "patch": {
-        "tags": ["users"],
+        "tags": [
+          "users"
+        ],
         "summary": "Update authenticated user profile",
         "operationId": "updateProfile",
         "security": [
@@ -558,7 +582,9 @@
     },
     "/api/users/me/avatar": {
       "patch": {
-        "tags": ["users"],
+        "tags": [
+          "users"
+        ],
         "summary": "Upload authenticated user avatar",
         "operationId": "updateAvatar",
         "security": [
@@ -612,7 +638,9 @@
     },
     "/api/users/me/password": {
       "patch": {
-        "tags": ["users"],
+        "tags": [
+          "users"
+        ],
         "summary": "Change authenticated user password",
         "operationId": "changePassword",
         "security": [
@@ -666,29 +694,44 @@
     },
     "/api/comment/{id}": {
       "get": {
-        "tags": ["comments"],
+        "tags": [
+          "comments"
+        ],
         "summary": "Lấy danh sách comments theo postId (phân trang)",
         "operationId": "getComments",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
             "description": "ID của entity (post, food, restaurant, v.v.)",
-            "schema": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"}
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
           },
           {
             "name": "page",
             "in": "query",
             "required": false,
-            "schema": {"type": "integer", "default": 1}
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
           },
           {
             "name": "limit",
             "in": "query",
             "required": false,
-            "schema": {"type": "integer", "default": 10}
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
           }
         ],
         "responses": {
@@ -696,33 +739,50 @@
             "description": "Danh sách comments",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommentListResponse"}
+                "schema": {
+                  "$ref": "#/components/schemas/CommentListResponse"
+                }
               }
             }
           },
-          "401": {"description": "Unauthorized - Token không hợp lệ hoặc hết hạn"},
-          "400": {"description": "Bad Request - postId không hợp lệ"}
+          "400": {
+            "description": "Bad Request - postId không hợp lệ"
+          },
+          "401": {
+            "description": "Unauthorized - Token không hợp lệ hoặc hết hạn"
+          }
         }
       },
       "post": {
-        "tags": ["comments"],
+        "tags": [
+          "comments"
+        ],
         "summary": "Thêm comment mới",
         "operationId": "addComment",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
             "description": "ID của entity được comment",
-            "schema": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"}
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {"$ref": "#/components/schemas/CommentCreateInput"}
+              "schema": {
+                "$ref": "#/components/schemas/CommentCreateInput"
+              }
             }
           }
         },
@@ -731,68 +791,108 @@
             "description": "Comment đã được tạo",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommentResponse"}
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
               }
             }
           },
-          "400": {"description": "Bad Request - Thiếu content hoặc postId không hợp lệ"},
-          "401": {"description": "Unauthorized"},
-          "404": {"description": "Not Found - postId không tồn tại"}
+          "400": {
+            "description": "Bad Request - Thiếu content hoặc postId không hợp lệ"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found - postId không tồn tại"
+          }
         }
       }
     },
     "/api/comment/{id}/remove": {
       "delete": {
-        "tags": ["comments"],
+        "tags": [
+          "comments"
+        ],
         "summary": "Xóa comment (chỉ chủ sở hữu)",
         "operationId": "removeComment",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
             "description": "postId",
-            "schema": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"}
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {"$ref": "#/components/schemas/CommentDeleteInput"}
+              "schema": {
+                "$ref": "#/components/schemas/CommentDeleteInput"
+              }
             }
           }
         },
         "responses": {
-          "200": {"description": "Comment đã bị xóa"},
-          "400": {"description": "Bad Request - Thiếu cmtId"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden - Không phải chủ sở hữu comment"},
-          "404": {"description": "Not Found - Comment không tồn tại"}
+          "200": {
+            "description": "Comment đã bị xóa"
+          },
+          "400": {
+            "description": "Bad Request - Thiếu cmtId"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Không phải chủ sở hữu comment"
+          },
+          "404": {
+            "description": "Not Found - Comment không tồn tại"
+          }
         }
       }
     },
     "/api/comment/{id}/like": {
       "put": {
-        "tags": ["comments"],
+        "tags": [
+          "comments"
+        ],
         "summary": "Like hoặc Unlike một comment",
         "operationId": "likeComment",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
             "description": "postId",
-            "schema": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"}
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {"$ref": "#/components/schemas/CommentLikeInput"}
+              "schema": {
+                "$ref": "#/components/schemas/CommentLikeInput"
+              }
             }
           }
         },
@@ -801,23 +901,39 @@
             "description": "Cập nhật like thành công",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommentResponse"}
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
               }
             }
           },
-          "400": {"description": "Bad Request - Thiếu cmtId hoặc type không hợp lệ"},
-          "401": {"description": "Unauthorized"},
-          "404": {"description": "Not Found - Comment không tồn tại"},
-          "409": {"description": "Conflict - Đã like hoặc chưa like"}
+          "400": {
+            "description": "Bad Request - Thiếu cmtId hoặc type không hợp lệ"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found - Comment không tồn tại"
+          },
+          "409": {
+            "description": "Conflict - Đã like hoặc chưa like"
+          }
         }
       }
     },
     "/api/orders": {
       "post": {
-        "tags": ["orders"],
+        "tags": [
+          "orders"
+        ],
         "summary": "Create new order",
         "operationId": "createOrder",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -874,10 +990,16 @@
     },
     "/api/orders/my": {
       "get": {
-        "tags": ["orders"],
+        "tags": [
+          "orders"
+        ],
         "summary": "Get all user's orders with pagination",
         "operationId": "getMyOrders",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "page",
@@ -938,10 +1060,16 @@
     },
     "/api/orders/{orderId}": {
       "get": {
-        "tags": ["orders"],
+        "tags": [
+          "orders"
+        ],
         "summary": "Get order by ID",
         "operationId": "getOrderById",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "orderId",
@@ -1010,10 +1138,16 @@
     },
     "/api/orders/{orderId}/status": {
       "patch": {
-        "tags": ["orders"],
+        "tags": [
+          "orders"
+        ],
         "summary": "Update order status (admin only)",
         "operationId": "updateOrderStatus",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "orderId",
@@ -1092,10 +1226,16 @@
     },
     "/api/orders/{orderId}/cancel": {
       "post": {
-        "tags": ["orders"],
+        "tags": [
+          "orders"
+        ],
         "summary": "Cancel order by ID",
         "operationId": "cancelOrder",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "orderId",
@@ -1164,7 +1304,9 @@
     },
     "/api/categories": {
       "get": {
-        "tags": ["categories"],
+        "tags": [
+          "categories"
+        ],
         "summary": "Get root categories",
         "operationId": "getRootCategories",
         "responses": {
@@ -1191,33 +1333,57 @@
         }
       },
       "post": {
-        "tags": ["categories"],
+        "tags": [
+          "categories"
+        ],
         "summary": "Create a category",
         "operationId": "createCategory",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {"$ref": "#/components/schemas/CategoryCreateInput"}
+              "schema": {
+                "$ref": "#/components/schemas/CategoryCreateInput"
+              }
             }
           }
         },
         "responses": {
           "201": {
             "description": "Category created",
-            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CategorySuccessResponse"}}}
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategorySuccessResponse"
+                }
+              }
+            }
           },
-          "401": {"description": "Unauthorized - Missing or invalid token"},
-          "403": {"description": "Forbidden - Admin only"},
-          "409": {"description": "Conflict - Duplicate category"},
-          "500": {"description": "Internal server error"}
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "409": {
+            "description": "Conflict - Duplicate category"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
         }
       }
     },
     "/api/categories/hierarchy": {
       "get": {
-        "tags": ["categories"],
+        "tags": [
+          "categories"
+        ],
         "summary": "Get all categories in hierarchical tree structure",
         "operationId": "getAllCategoriesHierarchy",
         "responses": {
@@ -1246,10 +1412,16 @@
     },
     "/api/categories/{id}": {
       "put": {
-        "tags": ["categories"],
+        "tags": [
+          "categories"
+        ],
         "summary": "Update a category",
         "operationId": "updateCategory",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1266,26 +1438,48 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {"$ref": "#/components/schemas/CategoryCreateInput"}
+              "schema": {
+                "$ref": "#/components/schemas/CategoryCreateInput"
+              }
             }
           }
         },
         "responses": {
           "200": {
             "description": "Category updated",
-            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CategorySuccessResponse"}}}
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategorySuccessResponse"
+                }
+              }
+            }
           },
-          "401": {"description": "Unauthorized - Missing or invalid token"},
-          "403": {"description": "Forbidden - Admin only"},
-          "404": {"description": "Category not found"},
-          "500": {"description": "Internal server error"}
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Category not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
         }
       },
       "delete": {
-        "tags": ["categories"],
+        "tags": [
+          "categories"
+        ],
         "summary": "Delete a category",
         "operationId": "deleteCategory",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1301,19 +1495,37 @@
         "responses": {
           "200": {
             "description": "Category deleted",
-            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CategoryDeleteResponse"}}}
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryDeleteResponse"
+                }
+              }
+            }
           },
-          "401": {"description": "Unauthorized - Missing or invalid token"},
-          "403": {"description": "Forbidden - Admin only"},
-          "404": {"description": "Category not found"},
-          "409": {"description": "Conflict - Cannot delete category with child categories"},
-          "500": {"description": "Internal server error"}
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Category not found"
+          },
+          "409": {
+            "description": "Conflict - Cannot delete category with child categories"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
         }
       }
     },
     "/api/categories/{id}/children": {
       "get": {
-        "tags": ["categories"],
+        "tags": [
+          "categories"
+        ],
         "summary": "Get child categories",
         "operationId": "getChildCategories",
         "parameters": [
@@ -1354,7 +1566,9 @@
     },
     "/api/foods": {
       "get": {
-        "tags": ["foods"],
+        "tags": [
+          "foods"
+        ],
         "summary": "Get all foods with search, category filter, rating filter, and sorting",
         "operationId": "getAllFood",
         "parameters": [
@@ -1408,7 +1622,10 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["desc", "asc"],
+              "enum": [
+                "desc",
+                "asc"
+              ],
               "default": "desc",
               "example": "desc"
             }
@@ -1460,10 +1677,16 @@
         }
       },
       "post": {
-        "tags": ["foods"],
+        "tags": [
+          "foods"
+        ],
         "summary": "Create a food",
         "operationId": "createFood",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1481,6 +1704,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FoodSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "You do not have a shop or invalid food data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1504,26 +1737,22 @@
                 }
               }
             }
-          },
-          "400": {
-            "description": "You do not have a shop or invalid food data",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
           }
         }
       }
     },
     "/api/foods/my-menu": {
       "get": {
-        "tags": ["foods"],
+        "tags": [
+          "foods"
+        ],
         "summary": "Get my menu",
         "operationId": "getMyMenu",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "page",
@@ -1604,7 +1833,9 @@
     },
     "/api/foods/{id}": {
       "get": {
-        "tags": ["foods"],
+        "tags": [
+          "foods"
+        ],
         "summary": "Get food detail",
         "operationId": "getFood",
         "parameters": [
@@ -1653,10 +1884,16 @@
         }
       },
       "put": {
-        "tags": ["foods"],
+        "tags": [
+          "foods"
+        ],
         "summary": "Update food",
         "operationId": "updateFood",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1723,10 +1960,16 @@
         }
       },
       "delete": {
-        "tags": ["foods"],
+        "tags": [
+          "foods"
+        ],
         "summary": "Delete food",
         "operationId": "deleteFood",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1785,7 +2028,9 @@
     },
     "/api/shops": {
       "get": {
-        "tags": ["shops"],
+        "tags": [
+          "shops"
+        ],
         "summary": "Get all shops with optional search and filter",
         "operationId": "getAllShops",
         "parameters": [
@@ -1819,7 +2064,10 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["desc", "asc"],
+              "enum": [
+                "desc",
+                "asc"
+              ],
               "default": "desc",
               "example": "desc"
             }
@@ -1871,10 +2119,16 @@
         }
       },
       "post": {
-        "tags": ["shops"],
+        "tags": [
+          "shops"
+        ],
         "summary": "Create a shop",
         "operationId": "createShop",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1941,10 +2195,16 @@
     },
     "/api/shops/my-shop": {
       "get": {
-        "tags": ["shops"],
+        "tags": [
+          "shops"
+        ],
         "summary": "Get the authenticated seller's shop",
         "operationId": "getMyShop",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Authenticated seller shop",
@@ -2001,7 +2261,9 @@
     },
     "/api/shops/{id}": {
       "get": {
-        "tags": ["shops"],
+        "tags": [
+          "shops"
+        ],
         "summary": "Get shop by id",
         "operationId": "getShopById",
         "parameters": [
@@ -2050,10 +2312,16 @@
         }
       },
       "put": {
-        "tags": ["shops"],
+        "tags": [
+          "shops"
+        ],
         "summary": "Update a shop",
         "operationId": "updateShop",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2129,6 +2397,151 @@
           }
         }
       }
+    },
+    "/api/foods/search": {
+      "get": {
+        "tags": [
+          "foods"
+        ],
+        "summary": "Search foods with Elasticsearch",
+        "operationId": "searchFoods",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Keyword to search by food name, category, or shop",
+            "schema": {
+              "type": "string",
+              "example": "banh mi"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            }
+          },
+          {
+            "name": "minRating",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 5,
+              "default": 0
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "description": "Sort by average rating",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Foods searched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodSearchListSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Search failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/foods/search-index/sync": {
+      "post": {
+        "tags": [
+          "foods"
+        ],
+        "summary": "Sync foods to Elasticsearch index",
+        "operationId": "syncFoodSearchIndex",
+        "description": "Creates the foods Elasticsearch index if needed, then indexes all non-draft foods from MongoDB.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Food search index synced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodSearchSyncSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - admin role required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Sync failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2143,449 +2556,1209 @@
       "User": {
         "type": "object",
         "properties": {
-          "id": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"},
-          "name": {"type": "string", "example": "Nguyen Van A"},
-          "email": {"type": "string", "format": "email", "example": "vana@example.com"},
-          "phone": {"type": "string", "nullable": true, "example": "0909123456"},
-          "avatar": {"type": "string", "nullable": true, "example": "https://example.com/avatar.png"},
-          "role": {"type": "string", "enum": ["user", "admin"], "example": "user"},
-          "isActive": {"type": "boolean", "example": true},
-          "createdAt": {"type": "string", "format": "date-time"},
-          "updatedAt": {"type": "string", "format": "date-time"}
+          "id": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b1"
+          },
+          "name": {
+            "type": "string",
+            "example": "Nguyen Van A"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "vana@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "example": "0909123456"
+          },
+          "avatar": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://example.com/avatar.png"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin"
+            ],
+            "example": "user"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["id", "name", "email", "role", "isActive", "createdAt", "updatedAt"]
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "isActive",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "UserCreateInput": {
         "type": "object",
-        "required": ["name", "email"],
+        "required": [
+          "name",
+          "email"
+        ],
         "properties": {
-          "name": {"type": "string", "minLength": 2, "maxLength": 50, "example": "Nguyen Van A"},
-          "email": {"type": "string", "format": "email", "example": "vana@example.com"},
-          "phone": {"type": "string", "example": "0909123456"},
-          "avatar": {"type": "string", "example": "https://example.com/avatar.png"},
-          "role": {"type": "string", "enum": ["user", "admin"], "default": "user"},
-          "isActive": {"type": "boolean", "default": true}
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "example": "Nguyen Van A"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "vana@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "example": "0909123456"
+          },
+          "avatar": {
+            "type": "string",
+            "example": "https://example.com/avatar.png"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin"
+            ],
+            "default": "user"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          }
         }
       },
       "UserUpdateInput": {
         "type": "object",
         "properties": {
-          "name": {"type": "string", "minLength": 2, "maxLength": 50, "example": "Nguyen Van B"},
-          "email": {"type": "string", "format": "email", "example": "vanb@example.com"},
-          "phone": {"type": "string", "example": "0911222333"},
-          "avatar": {"type": "string", "example": "https://example.com/new-avatar.png"},
-          "role": {"type": "string", "enum": ["user", "admin"]},
-          "isActive": {"type": "boolean"}
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "example": "Nguyen Van B"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "vanb@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "example": "0911222333"
+          },
+          "avatar": {
+            "type": "string",
+            "example": "https://example.com/new-avatar.png"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          }
         },
         "description": "All fields are optional for update."
       },
       "Pagination": {
         "type": "object",
         "properties": {
-          "page": {"type": "integer", "example": 1},
-          "limit": {"type": "integer", "example": 10},
-          "total": {"type": "integer", "example": 42},
-          "pages": {"type": "integer", "example": 5}
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "example": 10
+          },
+          "total": {
+            "type": "integer",
+            "example": 42
+          },
+          "pages": {
+            "type": "integer",
+            "example": 5
+          }
         },
-        "required": ["page", "limit", "total", "pages"]
+        "required": [
+          "page",
+          "limit",
+          "total",
+          "pages"
+        ]
       },
       "RootData": {
         "type": "object",
         "properties": {
-          "message": {"type": "string", "example": "Welcome to Mobile App Backend"},
-          "version": {"type": "string", "example": "1.0.0"},
+          "message": {
+            "type": "string",
+            "example": "Welcome to Mobile App Backend"
+          },
+          "version": {
+            "type": "string",
+            "example": "1.0.0"
+          },
           "endpoints": {
             "type": "object",
             "properties": {
-              "users": {"type": "string", "example": "/api/users"},
-              "shops": {"type": "string", "example": "/api/shops"},
-              "health": {"type": "string", "example": "/health"}
+              "users": {
+                "type": "string",
+                "example": "/api/users"
+              },
+              "shops": {
+                "type": "string",
+                "example": "/api/shops"
+              },
+              "health": {
+                "type": "string",
+                "example": "/health"
+              }
             },
-            "required": ["users", "shops", "health"]
+            "required": [
+              "users",
+              "shops",
+              "health"
+            ]
           }
         },
-        "required": ["message", "version", "endpoints"]
+        "required": [
+          "message",
+          "version",
+          "endpoints"
+        ]
       },
       "RootSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "API is running"},
-          "data": {"$ref": "#/components/schemas/RootData"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "API is running"
+          },
+          "data": {
+            "$ref": "#/components/schemas/RootData"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "data", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
       },
       "UserSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "User retrieved successfully"},
-          "data": {"$ref": "#/components/schemas/User"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "User retrieved successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "data", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
       },
       "UserListSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Users retrieved successfully"},
-          "data": {"type": "array", "items": {"$ref": "#/components/schemas/User"}},
-          "pagination": {"$ref": "#/components/schemas/Pagination"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Users retrieved successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "data", "pagination", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "data",
+          "pagination",
+          "timestamp"
+        ]
       },
       "Shop": {
         "type": "object",
         "properties": {
-          "id": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"},
-          "name": {"type": "string", "example": "Bun Cha Ha Noi"},
-          "userId": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b2"},
-          "avatar": {"type": "string", "nullable": true, "example": "https://example.com/shop.png"},
-          "address": {"type": "string", "example": "12 Nguyen Trai, Ha Noi"},
-          "about": {"type": "string", "example": "Specialized in Vietnamese street food"},
-          "average_rating": {"type": "number", "example": 4.8},
-          "rating_count": {"type": "integer", "example": 120},
-          "createdAt": {"type": "string", "format": "date-time"},
-          "updatedAt": {"type": "string", "format": "date-time"}
+          "id": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b1"
+          },
+          "name": {
+            "type": "string",
+            "example": "Bun Cha Ha Noi"
+          },
+          "userId": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b2"
+          },
+          "avatar": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://example.com/shop.png"
+          },
+          "address": {
+            "type": "string",
+            "example": "12 Nguyen Trai, Ha Noi"
+          },
+          "about": {
+            "type": "string",
+            "example": "Specialized in Vietnamese street food"
+          },
+          "average_rating": {
+            "type": "number",
+            "example": 4.8
+          },
+          "rating_count": {
+            "type": "integer",
+            "example": 120
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["id", "name", "userId", "average_rating", "rating_count", "createdAt", "updatedAt"]
+        "required": [
+          "id",
+          "name",
+          "userId",
+          "average_rating",
+          "rating_count",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "ShopCreateInput": {
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
-          "name": {"type": "string", "minLength": 2, "maxLength": 100, "example": "Bun Cha Ha Noi"},
-          "avatar": {"type": "string", "example": "https://example.com/shop.png"},
-          "address": {"type": "string", "example": "12 Nguyen Trai, Ha Noi"},
-          "about": {"type": "string", "maxLength": 500, "example": "Specialized in Vietnamese street food"}
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Bun Cha Ha Noi"
+          },
+          "avatar": {
+            "type": "string",
+            "example": "https://example.com/shop.png"
+          },
+          "address": {
+            "type": "string",
+            "example": "12 Nguyen Trai, Ha Noi"
+          },
+          "about": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Specialized in Vietnamese street food"
+          }
         },
         "description": "userId is taken from the authenticated seller token"
       },
       "ShopUpdateInput": {
         "type": "object",
         "properties": {
-          "name": {"type": "string", "minLength": 2, "maxLength": 100, "example": "Bun Cha Ha Noi Updated"},
-          "avatar": {"type": "string", "example": "https://example.com/shop-new.png"},
-          "address": {"type": "string", "example": "20 Ly Thuong Kiet, Ha Noi"},
-          "about": {"type": "string", "maxLength": 500, "example": "Updated: Specialized in authentic Vietnamese street food"}
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Bun Cha Ha Noi Updated"
+          },
+          "avatar": {
+            "type": "string",
+            "example": "https://example.com/shop-new.png"
+          },
+          "address": {
+            "type": "string",
+            "example": "20 Ly Thuong Kiet, Ha Noi"
+          },
+          "about": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Updated: Specialized in authentic Vietnamese street food"
+          }
         },
         "description": "All fields are optional for update."
       },
       "AuthRegisterInput": {
         "type": "object",
-        "required": ["username", "phone", "password"],
+        "required": [
+          "username",
+          "phone",
+          "password"
+        ],
         "properties": {
-          "username": {"type": "string", "example": "john_doe01"},
-          "phone": {"type": "string", "example": "0909123456"},
-          "password": {"type": "string", "example": "StrongPass1!"}
+          "username": {
+            "type": "string",
+            "example": "john_doe01"
+          },
+          "phone": {
+            "type": "string",
+            "example": "0909123456"
+          },
+          "password": {
+            "type": "string",
+            "example": "StrongPass1!"
+          }
         }
       },
       "AuthLoginInput": {
         "type": "object",
-        "required": ["username", "password"],
+        "required": [
+          "username",
+          "password"
+        ],
         "properties": {
-          "username": {"type": "string", "example": "john_doe01"},
-          "password": {"type": "string", "example": "StrongPass1!"}
+          "username": {
+            "type": "string",
+            "example": "john_doe01"
+          },
+          "password": {
+            "type": "string",
+            "example": "StrongPass1!"
+          }
         }
       },
       "AuthRegisterResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "User registered successfully"},
-          "data": {"$ref": "#/components/schemas/User"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "User registered successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "data", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
       },
       "AuthTokenResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "User logged in successfully"},
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "User logged in successfully"
+          },
           "data": {
             "type": "object",
             "properties": {
-              "accessToken": {"type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."}
+              "accessToken": {
+                "type": "string",
+                "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              }
             }
           },
-          "timestamp": {"type": "string", "format": "date-time"}
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "data", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
       },
       "AuthLogoutResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "User logged out successfully"},
-          "data": {"nullable": true, "example": null},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "User logged out successfully"
+          },
+          "data": {
+            "nullable": true,
+            "example": null
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "timestamp"
+        ]
       },
       "UserProfileUpdateInput": {
         "type": "object",
         "properties": {
-          "name": {"type": "string", "minLength": 2, "maxLength": 50, "example": "Nguyen Van A"},
-          "phone": {"type": "string", "example": "0909123456"}
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "example": "Nguyen Van A"
+          },
+          "phone": {
+            "type": "string",
+            "example": "0909123456"
+          }
         },
         "description": "Only name and phone are allowed for /me update."
       },
       "AvatarUploadInput": {
         "type": "object",
-        "required": ["avatar"],
+        "required": [
+          "avatar"
+        ],
         "properties": {
-          "avatar": {"type": "string", "format": "binary"}
+          "avatar": {
+            "type": "string",
+            "format": "binary"
+          }
         }
       },
       "PasswordChangeInput": {
         "type": "object",
-        "required": ["oldPassword", "newPassword"],
+        "required": [
+          "oldPassword",
+          "newPassword"
+        ],
         "properties": {
-          "oldPassword": {"type": "string", "example": "OldPass1!"},
-          "newPassword": {"type": "string", "example": "NewStrongPass2!"}
+          "oldPassword": {
+            "type": "string",
+            "example": "OldPass1!"
+          },
+          "newPassword": {
+            "type": "string",
+            "example": "NewStrongPass2!"
+          }
         }
       },
       "AvatarUpdateSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Avatar updated successfully"},
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Avatar updated successfully"
+          },
           "data": {
             "type": "object",
             "properties": {
-              "message": {"type": "string", "example": "Avatar updated successfully"},
-              "avatarURL": {"type": "string", "example": "https://res.cloudinary.com/demo/image/upload/v123/avatar.jpg"}
+              "message": {
+                "type": "string",
+                "example": "Avatar updated successfully"
+              },
+              "avatarURL": {
+                "type": "string",
+                "example": "https://res.cloudinary.com/demo/image/upload/v123/avatar.jpg"
+              }
             }
           },
-          "timestamp": {"type": "string", "format": "date-time"}
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "data", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
       },
       "MessageSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Password changed successfully"},
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Password changed successfully"
+          },
           "data": {
             "type": "object",
             "properties": {
-              "message": {"type": "string", "example": "Password changed successfully"}
+              "message": {
+                "type": "string",
+                "example": "Password changed successfully"
+              }
             }
           },
-          "timestamp": {"type": "string", "format": "date-time"}
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "data", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
       },
       "Category": {
         "type": "object",
         "properties": {
-          "id": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b3"},
-          "name": {"type": "string", "example": "Ăn vặt"},
-          "parentId": {"type": ["string", "null"], "nullable": true, "example": null},
-          "createdAt": {"type": "string", "format": "date-time"},
-          "updatedAt": {"type": "string", "format": "date-time"}
+          "id": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b3"
+          },
+          "name": {
+            "type": "string",
+            "example": "Ăn vặt"
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "nullable": true,
+            "example": null
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["id", "name", "createdAt", "updatedAt"]
+        "required": [
+          "id",
+          "name",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "CategoryCreateInput": {
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
-          "name": {"type": "string", "example": "Ăn vặt"},
-          "parentId": {"type": "string", "nullable": true, "example": null}
+          "name": {
+            "type": "string",
+            "example": "Ăn vặt"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          }
         }
       },
       "CategorySuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Category retrieved successfully"},
-          "data": {"$ref": "#/components/schemas/Category"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Category retrieved successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CategoryListSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Categories retrieved successfully"},
-          "data": {"type": "array", "items": {"$ref": "#/components/schemas/Category"}},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Categories retrieved successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CategoryDeleteResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Category deleted successfully"},
-          "data": {"type": "object", "properties": {"id": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"}}},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Category deleted successfully"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "661fb4e9680c5e2a86f9f7b1"
+              }
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CategoryNode": {
         "type": "object",
         "properties": {
-          "id": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"},
-          "name": {"type": "string", "example": "Cơm"},
-          "child": {"type": "array", "items": {"$ref": "#/components/schemas/CategoryNode"}, "example": []}
+          "id": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b1"
+          },
+          "name": {
+            "type": "string",
+            "example": "Cơm"
+          },
+          "child": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryNode"
+            },
+            "example": []
+          }
         }
       },
       "CategoryHierarchyResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Categories hierarchy retrieved successfully"},
-          "data": {"type": "array", "items": {"$ref": "#/components/schemas/CategoryNode"}},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Categories hierarchy retrieved successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryNode"
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "Food": {
         "type": "object",
         "properties": {
-          "id": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"},
-          "name": {"type": "string", "example": "Bún bò Huế"},
-          "description": {"type": "string", "example": "Món bún bò đậm vị"},
+          "id": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b1"
+          },
+          "name": {
+            "type": "string",
+            "example": "Bún bò Huế"
+          },
+          "description": {
+            "type": "string",
+            "example": "Món bún bò đậm vị"
+          },
           "category": {
             "oneOf": [
-              {"type": "string", "example": "661fb4e9680c5e2a86f9f7b3"},
-              {"$ref": "#/components/schemas/Category"}
+              {
+                "type": "string",
+                "example": "661fb4e9680c5e2a86f9f7b3"
+              },
+              {
+                "$ref": "#/components/schemas/Category"
+              }
             ]
           },
           "shop": {
             "oneOf": [
-              {"type": "string", "example": "661fb4e9680c5e2a86f9f7b2"},
-              {"$ref": "#/components/schemas/Shop"}
+              {
+                "type": "string",
+                "example": "661fb4e9680c5e2a86f9f7b2"
+              },
+              {
+                "$ref": "#/components/schemas/Shop"
+              }
             ]
           },
           "listUrlImg": {
             "type": "array",
-            "items": {"type": "string"},
-            "example": ["https://example.com/food1.jpg"]
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "https://example.com/food1.jpg"
+            ]
           },
-          "isAvailble": {"type": "boolean", "example": true},
-          "isDraft": {"type": "boolean", "example": false},
-          "price": {"type": "number", "example": 45000},
-          "specialPrice": {"type": "number", "nullable": true, "example": 39000},
-          "startTime": {"type": "string", "nullable": true, "example": "08:00"},
-          "endTime": {"type": "string", "nullable": true, "example": "22:00"},
-          "createdAt": {"type": "string", "format": "date-time"},
-          "updatedAt": {"type": "string", "format": "date-time"}
+          "isAvailble": {
+            "type": "boolean",
+            "example": true
+          },
+          "isDraft": {
+            "type": "boolean",
+            "example": false
+          },
+          "price": {
+            "type": "number",
+            "example": 45000
+          },
+          "specialPrice": {
+            "type": "number",
+            "nullable": true,
+            "example": 39000
+          },
+          "startTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "08:00"
+          },
+          "endTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "22:00"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["id", "name", "category", "shop", "price", "createdAt", "updatedAt"]
+        "required": [
+          "id",
+          "name",
+          "category",
+          "shop",
+          "price",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "FoodCreateInput": {
         "type": "object",
-        "required": ["name", "category", "price"],
+        "required": [
+          "name",
+          "category",
+          "price"
+        ],
         "properties": {
-          "name": {"type": "string", "example": "Bún bò Huế"},
-          "description": {"type": "string", "example": "Món bún bò đậm vị"},
-          "category": {"type": "string", "description": "Category ID", "example": "661fb4e9680c5e2a86f9f7b3"},
-          "price": {"type": "number", "example": 45000},
-          "specialPrice": {"type": "number", "nullable": true, "example": 39000},
-          "startTime": {"type": "string", "nullable": true, "example": "08:00"},
-          "endTime": {"type": "string", "nullable": true, "example": "22:00"},
-          "listUrlImg": {"type": "array", "items": {"type": "string"}, "example": ["https://example.com/food1.jpg"]},
-          "isAvailble": {"type": "boolean", "default": true},
-          "isDraft": {"type": "boolean", "default": false}
+          "name": {
+            "type": "string",
+            "example": "Bún bò Huế"
+          },
+          "description": {
+            "type": "string",
+            "example": "Món bún bò đậm vị"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category ID",
+            "example": "661fb4e9680c5e2a86f9f7b3"
+          },
+          "price": {
+            "type": "number",
+            "example": 45000
+          },
+          "specialPrice": {
+            "type": "number",
+            "nullable": true,
+            "example": 39000
+          },
+          "startTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "08:00"
+          },
+          "endTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "22:00"
+          },
+          "listUrlImg": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "https://example.com/food1.jpg"
+            ]
+          },
+          "isAvailble": {
+            "type": "boolean",
+            "default": true
+          },
+          "isDraft": {
+            "type": "boolean",
+            "default": false
+          }
         },
         "description": "The shop is inferred from the authenticated seller account"
       },
       "FoodUpdateInput": {
         "type": "object",
         "properties": {
-          "name": {"type": "string", "example": "Bún bò Huế đặc biệt"},
-          "description": {"type": "string", "example": "Món bún bò đậm vị"},
-          "category": {"type": "string", "description": "Category ID", "example": "661fb4e9680c5e2a86f9f7b3"},
-          "price": {"type": "number", "example": 45000},
-          "specialPrice": {"type": "number", "nullable": true, "example": 39000},
-          "startTime": {"type": "string", "nullable": true, "example": "08:00"},
-          "endTime": {"type": "string", "nullable": true, "example": "22:00"},
-          "listUrlImg": {"type": "array", "items": {"type": "string"}, "example": ["https://example.com/food1.jpg"]},
-          "isAvailble": {"type": "boolean", "example": true},
-          "isDraft": {"type": "boolean", "example": false}
+          "name": {
+            "type": "string",
+            "example": "Bún bò Huế đặc biệt"
+          },
+          "description": {
+            "type": "string",
+            "example": "Món bún bò đậm vị"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category ID",
+            "example": "661fb4e9680c5e2a86f9f7b3"
+          },
+          "price": {
+            "type": "number",
+            "example": 45000
+          },
+          "specialPrice": {
+            "type": "number",
+            "nullable": true,
+            "example": 39000
+          },
+          "startTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "08:00"
+          },
+          "endTime": {
+            "type": "string",
+            "nullable": true,
+            "example": "22:00"
+          },
+          "listUrlImg": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "https://example.com/food1.jpg"
+            ]
+          },
+          "isAvailble": {
+            "type": "boolean",
+            "example": true
+          },
+          "isDraft": {
+            "type": "boolean",
+            "example": false
+          }
         }
       },
       "FoodSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Food retrieved successfully"},
-          "data": {"$ref": "#/components/schemas/Food"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Food retrieved successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Food"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "data", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
       },
       "FoodListSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Foods retrieved successfully"},
-          "data": {"type": "array", "items": {"$ref": "#/components/schemas/Food"}},
-          "pagination": {"$ref": "#/components/schemas/Pagination"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Foods retrieved successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Food"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "data", "pagination", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "data",
+          "pagination",
+          "timestamp"
+        ]
       },
       "ShopSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Shop created successfully"},
-          "data": {"$ref": "#/components/schemas/Shop"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Shop created successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Shop"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "data", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
       },
       "ShopListSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Shops retrieved successfully"},
-          "data": {"type": "array", "items": {"$ref": "#/components/schemas/Shop"}},
-          "pagination": {"$ref": "#/components/schemas/Pagination"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Shops retrieved successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Shop"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "data", "pagination", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "data",
+          "pagination",
+          "timestamp"
+        ]
       },
       "DeleteSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "User deleted successfully"},
-          "data": {"nullable": true, "example": null},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "User deleted successfully"
+          },
+          "data": {
+            "nullable": true,
+            "example": null
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "timestamp"
+        ]
       },
       "ErrorResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": false},
-          "message": {"type": "string", "example": "Failed to fetch users"},
-          "error": {"nullable": true, "example": "Cast to ObjectId failed for value \"abc\""},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Failed to fetch users"
+          },
+          "error": {
+            "nullable": true,
+            "example": "Cast to ObjectId failed for value \"abc\""
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["success", "message", "timestamp"]
+        "required": [
+          "success",
+          "message",
+          "timestamp"
+        ]
       },
       "HealthResponse": {
         "type": "object",
         "properties": {
-          "status": {"type": "string", "example": "OK"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "status": {
+            "type": "string",
+            "example": "OK"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["status", "timestamp"]
+        "required": [
+          "status",
+          "timestamp"
+        ]
       },
       "OrderItem": {
         "type": "object",
         "properties": {
-          "foodId": {"type": "string", "description": "Có thể là ObjectId hoặc string tạm thời", "example": "Bún bò"},
-          "name": {"type": "string", "example": "Bún bò Huế"},
-          "price": {"type": "number", "example": 45000},
-          "quantity": {"type": "integer", "minimum": 1, "example": 2}
+          "foodId": {
+            "type": "string",
+            "description": "Có thể là ObjectId hoặc string tạm thời",
+            "example": "Bún bò"
+          },
+          "name": {
+            "type": "string",
+            "example": "Bún bò Huế"
+          },
+          "price": {
+            "type": "number",
+            "example": 45000
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "example": 2
+          }
         }
       },
       "StatusHistory": {
@@ -2593,42 +3766,95 @@
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["PENDING", "CONFIRMED", "PREPARING", "DELIVERING", "COMPLETED", "CANCELLED"],
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "PREPARING",
+              "DELIVERING",
+              "COMPLETED",
+              "CANCELLED"
+            ],
             "example": "PENDING"
           },
-          "updatedAt": {"type": "string", "format": "date-time"}
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "Order": {
         "type": "object",
         "properties": {
-          "id": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"},
-          "userId": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b2"},
+          "id": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b1"
+          },
+          "userId": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b2"
+          },
           "items": {
             "type": "array",
-            "items": {"$ref": "#/components/schemas/OrderItem"}
+            "items": {
+              "$ref": "#/components/schemas/OrderItem"
+            }
           },
-          "totalPrice": {"type": "number", "example": 90000},
-          "deliveryAddress": {"type": "string", "example": "12 Nguyen Trai, Ha Noi"},
-          "phone": {"type": "string", "example": "0909123456"},
-          "note": {"type": "string", "nullable": true, "example": "Giao hàng trước 5pm"},
+          "totalPrice": {
+            "type": "number",
+            "example": 90000
+          },
+          "deliveryAddress": {
+            "type": "string",
+            "example": "12 Nguyen Trai, Ha Noi"
+          },
+          "phone": {
+            "type": "string",
+            "example": "0909123456"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "example": "Giao hàng trước 5pm"
+          },
           "status": {
             "type": "string",
-            "enum": ["PENDING", "CONFIRMED", "PREPARING", "DELIVERING", "COMPLETED", "CANCELLED"],
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "PREPARING",
+              "DELIVERING",
+              "COMPLETED",
+              "CANCELLED"
+            ],
             "example": "PENDING"
           },
-          "isPaid": {"type": "boolean", "example": false},
+          "isPaid": {
+            "type": "boolean",
+            "example": false
+          },
           "statusHistory": {
             "type": "array",
-            "items": {"$ref": "#/components/schemas/StatusHistory"}
+            "items": {
+              "$ref": "#/components/schemas/StatusHistory"
+            }
           },
-          "createdAt": {"type": "string", "format": "date-time"},
-          "updatedAt": {"type": "string", "format": "date-time"}
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "OrderCreateInput": {
         "type": "object",
-        "required": ["deliveryAddress", "phone", "items"],
+        "required": [
+          "deliveryAddress",
+          "phone",
+          "items"
+        ],
         "properties": {
           "deliveryAddress": {
             "type": "string",
@@ -2652,10 +3878,21 @@
             "minItems": 1,
             "items": {
               "type": "object",
-              "required": ["foodId", "quantity"],
+              "required": [
+                "foodId",
+                "quantity"
+              ],
               "properties": {
-                "foodId": {"type": "string", "description": "ID của món ăn", "example": "Bún bò"},
-                "quantity": {"type": "integer", "minimum": 1, "example": 2}
+                "foodId": {
+                  "type": "string",
+                  "description": "ID của món ăn",
+                  "example": "Bún bò"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "example": 2
+                }
               }
             }
           }
@@ -2663,11 +3900,20 @@
       },
       "OrderStatusUpdateInput": {
         "type": "object",
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["PENDING", "CONFIRMED", "PREPARING", "DELIVERING", "COMPLETED", "CANCELLED"],
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "PREPARING",
+              "DELIVERING",
+              "COMPLETED",
+              "CANCELLED"
+            ],
             "description": "Trạng thái mới cho đơn hàng",
             "example": "CONFIRMED"
           }
@@ -2676,46 +3922,108 @@
       "OrderSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Order created successfully"},
-          "data": {"$ref": "#/components/schemas/Order"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Order created successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Order"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "OrderListSuccessResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Orders retrieved successfully"},
-          "data": {"type": "array", "items": {"$ref": "#/components/schemas/Order"}},
-          "pagination": {"$ref": "#/components/schemas/Pagination"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Orders retrieved successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Order"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "Comment": {
         "type": "object",
         "properties": {
-          "id": {"type": "string", "example": "6630abcd1234567890abcdef"},
-          "postId": {"type": "string", "example": "661fb4e9680c5e2a86f9f7b1"},
+          "id": {
+            "type": "string",
+            "example": "6630abcd1234567890abcdef"
+          },
+          "postId": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b1"
+          },
           "userId": {
             "type": "object",
             "properties": {
-              "_id": {"type": "string"},
-              "username": {"type": "string"},
-              "name": {"type": "string"},
-              "avatar": {"type": "string", "nullable": true}
+              "_id": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "avatar": {
+                "type": "string",
+                "nullable": true
+              }
             }
           },
-          "content": {"type": "string", "example": "Món ăn rất ngon!"},
-          "likeCount": {"type": "integer", "example": 5},
-          "likes": {"type": "array", "items": {"type": "string"}, "description": "Danh sách userId đã like"},
-          "createdAt": {"type": "string", "format": "date-time"},
-          "updatedAt": {"type": "string", "format": "date-time"}
+          "content": {
+            "type": "string",
+            "example": "Món ăn rất ngon!"
+          },
+          "likeCount": {
+            "type": "integer",
+            "example": 5
+          },
+          "likes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Danh sách userId đã like"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CommentCreateInput": {
         "type": "object",
-        "required": ["content"],
+        "required": [
+          "content"
+        ],
         "properties": {
           "content": {
             "type": "string",
@@ -2727,7 +4035,9 @@
       },
       "CommentDeleteInput": {
         "type": "object",
-        "required": ["cmtId"],
+        "required": [
+          "cmtId"
+        ],
         "properties": {
           "cmtId": {
             "type": "string",
@@ -2738,7 +4048,10 @@
       },
       "CommentLikeInput": {
         "type": "object",
-        "required": ["cmtId", "type"],
+        "required": [
+          "cmtId",
+          "type"
+        ],
         "properties": {
           "cmtId": {
             "type": "string",
@@ -2747,7 +4060,10 @@
           },
           "type": {
             "type": "string",
-            "enum": ["inc", "dec"],
+            "enum": [
+              "inc",
+              "dec"
+            ],
             "description": "'inc' để like, 'dec' để unlike",
             "example": "inc"
           }
@@ -2756,21 +4072,164 @@
       "CommentResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Comment added successfully"},
-          "data": {"$ref": "#/components/schemas/Comment"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Comment added successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Comment"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CommentListResponse": {
         "type": "object",
         "properties": {
-          "success": {"type": "boolean", "example": true},
-          "message": {"type": "string", "example": "Comments retrieved successfully"},
-          "data": {"type": "array", "items": {"$ref": "#/components/schemas/Comment"}},
-          "pagination": {"$ref": "#/components/schemas/Pagination"},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Comments retrieved successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Comment"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
+      },
+      "FoodSearchDocument": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "661fb4e9680c5e2a86f9f7b1"
+          },
+          "name": {
+            "type": "string",
+            "example": "Bun bo Hue"
+          },
+          "category": {
+            "type": "string",
+            "nullable": true,
+            "example": "Mon nuoc"
+          },
+          "shop": {
+            "type": "string",
+            "nullable": true,
+            "example": "UniBite Shop"
+          },
+          "UrlImg": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://example.com/food1.jpg"
+          },
+          "isAvailble": {
+            "type": "boolean",
+            "example": true
+          },
+          "price": {
+            "type": "number",
+            "example": 45000
+          },
+          "average_rating": {
+            "type": "number",
+            "example": 4.5
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "isAvailble",
+          "price",
+          "average_rating"
+        ]
+      },
+      "FoodSearchListSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Foods searched successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FoodSearchDocument"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "pagination",
+          "timestamp"
+        ]
+      },
+      "FoodSearchSyncSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Food search index synced successfully"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "indexed": {
+                "type": "integer",
+                "example": 25
+              },
+              "errors": {
+                "type": "boolean",
+                "example": false
+              }
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data",
+          "timestamp"
+        ]
       }
     }
   }
