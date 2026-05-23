@@ -189,14 +189,14 @@ export default function SignInScreen() {
               <Text style={styles.labelLarge}>Tên tài khoản</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.inputRow}>
-                  <User color="#616161" size={16} />
-                  <View style={styles.divider} />
+                  <User size={16} color="#616161" />
+                  <View style={styles.dividerGray} />
                   <TextInput
                     style={styles.input}
                     value={username}
                     onChangeText={setUsername}
                     placeholder="Nhập tên tài khoản"
-                    placeholderTextColor="#616161"
+                    placeholderTextColor="#BDBDBD"
                     keyboardType="default"
                     autoCapitalize="none"
                   />
@@ -218,10 +218,10 @@ export default function SignInScreen() {
               <Text style={styles.label}>Mật khẩu</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.inputRow}>
-                  <KeyRound color="#BDBDBD" size={16} />
+                  <KeyRound size={16} color="#616161" />
                   <View style={styles.dividerGray} />
                   <TextInput
-                    style={styles.inputGray}
+                    style={styles.input}
                     value={password}
                     onChangeText={setPassword}
                     placeholder="Nhập mật khẩu"
@@ -233,9 +233,9 @@ export default function SignInScreen() {
                     onPress={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <Eye color="#BDBDBD" size={20} />
+                      <Eye size={20} color="#BDBDBD" />
                     ) : (
-                      <EyeOff color="#BDBDBD" size={20} />
+                      <EyeOff size={20} color="#BDBDBD"  />
                     )}
                   </TouchableOpacity>
                 </View>
@@ -434,14 +434,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingBottom: 8,
     gap: 8,
-  },
-  icon: {
-    fontSize: 16,
-    color: "#616161",
-  },
-  iconGray: {
-    fontSize: 16,
-    color: "#BDBDBD",
   },
   divider: {
     width: 1,

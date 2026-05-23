@@ -195,14 +195,14 @@ export default function SignUpScreen() {
               <Text style={styles.labelLarge}>Tên tài khoản</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.inputRow}>
-                  <User color="#616161" size={16} />
-                  <View style={styles.divider} />
+                  <User size={16} color="#616161" />
+                  <View style={styles.dividerGray} />
                   <TextInput
                     style={styles.input}
                     value={username}
                     onChangeText={setUsername}
                     placeholder="Nhập tên tài khoản"
-                    placeholderTextColor="#616161"
+                    placeholderTextColor="#BDBDBD"
                     keyboardType="default"
                     autoCapitalize="none"
                   />
@@ -224,14 +224,14 @@ export default function SignUpScreen() {
               <Text style={styles.label}>Số điện thoại</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.inputRow}>
-                  <Phone color="#616161" size={16} />
-                  <View style={styles.divider} />
+                  <Phone size={16} color="#616161" />
+                  <View style={styles.dividerGray} />
                   <TextInput
                     style={styles.input}
                     value={phoneNumber}
                     onChangeText={setPhoneNumber}
                     placeholder="Nhập số điện thoại"
-                    placeholderTextColor="#616161"
+                    placeholderTextColor="#BDBDBD"
                     keyboardType="phone-pad"
                   />
                 </View>
@@ -252,10 +252,10 @@ export default function SignUpScreen() {
               <Text style={styles.label}>Mật khẩu</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.inputRow}>
-                  <KeyRound color="#BDBDBD" size={16} />
+                  <KeyRound size={16} color="#616161" />
                   <View style={styles.dividerGray} />
                   <TextInput
-                    style={styles.inputGray}
+                    style={styles.input}
                     value={password}
                     onChangeText={setPassword}
                     placeholder="Nhập mật khẩu"
@@ -267,9 +267,9 @@ export default function SignUpScreen() {
                     onPress={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <Eye color="#BDBDBD" size={20} />
+                      <Eye size={20} color="#BDBDBD" />
                     ) : (
-                      <EyeOff color="#BDBDBD" size={20} />
+                      <EyeOff size={20} color="#BDBDBD" />
                     )}
                   </TouchableOpacity>
                 </View>
@@ -290,10 +290,10 @@ export default function SignUpScreen() {
               <Text style={styles.label}>Xác nhận mật khẩu</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.inputRow}>
-                  <KeyRound color="#BDBDBD" size={16} />
+                  <KeyRound size={16} color="#616161" />
                   <View style={styles.dividerGray} />
                   <TextInput
-                    style={styles.inputGray}
+                    style={styles.input}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     placeholder="Nhập lại mật khẩu"
@@ -306,7 +306,9 @@ export default function SignUpScreen() {
                   >
                     {showConfirmPassword ? (
                       <Eye color="#BDBDBD" size={20} />
+                      <Eye color="#BDBDBD" size={20} />
                     ) : (
+                      <EyeOff color="#BDBDBD" size={20} />
                       <EyeOff color="#BDBDBD" size={20} />
                     )}
                   </TouchableOpacity>
