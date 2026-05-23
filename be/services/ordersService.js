@@ -197,7 +197,7 @@ export const getMySellerOrders = async (
         }
 
         const [orders, total] = await Promise.all([
-            Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Order.find(query).populate('user', 'username name phone').sort({ createdAt: -1 }).skip(skip).limit(limit),
             Order.countDocuments(query),
         ]);
 
@@ -228,7 +228,7 @@ export const getOrderById = async (orderId, userId) => {
             throw error;
         };
 
-        const order = await Order.findById(orderId);
+        const order = await Order.findById(orderId).populate('user', 'username name phone');
 
         if (!order) {
             const error = new Error('Order not found');
