@@ -1,5 +1,6 @@
 import { logger } from '../utils/logger.js';
 import User from '../models/User.js';
+import Order from '../models/Order.js';
 import { deleteAvatarFromS3 } from '../utils/s3Upload.js';
 import bcrypt from 'bcryptjs';
 
