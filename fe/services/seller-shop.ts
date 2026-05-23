@@ -34,6 +34,27 @@ export type SellerCategory = {
   children?: SellerCategory[];
 };
 
+export type SellerOrder = {
+  id: string;
+  user?: string;
+  seller?: string;
+  items?: Array<{
+    food: string;
+    name?: string;
+    price?: number;
+    quantity: number;
+  }>;
+  totalPrice: number;
+  status: string;
+  phone?: string;
+  deliveryAddress?: string;
+  statusHistory?: Array<{
+    status: string;
+    updatedAt: string;
+  }>;
+  createdAt?: string;
+};
+
 type SellerTokens = {
   accessToken: string;
   refreshToken: string;
@@ -51,6 +72,14 @@ function getAuthHeaders(accessToken: string) {
 async function parseJsonResponse(res: Response) {
   const data = await res.json().catch(() => null);
   return data?.data ?? data;
+}
+
+async function parsePaginatedJsonResponse(res: Response) {
+  const data = await res.json().catch(() => null);
+  return {
+    data: data?.data ?? [],
+    pagination: data?.pagination,
+  };
 }
 
 export function parseSellerTokens(value: string | null): SellerTokens | null {
@@ -154,6 +183,51 @@ export async function getSellerMenu(accessToken: string, limit = 10) {
   }
 
   return parseJsonResponse(res) as Promise<SellerFood[]>;
+}
+
+export async function getMySellerOrders(
+  accessToken: string,
+  params: {
+    fromDate?: string;
+    toDate?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  } = {},
+) {
+  const query = new URLSearchParams();
+
+  query.set("page", String(params.page || 1));
+  query.set("limit", String(params.limit || 1000));
+
+  if (params.fromDate) {
+    query.set("fromDate", params.fromDate);
+  }
+
+  if (params.toDate) {
+    query.set("toDate", params.toDate);
+  }
+
+  if (params.status) {
+    query.set("status", params.status);
+  }
+
+  const res = await fetch(`${API_BASE}/api/orders/seller/my?${query.toString()}`, {
+    method: "GET",
+    headers: getAuthHeaders(accessToken),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Get seller orders failed: ${res.status} ${text}`);
+  }
+
+  const payload = await parsePaginatedJsonResponse(res);
+
+  return {
+    orders: payload.data as SellerOrder[],
+    pagination: payload.pagination,
+  };
 }
 
 export async function getFoodCategories() {
