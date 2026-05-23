@@ -196,7 +196,7 @@ export default function ProfileScreen() {
           <View style={styles.menuCard}>
             <MenuItem icon={<UserRoundPen size={22} stroke="rgba(34,49,49,0.8)" />} title="Chỉnh sửa hồ sơ" />
             <View style={styles.divider} />
-            <MenuItem icon={<MapPin size={22} stroke="rgba(34,49,49,0.8)" />} title="Địa chỉ đã lưu" />
+            <MenuItem icon={<MapPin size={22} stroke="rgba(34,49,49,0.8)" />} title="Địa chỉ đã lưu" onPress={() => router.push('/address')} />
           </View>
         </View>
 
@@ -249,14 +249,16 @@ const MenuItem = ({
   rightText,
   badge,
   showBorder,
+  onPress,
 }: {
   icon: React.ReactNode;
   title: string;
   rightText?: string;
   badge?: string;
   showBorder?: boolean;
+  onPress?: () => void;
 }) => (
-  <TouchableOpacity style={[styles.menuItem, showBorder && styles.menuItemBorder]}>
+  <TouchableOpacity style={[styles.menuItem, showBorder && styles.menuItemBorder]} onPress={onPress}>
     <View style={styles.menuItemLeft}>
       {icon}
       <Text style={styles.menuItemText}>{title}</Text>
