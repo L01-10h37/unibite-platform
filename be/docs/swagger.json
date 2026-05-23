@@ -2403,14 +2403,14 @@
         "tags": [
           "foods"
         ],
-        "summary": "Search foods with Elasticsearch",
+        "summary": "Search foods by name with Elasticsearch",
         "operationId": "searchFoods",
         "parameters": [
           {
             "name": "search",
             "in": "query",
             "required": false,
-            "description": "Keyword to search by food name, category, or shop",
+            "description": "Keyword to search by food name only",
             "schema": {
               "type": "string",
               "example": "banh mi"
@@ -4176,7 +4176,7 @@
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/FoodSearchDocument"
+              "$ref": "#/components/schemas/Food"
             }
           },
           "pagination": {

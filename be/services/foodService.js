@@ -177,7 +177,7 @@ export const searchFoods = async (
   limit = 10,
   search = "",
   minRating = 0,
-  order = "relevant",
+  order = "desc",
   minPrice = null,
   maxPrice = null,
   area = ""
@@ -187,18 +187,57 @@ export const searchFoods = async (
       `Service: Searching foods - search: ${search}, minRating: ${minRating}, minPrice: ${minPrice}, maxPrice: ${maxPrice}, area: ${area}, order: ${order}`
     );
 
-    return await getAllFood(
-      page,
-      limit,
-      search,
-      null,
-      null,
-      minRating,
-      order,
-      minPrice,
-      maxPrice,
-      area
+    let result;
+
+    try {
+      result = await foodSearchService.searchFoodDocuments({
+        page,
+        search,
+        limit,
+        minRating,
+        order,
+      });
+    } catch (error) {
+      const isMissingSearchIndex =
+        error.type === "index_not_found_exception" ||
+        error.message?.includes("no such index");
+
+      if (!isMissingSearchIndex) {
+        throw error;
+      }
+
+      logger.info("Service: Food search index missing, syncing before retry");
+      await foodSearchService.syncFoodSearchIndex();
+      result = await foodSearchService.searchFoodDocuments({
+        page,
+        search,
+        limit,
+        minRating,
+        order,
+      });
+    }
+
+    const foodIds = result.foods.map((food) => food.id).filter(Boolean);
+
+    if (!foodIds.length) {
+      return {
+        foods: [],
+        pagination: result.pagination,
+      };
+    }
+
+    const foods = await Food.find({ _id: { $in: foodIds }, isDraft: false })
+      .populate("category")
+      .populate("shop");
+
+    const foodById = new Map(
+      foods.map((food) => [food._id.toString(), food.getFormattedData?.() || food])
     );
+
+    return {
+      foods: foodIds.map((foodId) => foodById.get(foodId)).filter(Boolean),
+      pagination: result.pagination,
+    };
   } catch (error) {
     logger.error("Service: Error searching foods", error);
     throw error;

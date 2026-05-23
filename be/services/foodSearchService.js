@@ -159,13 +159,56 @@ export const searchFoodDocuments = async ({
   order = "desc",
 } = {}) => {
   const from = (page - 1) * limit;
-  const must = search.trim()
+  const normalizedSearch = search.trim();
+  const searchTokens = normalizedSearch.split(/\s+/).filter(Boolean);
+  const minimumShouldMatch = searchTokens.length > 2
+    ? Math.min(3, searchTokens.length - 1)
+    : 1;
+  const tokenMatches = searchTokens.map((token) => ({
+    match: {
+      name: {
+        query: token,
+        fuzziness: 1,
+        prefix_length: 0,
+      },
+    },
+  }));
+
+  const must = normalizedSearch
     ? [
         {
-          multi_match: {
-            query: search.trim(),
-            fields: ["name^3"],
-            fuzziness: "AUTO",
+          bool: {
+            should: [
+              {
+                match_phrase: {
+                  name: {
+                    query: normalizedSearch,
+                    boost: 4,
+                  },
+                },
+              },
+              {
+                match_phrase_prefix: {
+                  name: {
+                    query: normalizedSearch,
+                    boost: 3,
+                  },
+                },
+              },
+              {
+                match: {
+                  name: {
+                    query: normalizedSearch,
+                    fuzziness: 1,
+                    prefix_length: 0,
+                    operator: "or",
+                    boost: 2,
+                  },
+                },
+              },
+              ...tokenMatches,
+            ],
+            minimum_should_match: minimumShouldMatch,
           },
         },
       ]
