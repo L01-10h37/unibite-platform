@@ -13,7 +13,7 @@ import {
 
 import Svg, { ClipPath, Defs, Image as ImageSVG, Path } from "react-native-svg";
 
-import { Eye, EyeOff, KeyRound, Phone, Store, User } from "lucide-react-native";
+import { Eye, EyeOff, KeyRound, Smartphone, Store, User } from "lucide-react-native";
 
 const imgLogo = require("../assets/images/logo.png");
 
@@ -224,7 +224,7 @@ export default function SignUpScreen() {
               <Text style={styles.label}>Số điện thoại</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.inputRow}>
-                  <Phone size={16} color="#616161" />
+                  <Smartphone size={16} color="#616161" />
                   <View style={styles.dividerGray} />
                   <TextInput
                     style={styles.input}
@@ -306,9 +306,7 @@ export default function SignUpScreen() {
                   >
                     {showConfirmPassword ? (
                       <Eye color="#BDBDBD" size={20} />
-                      <Eye color="#BDBDBD" size={20} />
                     ) : (
-                      <EyeOff color="#BDBDBD" size={20} />
                       <EyeOff color="#BDBDBD" size={20} />
                     )}
                   </TouchableOpacity>
@@ -399,7 +397,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 40,
     marginTop: -50,
     paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingTop: 12,
     paddingBottom: 24,
   },
   formContainer: {
@@ -540,7 +538,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -557,6 +554,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 24,
+    marginBottom: 32,
     gap: 2,
   },
   switchText: {

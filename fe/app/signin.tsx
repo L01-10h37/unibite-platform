@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 40,
     marginTop: -50,
     paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingTop: 12,
     paddingBottom: 24,
   },
   formContainer: {

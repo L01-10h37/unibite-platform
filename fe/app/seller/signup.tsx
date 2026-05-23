@@ -204,13 +204,13 @@ export default function SellerSignUpScreen() {
             </Text>
             <View style={styles.inputRow}>
               <User color="#616161" size={15} strokeWidth={1.7} />
-              <View style={styles.divider} />
+              <View style={styles.dividerGray} />
               <TextInput
                 autoCapitalize="none"
                 keyboardType="default"
                 onChangeText={setUsername}
                 placeholder="Nhập tên tài khoản"
-                placeholderTextColor="#7A7A7A"
+                placeholderTextColor={COLORS.placeholder}
                 {...noFontScale}
                 style={styles.input}
                 value={username}
@@ -235,12 +235,12 @@ export default function SellerSignUpScreen() {
             </Text>
             <View style={styles.inputRow}>
               <Smartphone color="#616161" size={15} strokeWidth={1.7} />
-              <View style={styles.divider} />
+              <View style={styles.dividerGray} />
               <TextInput
                 keyboardType="phone-pad"
                 onChangeText={setPhoneNumber}
                 placeholder="Nhập số điện thoại"
-                placeholderTextColor="#7A7A7A"
+                placeholderTextColor={COLORS.placeholder}
                 {...noFontScale}
                 style={styles.input}
                 value={phoneNumber}
@@ -264,7 +264,7 @@ export default function SellerSignUpScreen() {
               Mật khẩu
             </Text>
             <View style={styles.inputRow}>
-              <KeyRound color={COLORS.placeholder} size={15} strokeWidth={1.6} />
+              <KeyRound color="#616161" size={15} strokeWidth={1.6} />
               <View style={styles.dividerGray} />
               <TextInput
                 autoCapitalize="none"
@@ -309,7 +309,7 @@ export default function SellerSignUpScreen() {
               Xác nhận mật khẩu
             </Text>
             <View style={styles.inputRow}>
-              <KeyRound color={COLORS.placeholder} size={15} strokeWidth={1.6} />
+              <KeyRound color="#616161" size={15} strokeWidth={1.6} />
               <View style={styles.dividerGray} />
               <TextInput
                 autoCapitalize="none"

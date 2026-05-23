@@ -123,8 +123,14 @@ export const getUserProfile = async (id) => {
   try {
     logger.info(`Service: Getting user profile by ID: ${id}`);
 
-    const user = await User.findById(id).select('-password');
-    return user ? user.getFormattedData?.() || user : null;
+    const [user, completedOrders] = await Promise.all([
+      // Chỉ lấy thông tin cần thiết, loại bỏ password
+      User.findById(id).select('-password'),
+      // Đếm số lượng đơn hàng đã hoàn thành của user
+      Order.countDocuments({ userId: id, status: 'COMPLETED' })
+    ]);
+    // Format dữ liệu trả về: {...userData, completedOrders: x}
+    return user ? { ...user.getFormattedData?.() || user, completedOrders } : null;
   } catch (error) {
     logger.error('Service: Error getting user profile', error);
     throw error;
