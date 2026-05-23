@@ -1,3 +1,2 @@
-# Assignment
 # Unibite
 
