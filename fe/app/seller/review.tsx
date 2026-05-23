@@ -1,8 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { SellerBottomTabBar } from "@/components/seller-bottom-tab-bar";
-
 export default function SellerReviewScreen() {
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
@@ -10,7 +8,6 @@ export default function SellerReviewScreen() {
         <Text style={styles.title}>Đang phát triển</Text>
         <Text style={styles.subtitle}>Tính năng Review cho người bán sẽ được cập nhật sau.</Text>
       </View>
-      <SellerBottomTabBar />
     </SafeAreaView>
   );
 }

@@ -27,7 +27,6 @@ import {
   Wallet,
 } from "lucide-react-native";
 
-import { SellerBottomTabBar } from "@/components/seller-bottom-tab-bar";
 import {
   getMySellerShop,
   parseSellerTokens,
@@ -247,8 +246,6 @@ export default function SellerProfileScreen() {
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
       </ScrollView>
-
-      <SellerBottomTabBar />
     </SafeAreaView>
   );
 }
