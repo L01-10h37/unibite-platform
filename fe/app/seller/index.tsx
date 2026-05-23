@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -30,6 +30,10 @@ const FOOD_IMAGE_FALLBACK = require("@/assets/images/seller/milk-tea.png");
 const BLUE = "#2478FF";
 const BORDER = "#9FAFC0";
 const BG = "#EAF9F8";
+const noFontScale = {
+  allowFontScaling: false,
+  maxFontSizeMultiplier: 1,
+} as const;
 
 export default function SellerHomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
@@ -57,52 +61,54 @@ export default function SellerHomeScreen() {
     }
   };
 
-  useEffect(() => {
-    let isMounted = true;
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-    const loadHome = async () => {
-      try {
-        const tokens = parseSellerTokens(
-          await SecureStore.getItemAsync("sellerTokens"),
-        );
+      const loadHome = async () => {
+        try {
+          const tokens = parseSellerTokens(
+            await SecureStore.getItemAsync("sellerTokens"),
+          );
 
-        if (!tokens) {
+          if (!tokens) {
+            router.replace("/seller/signin" as any);
+            return;
+          }
+
+          const currentShop = await getMySellerShop(tokens.accessToken);
+
+          if (!currentShop) {
+            router.replace("/seller/create-shop" as any);
+            return;
+          }
+
+          const foods = await getSellerMenu(tokens.accessToken, 10).catch((error) => {
+            console.error("Failed to load seller menu:", error);
+            return [];
+          });
+
+          if (isActive) {
+            setShop(currentShop);
+            setMenu(foods);
+          }
+        } catch (error) {
+          console.error("Error loading seller home:", error);
           router.replace("/seller/signin" as any);
-          return;
+        } finally {
+          if (isActive) {
+            setIsLoading(false);
+          }
         }
+      };
 
-        const currentShop = await getMySellerShop(tokens.accessToken);
+      loadHome();
 
-        if (!currentShop) {
-          router.replace("/seller/create-shop" as any);
-          return;
-        }
-
-        const foods = await getSellerMenu(tokens.accessToken, 10).catch((error) => {
-          console.error("Failed to load seller menu:", error);
-          return [];
-        });
-
-        if (isMounted) {
-          setShop(currentShop);
-          setMenu(foods);
-        }
-      } catch (error) {
-        console.error("Error loading seller home:", error);
-        router.replace("/seller/signin" as any);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadHome();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+      return () => {
+        isActive = false;
+      };
+    }, []),
+  );
 
   const avatarSource = useMemo<ImageSourcePropType>(() => {
     if (shop?.avatar) {
@@ -127,7 +133,9 @@ export default function SellerHomeScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.screenTitle}>Gian hàng của tôi</Text>
+        <Text {...noFontScale} style={styles.screenTitle}>
+          Gian hàng của tôi
+        </Text>
 
         <TouchableOpacity
           activeOpacity={0.82}
@@ -136,13 +144,13 @@ export default function SellerHomeScreen() {
         >
           <Image source={avatarSource} style={styles.shopAvatar} />
           <View style={styles.shopInfo}>
-            <Text style={styles.shopName} numberOfLines={1}>
+            <Text {...noFontScale} style={styles.shopName} numberOfLines={1}>
               {shop?.name || "Gian hàng của tôi"}
             </Text>
-            <Text style={styles.shopTime} numberOfLines={1}>
+            <Text {...noFontScale} style={styles.shopTime} numberOfLines={1}>
               {shop?.openingHours || "Chưa cập nhật giờ mở cửa"}
             </Text>
-            <Text style={styles.rankText} numberOfLines={1}>
+            <Text {...noFontScale} style={styles.rankText} numberOfLines={1}>
               {shop?.address || "Chưa cập nhật địa chỉ"}
             </Text>
           </View>
@@ -157,8 +165,12 @@ export default function SellerHomeScreen() {
 
         <View style={styles.orderCard}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Đơn hàng</Text>
-            <Text style={styles.cardDate}>12/04/2026</Text>
+            <Text {...noFontScale} style={styles.cardTitle}>
+              Đơn hàng
+            </Text>
+            <Text {...noFontScale} style={styles.cardDate}>
+              12/04/2026
+            </Text>
             <ChevronRight size={17} color="#8EA0B4" />
           </View>
           <View style={styles.orderStats}>
@@ -171,7 +183,9 @@ export default function SellerHomeScreen() {
 
         <View style={styles.menuCard}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Thực đơn</Text>
+            <Text {...noFontScale} style={styles.cardTitle}>
+              Thực đơn
+            </Text>
             <ChevronRight size={17} color="#8EA0B4" />
           </View>
 
@@ -181,7 +195,9 @@ export default function SellerHomeScreen() {
             style={styles.addButton}
           >
             <Plus size={26} color="#FFFFFF" />
-            <Text style={styles.addButtonText}>Thêm món mới</Text>
+            <Text {...noFontScale} style={styles.addButtonText}>
+              Thêm món mới
+            </Text>
           </TouchableOpacity>
 
           {menu.length > 0 ? (
@@ -194,8 +210,12 @@ export default function SellerHomeScreen() {
             ))
           ) : (
             <View style={styles.emptyMenu}>
-              <Text style={styles.emptyTitle}>Chưa có món nào</Text>
-              <Text style={styles.emptyText}>Thêm món mới để bắt đầu bán hàng.</Text>
+              <Text {...noFontScale} style={styles.emptyTitle}>
+                Chưa có món nào
+              </Text>
+              <Text {...noFontScale} style={styles.emptyText}>
+                Thêm món mới để bắt đầu bán hàng.
+              </Text>
             </View>
           )}
         </View>
@@ -207,8 +227,12 @@ export default function SellerHomeScreen() {
 function Metric({ value, label }: { value: string; label: string }) {
   return (
     <View style={styles.metric}>
-      <Text style={styles.metricValue}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
+      <Text {...noFontScale} style={styles.metricValue}>
+        {value}
+      </Text>
+      <Text {...noFontScale} style={styles.metricLabel} numberOfLines={1}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -224,8 +248,12 @@ function OrderStat({
 }) {
   return (
     <View style={styles.orderStat}>
-      <Text style={[styles.orderValue, active && styles.orderValueActive]}>{value}</Text>
-      <Text style={styles.orderLabel}>{label}</Text>
+      <Text {...noFontScale} style={[styles.orderValue, active && styles.orderValueActive]}>
+        {value}
+      </Text>
+      <Text {...noFontScale} style={styles.orderLabel} numberOfLines={2}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -260,10 +288,10 @@ function FoodRow({
     >
       <Image source={imageSource} style={styles.foodImage} />
       <View style={styles.foodInfo}>
-        <Text style={styles.foodName} numberOfLines={1}>
+        <Text {...noFontScale} style={styles.foodName} numberOfLines={1}>
           {food.name}
         </Text>
-        <Text style={styles.foodTime}>29 Nov, 01:20 pm</Text>
+        <Text {...noFontScale} style={styles.foodTime}>29 Nov, 01:20 pm</Text>
         <TouchableOpacity
           activeOpacity={0.82}
           onPress={() => onToggleAvailability(food)}
@@ -272,16 +300,18 @@ function FoodRow({
             !food.isAvailble && styles.statusPillUnavailable,
           ]}
         >
-          <Text style={styles.statusText}>
+          <Text {...noFontScale} style={styles.statusText}>
             {food.isAvailble ? "Hiện có" : "Hết món"}
           </Text>
         </TouchableOpacity>
       </View>
       <View style={styles.foodRight}>
-        <Text style={styles.foodPrice}>{formatPrice(price)}</Text>
-        <Text style={styles.soldText}>Đã bán: {food.sold_count || 0}</Text>
+        <Text {...noFontScale} style={styles.foodPrice} numberOfLines={1}>
+          {formatPrice(price)}
+        </Text>
+        <Text {...noFontScale} style={styles.soldText}>Đã bán: {food.sold_count || 0}</Text>
         <View style={styles.ratingPill}>
-          <Text style={styles.ratingText}>{rating}</Text>
+          <Text {...noFontScale} style={styles.ratingText}>{rating}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -307,33 +337,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: 10,
-    paddingTop: 12,
-    paddingBottom: 10,
+    paddingHorizontal: 11,
+    paddingTop: 8,
+    paddingBottom: 18,
   },
   screenTitle: {
     color: "#111111",
     fontFamily: "Montserrat-ExtraBold",
-    fontSize: 21,
-    marginBottom: 14,
-    marginLeft: 7,
+    fontSize: 20,
+    lineHeight: 26,
+    marginBottom: 12,
+    marginLeft: 6,
   },
   shopCard: {
-    minHeight: 139,
+    minHeight: 126,
     backgroundColor: "#FFFFFF",
     borderColor: BORDER,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingTop: 14,
+    paddingHorizontal: 14,
+    paddingTop: 12,
     marginBottom: 10,
   },
   shopAvatar: {
-    width: 55,
-    height: 55,
-    borderRadius: 28,
-    marginRight: 16,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    marginRight: 12,
   },
   shopInfo: {
     flex: 1,
@@ -343,53 +374,57 @@ const styles = StyleSheet.create({
     color: "#171717",
     fontFamily: "Montserrat-Bold",
     fontSize: 16,
-    marginBottom: 7,
+    lineHeight: 21,
+    marginBottom: 4,
   },
   shopTime: {
     color: "#94A0B4",
     fontFamily: "Montserrat-Medium",
     fontSize: 12,
-    marginBottom: 7,
+    lineHeight: 16,
+    marginBottom: 4,
   },
   rankText: {
     color: "#94A0B4",
     fontFamily: "Montserrat-Medium",
     fontSize: 12,
+    lineHeight: 16,
   },
   shopMetrics: {
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 9,
+    bottom: 8,
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
   metric: {
     width: "32%",
     alignItems: "center",
-    gap: 8,
+    gap: 4,
   },
   metricValue: {
     color: "#000000",
     fontFamily: "Montserrat-ExtraBold",
-    fontSize: 22,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 18,
   },
   metricLabel: {
     color: "#9AA6B9",
     fontFamily: "Montserrat-Medium",
-    fontSize: 12,
+    fontSize: 11,
+    lineHeight: 15,
     textAlign: "center",
   },
   orderCard: {
     backgroundColor: "#FFFFFF",
     borderColor: BORDER,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingTop: 11,
-    paddingBottom: 12,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 11,
     marginBottom: 11,
   },
   cardHeader: {
@@ -400,29 +435,32 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: "#000000",
     fontFamily: "Montserrat-Bold",
-    fontSize: 16,
+    fontSize: 15,
+    lineHeight: 20,
     flex: 1,
   },
   cardDate: {
     color: "#9AA6B9",
     fontFamily: "Montserrat-Medium",
     fontSize: 12,
-    marginRight: 128,
+    lineHeight: 16,
+    marginRight: 8,
   },
   orderStats: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingTop: 14,
+    paddingTop: 13,
   },
   orderStat: {
     width: "24%",
     alignItems: "center",
-    gap: 8,
+    gap: 5,
   },
   orderValue: {
     color: "#000000",
     fontFamily: "Montserrat-ExtraBold",
-    fontSize: 16,
+    fontSize: 15,
+    lineHeight: 18,
   },
   orderValueActive: {
     color: BLUE,
@@ -430,20 +468,21 @@ const styles = StyleSheet.create({
   orderLabel: {
     color: "#98A3B6",
     fontFamily: "Montserrat-Medium",
-    fontSize: 12,
+    fontSize: 11,
+    lineHeight: 15,
     textAlign: "center",
   },
   menuCard: {
     backgroundColor: "#FFFFFF",
     borderColor: BORDER,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    paddingHorizontal: 17,
+    paddingHorizontal: 14,
     paddingTop: 12,
-    paddingBottom: 12,
+    paddingBottom: 18,
   },
   addButton: {
-    height: 57,
+    height: 50,
     borderRadius: 9,
     backgroundColor: BLUE,
     alignItems: "center",
@@ -451,12 +490,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     marginTop: 10,
-    marginBottom: 19,
+    marginBottom: 18,
   },
   addButtonText: {
     color: "#FFFFFF",
     fontFamily: "Montserrat-ExtraBold",
-    fontSize: 16,
+    fontSize: 15,
+    lineHeight: 20,
   },
   foodRow: {
     flexDirection: "row",
@@ -464,10 +504,10 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   foodImage: {
-    width: 72,
-    height: 66,
-    borderRadius: 17,
-    marginRight: 12,
+    width: 64,
+    height: 60,
+    borderRadius: 15,
+    marginRight: 10,
   },
   foodInfo: {
     flex: 1,
@@ -476,18 +516,20 @@ const styles = StyleSheet.create({
   foodName: {
     color: "#3A221A",
     fontFamily: "Montserrat-Medium",
-    fontSize: 20,
+    fontSize: 15,
+    lineHeight: 20,
     marginBottom: 2,
   },
   foodTime: {
     color: "#3A221A",
     fontFamily: "Montserrat-Regular",
-    fontSize: 12,
+    fontSize: 11,
+    lineHeight: 15,
     marginBottom: 6,
   },
   statusPill: {
-    width: 121,
-    height: 27,
+    width: 104,
+    height: 24,
     borderRadius: 100,
     alignItems: "center",
     justifyContent: "center",
@@ -499,27 +541,30 @@ const styles = StyleSheet.create({
   statusText: {
     color: "#FFFFFF",
     fontFamily: "Montserrat-Bold",
-    fontSize: 13,
+    fontSize: 12,
+    lineHeight: 16,
   },
   foodRight: {
-    width: 118,
+    width: 106,
     alignItems: "flex-end",
   },
   foodPrice: {
     color: BLUE,
     fontFamily: "Montserrat-Bold",
-    fontSize: 18,
+    fontSize: 15,
+    lineHeight: 20,
     marginBottom: 3,
   },
   soldText: {
     color: "#3A221A",
     fontFamily: "Montserrat-Regular",
-    fontSize: 12,
+    fontSize: 11,
+    lineHeight: 15,
     marginBottom: 7,
   },
   ratingPill: {
-    width: 100,
-    height: 27,
+    width: 92,
+    height: 24,
     borderRadius: 100,
     alignItems: "center",
     justifyContent: "center",
@@ -528,21 +573,24 @@ const styles = StyleSheet.create({
   ratingText: {
     color: "#000000",
     fontFamily: "Montserrat-Medium",
-    fontSize: 13,
+    fontSize: 12,
+    lineHeight: 16,
   },
   emptyMenu: {
     alignItems: "center",
-    paddingVertical: 24,
+    paddingVertical: 22,
   },
   emptyTitle: {
     color: "#111111",
     fontFamily: "Montserrat-Bold",
     fontSize: 16,
+    lineHeight: 21,
     marginBottom: 6,
   },
   emptyText: {
     color: "#7A8795",
     fontFamily: "Montserrat-Medium",
     fontSize: 13,
+    lineHeight: 18,
   },
 });

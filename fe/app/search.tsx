@@ -35,6 +35,7 @@ type SearchFood = {
   name: string;
   shop?: string | null;
   UrlImg?: string | null;
+  listUrlImg?: string[] | null;
   price?: number | null;
   average_rating?: number | null;
 };
@@ -60,8 +61,10 @@ function formatPrice(value?: number | null) {
 }
 
 function getImageSource(item: SearchFood) {
-  return item.UrlImg
-    ? { uri: item.UrlImg }
+  const firstFoodImage = item.listUrlImg?.find(Boolean) || item.UrlImg;
+
+  return firstFoodImage
+    ? { uri: firstFoodImage }
     : require("@/assets/images/bun-bo-hue-detail-2.png");
 }
 

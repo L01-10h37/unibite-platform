@@ -71,6 +71,26 @@ export default function SellerCreateFoodScreen() {
     loadCategories();
   }, []);
 
+  const resetForm = () => {
+    setImages([]);
+    setCategoryPath([]);
+    setSelectedCategory(null);
+    setCategoryOptions(categories);
+    setShowCategories(false);
+    setName("");
+    setDescription("");
+    setPrice("");
+    setSpecialPrice("");
+    setStartTime("");
+    setEndTime("");
+    setIsAvailable(true);
+  };
+
+  const handleBack = () => {
+    resetForm();
+    router.back();
+  };
+
   const categoryPathText = useMemo(() => {
     if (selectedCategory) {
       return selectedCategory.path;
@@ -194,6 +214,7 @@ export default function SellerCreateFoodScreen() {
         );
       }
 
+      resetForm();
       router.replace("/seller" as any);
     } catch (error) {
       console.error("Failed to create food:", error);
@@ -210,7 +231,7 @@ export default function SellerCreateFoodScreen() {
         style={styles.keyboardView}
       >
         <View style={styles.header}>
-          <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.headerButton} onPress={handleBack}>
             <ChevronRight color="#000000" size={27} style={styles.backIcon} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Thêm món mới</Text>
