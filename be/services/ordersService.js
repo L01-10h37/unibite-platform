@@ -236,7 +236,7 @@ export const getOrderById = async (orderId, userId) => {
             throw error;
         };
 
-        if (order.user.toString() !== userId) {
+        if (order.user.toString() !== userId && order.seller.toString() !== userId) {
             const error = new Error('Not your order');
             error.statusCode = 403;
             throw error;
@@ -418,7 +418,7 @@ export const cancelOrder = async (orderId, userId) => {
             throw error;
         };
 
-        if (order.user.toString() !== userId) {
+        if (order.user.toString() !== userId && order.seller.toString() !== userId) {
             const error = new Error('Not your order');
             error.statusCode = 403;
             throw error;

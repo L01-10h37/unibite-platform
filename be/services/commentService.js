@@ -1,5 +1,7 @@
 import { logger } from '../utils/logger.js';
 import Comment from '../models/Comment.js';
+import Shop from '../models/Shop.js';
+import Food from '../models/Food.js';
 import mongoose from 'mongoose';
 
 /**
@@ -29,13 +31,21 @@ export const getCommentsByPostId = async (postId, page = 1, limit = 10) => {
 
     const skip = (page - 1) * limit;
 
+    // Nếu postId là shopId, lấy cả comment của shop đó lẫn toàn bộ món ăn (foods) của shop đó
+    let postIds = [postId];
+    const isShop = await Shop.exists({ _id: postId });
+    if (isShop) {
+      const foods = await Food.find({ shop: postId }).select('_id');
+      postIds = [postId, ...foods.map(f => f._id)];
+    }
+
     const [comments, total] = await Promise.all([
-      Comment.find({ postId, isDeleted: false })
+      Comment.find({ postId: { $in: postIds }, isDeleted: false })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .populate('userId', 'username name avatar'), // join thông tin user
-      Comment.countDocuments({ postId, isDeleted: false }),
+      Comment.countDocuments({ postId: { $in: postIds }, isDeleted: false }),
     ]);
 
     return {
