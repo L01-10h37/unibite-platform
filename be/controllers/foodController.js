@@ -183,8 +183,8 @@ export const uploadFoodImages = async (req, res, next) => {
       return errorResponse(res, null, "At least one image file is required", 400);
     }
 
-    if (files.length > 5) {
-      return errorResponse(res, null, "You can upload a maximum of 5 images", 400);
+    if (files.length > 8) {
+      return errorResponse(res, null, "You can upload a maximum of 8 images", 400);
     }
 
     logger.info(`Uploading images for food: ${foodId} by user: ${userId} - Number of files: ${files.length}`);

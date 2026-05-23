@@ -1,6 +1,6 @@
 import express from 'express';
 import * as ordersController from '../controllers/ordersController.js';
-import { authenticate } from '../middleware/authMiddleware.js';
+import { authenticate, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -27,6 +27,17 @@ router.get('/:orderId', authenticate, ordersController.getOrderById);
  * PATCH api/orders/:orderId/status
  */
 router.patch('/:orderId/status', authenticate, ordersController.updateOrderStatus);
+
+/**
+ * Update order status by assigned seller
+ * PATCH api/orders/:orderId/seller-status
+ */
+router.patch(
+	'/:orderId/seller-status',
+	authenticate,
+	authorize('seller'),
+	ordersController.updateSellerOrderStatus
+);
 
 /**
  * Cancel order by id 

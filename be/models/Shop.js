@@ -26,6 +26,12 @@ const shopSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    openingHours: {
+      type: String,
+      trim: true,
+      maxlength: [100, 'Opening hours must not exceed 100 characters'],
+      default: '',
+    },
     about: {
       type: String,
       trim: true,
@@ -55,6 +61,7 @@ shopSchema.methods.getFormattedData = function () {
     userId: this.userId,
     avatar: this.avatar,
     address: this.address,
+    openingHours: this.openingHours,
     about: this.about,
     average_rating: this.average_rating,
     rating_count: this.rating_count,

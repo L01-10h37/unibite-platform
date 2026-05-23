@@ -3,6 +3,7 @@ import Order from '../models/Order.js';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Food from '../models/Food.js';
+import * as foodService from './foodService.js';
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -33,10 +34,24 @@ export const createOrder = async (orderData, userId) => {
 
         const foods = await Food.find({
             _id: { $in: orderData.items.map(i => i.food) }
-        });
+        }).populate("shop");
 
         if (foods.length !== orderData.items.length) {
             const error = new Error('Some foods not found');
+            error.statusCode = 404;
+            throw error;
+        };
+
+        const shopIds = new Set(foods.map((food) => food.shop?._id?.toString()));
+        if (shopIds.size !== 1) {
+            const error = new Error('Order can only contain foods from one shop');
+            error.statusCode = 400;
+            throw error;
+        };
+
+        const sellerId = foods[0]?.shop?.userId;
+        if (!sellerId) {
+            const error = new Error('Seller not found for this order');
             error.statusCode = 404;
             throw error;
         };
@@ -64,6 +79,7 @@ export const createOrder = async (orderData, userId) => {
 
         const order = await Order.create({
             user: userId,
+            seller: sellerId,
             items: orderItems,
             totalPrice,
             deliveryAddress: orderData.deliveryAddress,
@@ -210,6 +226,76 @@ export const updateOrderStatus = async (orderId, newStatus, userId) => {
         return order.getFormattedData?.("detail") || order;
     } catch (error) {
         logger.error('Service: Error updating order status', error);
+		throw error;
+    }
+};
+
+export const updateSellerOrderStatus = async (orderId, newStatus, sellerUserId) => {
+    try {
+        logger.info(`Service: Seller ${sellerUserId} updating order ${orderId} status to ${newStatus}`);
+        const sellerAllowedTransitions = {
+            PENDING: ["CONFIRMED", "CANCELLED"],
+            CONFIRMED: ["PREPARING", "CANCELLED"],
+            PREPARING: ["DELIVERING"],
+            DELIVERING: ["COMPLETED"],
+            COMPLETED: [],
+            CANCELLED: []
+        };
+
+        if (!isValidObjectId(orderId)) {
+            const error = new Error('Invalid orderId format');
+            error.statusCode = 400;
+            throw error;
+        };
+
+        const order = await Order.findById(orderId);
+
+        if (!order) {
+            const error = new Error('Order not found');
+            error.statusCode = 404;
+            throw error;
+        };
+
+        if (!order.seller || order.seller.toString() !== sellerUserId.toString()) {
+            const error = new Error('You do not have permission to update this order');
+            error.statusCode = 403;
+            throw error;
+        };
+
+        const status = newStatus.toUpperCase().trim();
+        if (!Object.values(sellerAllowedTransitions).flat().concat(Object.keys(sellerAllowedTransitions)).includes(status)) {
+            const error = new Error("Invalid status value");
+            error.statusCode = 400;
+            throw error;
+        };
+
+        const currentStatus = order.status;
+        if (!sellerAllowedTransitions[currentStatus]?.includes(status)) {
+            const error = new Error("Invalid status transition");
+            error.statusCode = 400;
+            throw error;
+        };
+
+        order.status = status;
+        order.statusHistory = order.statusHistory || [];
+        order.statusHistory.push({
+            status,
+            updatedAt: new Date(),
+        });
+
+        await order.save();
+
+        if (status === "COMPLETED") {
+            await Promise.all(
+                order.items.map((item) =>
+                    foodService.incrementFoodSoldCount(item.food, item.quantity)
+                )
+            );
+        }
+
+        return order.getFormattedData?.("detail") || order;
+    } catch (error) {
+        logger.error('Service: Error updating seller order status', error);
 		throw error;
     }
 };

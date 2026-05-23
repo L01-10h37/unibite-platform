@@ -93,6 +93,30 @@ export const updateOrderStatus = async (req, res, next) => {
 };
 
 /**
+ * Update order status by seller assigned to the order
+ */
+export const updateSellerOrderStatus = async (req, res, next) => {
+    try {
+        const { status } = req.body;
+        const { orderId } = req.params;
+
+        if (!status || status.trim().length === 0) {
+            return errorResponse(res, null, 'Order status is required', 400);
+        };
+
+        logger.info(`Seller ${req.user.id} updating order status to ${status} for orderId: ${orderId}`);
+
+        const order = await orderService.updateSellerOrderStatus(orderId, status, req.user.id);
+
+        successResponse(res, order, 'Seller updated order status successfully', 200);
+    } catch (error) {
+        logger.error('Error updating seller order status', error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, 'Failed to update seller order status', statusCode);
+    }
+};
+
+/**
  * Cancel order by id
  */
 export const cancelOrder = async (req, res, next) => {

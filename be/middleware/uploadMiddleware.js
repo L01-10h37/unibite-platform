@@ -42,9 +42,9 @@ export const uploadSingleFile = upload.single('avatar');
 
 /**
  * Middleware for multiple file upload
- * Usage: uploadMiddleware.array('images', 5)(req, res, next) - max 5 files
+ * Usage: uploadMiddleware.array('images', 8)(req, res, next) - max 8 files
  */
-export const uploadMultipleFiles = upload.array('images', 5);
+export const uploadMultipleFiles = upload.array('images', 8);
 
 /**
  * Error handling for multer
