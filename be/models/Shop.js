@@ -48,6 +48,11 @@ const shopSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    profit: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true,
@@ -65,6 +70,7 @@ shopSchema.methods.getFormattedData = function () {
     about: this.about,
     average_rating: this.average_rating,
     rating_count: this.rating_count,
+    profit: this.profit,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };

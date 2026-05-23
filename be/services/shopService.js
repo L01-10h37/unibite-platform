@@ -1,5 +1,6 @@
 import { logger } from "../utils/logger.js";
 import Shop from "../models/Shop.js";
+import Order from "../models/Order.js";
 import { uploadAvatarToS3, deleteAvatarFromS3, validateImageFile, validateFileSize } from '../utils/s3Upload.js';
 
 /**
@@ -176,6 +177,124 @@ export const updateShop = async (shopId, userId, updateData) => {
         return updatedShop.getFormattedData?.() || updatedShop;
     } catch (error) {
         logger.error("Service: Error updating shop", error);
+        throw error;
+    }
+};
+
+/**
+ * Increment shop profit by amount.
+ */
+export const incrementShopProfit = async (shopId, amount) => {
+    try {
+        logger.info(`Service: Incrementing shop ${shopId} profit by ${amount}`);
+
+        const increment = Number(amount);
+
+        if (!Number.isFinite(increment) || increment <= 0) {
+            const error = new Error("Profit increment amount must be a positive number");
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const updatedShop = await Shop.findByIdAndUpdate(
+            shopId,
+            { $inc: { profit: increment } },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedShop) {
+            const error = new Error("Shop not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return updatedShop.getFormattedData?.() || updatedShop;
+    } catch (error) {
+        logger.error("Service: Error incrementing shop profit", error);
+        throw error;
+    }
+};
+
+/**
+ * Sync shop profit from completed orders.
+ */
+export const syncShopProfit = async (shopId) => {
+    try {
+        logger.info(`Service: Syncing profit for shop ${shopId}`);
+
+        const shop = await Shop.findById(shopId);
+
+        if (!shop) {
+            const error = new Error("Shop not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const result = await Order.aggregate([
+            {
+                $match: {
+                    seller: shop.userId,
+                    status: "COMPLETED",
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    profit: { $sum: "$totalPrice" },
+                },
+            },
+        ]);
+
+        shop.profit = result[0]?.profit || 0;
+        const updatedShop = await shop.save();
+
+        return updatedShop.getFormattedData?.() || updatedShop;
+    } catch (error) {
+        logger.error("Service: Error syncing shop profit", error);
+        throw error;
+    }
+};
+
+/**
+ * Placeholder: sync shop average rating.
+ */
+export const syncShopAverageRating = async (shopId) => {
+    try {
+        logger.info(`Service: Syncing average rating for shop ${shopId}`);
+
+        const shop = await Shop.findById(shopId);
+
+        if (!shop) {
+            const error = new Error("Shop not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return shop.getFormattedData?.() || shop;
+    } catch (error) {
+        logger.error("Service: Error syncing shop average rating", error);
+        throw error;
+    }
+};
+
+/**
+ * Placeholder: sync shop rating count.
+ */
+export const syncShopRatingCount = async (shopId) => {
+    try {
+        logger.info(`Service: Syncing rating count for shop ${shopId}`);
+
+        const shop = await Shop.findById(shopId);
+
+        if (!shop) {
+            const error = new Error("Shop not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return shop.getFormattedData?.() || shop;
+    } catch (error) {
+        logger.error("Service: Error syncing shop rating count", error);
         throw error;
     }
 };

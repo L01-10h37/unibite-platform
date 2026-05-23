@@ -5,6 +5,9 @@ export type SellerShop = {
   address?: string;
   openingHours?: string;
   about?: string;
+  profit?: number;
+  average_rating?: number;
+  rating_count?: number;
 };
 
 export type SellerFood = {

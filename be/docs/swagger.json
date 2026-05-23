@@ -2490,6 +2490,184 @@
         }
       }
     },
+    "/api/shops/sync/profit/{shopId}": {
+      "post": {
+        "tags": [
+          "shops"
+        ],
+        "summary": "Sync any shop profit by shopId (admin only)",
+        "description": "Recalculate shop profit from COMPLETED orders for the selected shop.",
+        "operationId": "syncShopProfitById",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId of the shop to sync",
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop profit synced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid shopId format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shops/sync/rating-count/{shopId}": {
+      "post": {
+        "tags": [
+          "shops"
+        ],
+        "summary": "Sync any shop rating count by shopId (admin only)",
+        "description": "Placeholder admin endpoint for recalculating rating count of a selected shop.",
+        "operationId": "syncShopRatingCountById",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId of the shop to sync",
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop rating count synced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid shopId format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/shops/{id}": {
       "get": {
         "tags": [
@@ -3104,6 +3282,11 @@
             "type": "integer",
             "example": 120
           },
+          "profit": {
+            "type": "number",
+            "description": "Total revenue from completed orders",
+            "example": 1250000
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -3119,6 +3302,7 @@
           "userId",
           "average_rating",
           "rating_count",
+          "profit",
           "createdAt",
           "updatedAt"
         ]

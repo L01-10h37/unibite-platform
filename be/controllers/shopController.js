@@ -114,6 +114,150 @@ export const updateShop = async (req, res, next) => {
 };
 
 /**
+ * Sync current seller shop profit
+ */
+export const syncMyShopProfit = async (req, res, next) => {
+    try {
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return errorResponse(res, null, "User is required to sync shop profit", 401);
+        }
+
+        const shop = await shopService.getShopByUserId(userId);
+        const syncedShop = await shopService.syncShopProfit(shop.id);
+
+        successResponse(res, syncedShop, "Shop profit synced successfully", 200);
+    } catch (error) {
+        logger.error("Error syncing shop profit", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to sync shop profit", statusCode);
+    }
+};
+
+/**
+ * Sync any shop profit by shopId (admin only)
+ */
+export const syncShopProfitById = async (req, res, next) => {
+    try {
+        const userId = req.user?.id;
+        const { shopId } = req.params;
+
+        if (!userId) {
+            return errorResponse(res, null, "User is required to sync shop profit", 401);
+        }
+
+        if (!shopId) {
+            return errorResponse(res, null, "shopId is required to sync shop profit", 400);
+        }
+
+        const syncedShop = await shopService.syncShopProfit(shopId);
+
+        successResponse(res, syncedShop, "Shop profit synced successfully", 200);
+    } catch (error) {
+        logger.error("Error syncing shop profit by shopId", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to sync shop profit", statusCode);
+    }
+};
+
+/**
+ * Sync any shop average rating by shopId (admin only)
+ */
+export const syncShopAverageRatingById = async (req, res, next) => {
+    try {
+        const userId = req.user?.id;
+        const { shopId } = req.params;
+
+        if (!userId) {
+            return errorResponse(res, null, "User is required to sync shop average rating", 401);
+        }
+
+        if (!shopId) {
+            return errorResponse(res, null, "shopId is required to sync shop average rating", 400);
+        }
+
+        const syncedShop = await shopService.syncShopAverageRating(shopId);
+
+        successResponse(res, syncedShop, "Shop average rating synced successfully", 200);
+    } catch (error) {
+        logger.error("Error syncing shop average rating by shopId", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to sync shop average rating", statusCode);
+    }
+};
+
+/**
+ * Sync any shop rating count by shopId (admin only)
+ */
+export const syncShopRatingCountById = async (req, res, next) => {
+    try {
+        const userId = req.user?.id;
+        const { shopId } = req.params;
+
+        if (!userId) {
+            return errorResponse(res, null, "User is required to sync shop rating count", 401);
+        }
+
+        if (!shopId) {
+            return errorResponse(res, null, "shopId is required to sync shop rating count", 400);
+        }
+
+        const syncedShop = await shopService.syncShopRatingCount(shopId);
+
+        successResponse(res, syncedShop, "Shop rating count synced successfully", 200);
+    } catch (error) {
+        logger.error("Error syncing shop rating count by shopId", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to sync shop rating count", statusCode);
+    }
+};
+
+/**
+ * Sync current seller shop average rating
+ */
+export const syncMyShopAverageRating = async (req, res, next) => {
+    try {
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return errorResponse(res, null, "User is required to sync shop average rating", 401);
+        }
+
+        const shop = await shopService.getShopByUserId(userId);
+        const syncedShop = await shopService.syncShopAverageRating(shop.id);
+
+        successResponse(res, syncedShop, "Shop average rating synced successfully", 200);
+    } catch (error) {
+        logger.error("Error syncing shop average rating", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to sync shop average rating", statusCode);
+    }
+};
+
+/**
+ * Sync current seller shop rating count
+ */
+export const syncMyShopRatingCount = async (req, res, next) => {
+    try {
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return errorResponse(res, null, "User is required to sync shop rating count", 401);
+        }
+
+        const shop = await shopService.getShopByUserId(userId);
+        const syncedShop = await shopService.syncShopRatingCount(shop.id);
+
+        successResponse(res, syncedShop, "Shop rating count synced successfully", 200);
+    } catch (error) {
+        logger.error("Error syncing shop rating count", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to sync shop rating count", statusCode);
+    }
+};
+
+/**
  * Update shop avatar
  */
 export const updateShopAvatar = async (req, res, next) => {
