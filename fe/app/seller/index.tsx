@@ -2,16 +2,13 @@ import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-  getMySellerShop,
-  parseSellerTokens,
-  type SellerShop,
-} from "@/services/seller-shop";
+import { SellerBottomTabBar } from "@/components/seller-bottom-tab-bar";
+import { getMySellerShop, parseSellerTokens } from "@/services/seller-shop";
 
 export default function SellerHomeScreen() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [shop, setShop] = useState<SellerShop | null>(null);
 
   useEffect(() => {
     const checkSellerAuth = async () => {
@@ -32,7 +29,6 @@ export default function SellerHomeScreen() {
           return;
         }
 
-        setShop(currentShop);
         setIsCheckingAuth(false);
       } catch (error) {
         console.error("Error checking seller shop:", error);
@@ -45,53 +41,52 @@ export default function SellerHomeScreen() {
 
   if (isCheckingAuth) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#9DBCF0" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2478FF" />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Kênh người bán</Text>
-      <Text style={styles.shopName}>{shop?.name}</Text>
-      <Text style={styles.subtitle}>
-        Shop đã sẵn sàng. Bạn có thể tiếp tục thêm các màn quản lý món ăn,
-        đơn hàng và thông tin cửa hàng trong khu vực người bán.
-      </Text>
-    </View>
+    <SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
+      <View style={styles.content}>
+        <Text style={styles.title}>Đang phát triển</Text>
+        <Text style={styles.subtitle}>Tính năng Home cho người bán sẽ được cập nhật sau.</Text>
+      </View>
+      <SellerBottomTabBar />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  center: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#EAF9F8",
+  },
+  loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#EAF9F8",
   },
-  container: {
+  content: {
     flex: 1,
+    alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 24,
-    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 32,
   },
   title: {
+    color: "#111111",
     fontFamily: "Montserrat-ExtraBold",
-    fontSize: 28,
-    color: "#9DBCF0",
-    marginBottom: 12,
-  },
-  shopName: {
-    fontFamily: "Montserrat-Bold",
-    fontSize: 20,
-    color: "#424242",
-    marginBottom: 8,
+    fontSize: 24,
+    marginBottom: 10,
+    textAlign: "center",
   },
   subtitle: {
+    color: "#65727F",
     fontFamily: "Montserrat-Medium",
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#616161",
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
   },
 });
