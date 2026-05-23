@@ -82,6 +82,8 @@ export default function RootLayout() {
         <Stack.Screen name="signup" options={{ presentation: 'modal', headerShown: false, title: 'Sign Up' }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="seller" options={{ headerShown: false }} />
+        <Stack.Screen name="search" options={{ headerShown: false }} />
+        <Stack.Screen name="filter" options={{ headerShown: false }} />
         <Stack.Screen name="food-detail" options={{ headerShown: false }} />
         <Stack.Screen name="shop-detail" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false, title: 'Thông tin' }} />

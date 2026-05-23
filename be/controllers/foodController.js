@@ -13,12 +13,26 @@ export const getAllFood = async (req, res, next) => {
     const categoryId = req.query.categoryId || null;
     const shopId = req.query.shopId || null;
     const minRating = parseFloat(req.query.minRating) || 0;
-    const order = req.query.order || "desc";
+    const minPrice = req.query.minPrice != null ? parseFloat(req.query.minPrice) : null;
+    const maxPrice = req.query.maxPrice != null ? parseFloat(req.query.maxPrice) : null;
+    const area = req.query.area || "";
+    const order = req.query.order || "relevant";
 
     logger.info(
-      `Fetching foods - Page: ${page}, Limit: ${limit}, Search: ${search}, CategoryId: ${categoryId}, ShopId: ${shopId}, MinRating: ${minRating}, Order: ${order}`
+      `Fetching foods - Page: ${page}, Limit: ${limit}, Search: ${search}, CategoryId: ${categoryId}, ShopId: ${shopId}, MinRating: ${minRating}, MinPrice: ${minPrice}, MaxPrice: ${maxPrice}, Area: ${area}, Order: ${order}`
     );
-    const result = await foodService.getAllFood(page, limit, search, categoryId, shopId, minRating, order);
+    const result = await foodService.getAllFood(
+      page,
+      limit,
+      search,
+      categoryId,
+      shopId,
+      minRating,
+      order,
+      minPrice,
+      maxPrice,
+      area
+    );
 
     paginatedResponse(
       res,
@@ -225,9 +239,21 @@ export const searchFoods = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search || "";
     const minRating = parseFloat(req.query.minRating) || 0;
-    const order = req.query.order || "desc";
+    const minPrice = req.query.minPrice != null ? parseFloat(req.query.minPrice) : null;
+    const maxPrice = req.query.maxPrice != null ? parseFloat(req.query.maxPrice) : null;
+    const area = req.query.area || "";
+    const order = req.query.order || "relevant";
 
-    const result = await foodService.searchFoods(page, limit, search, minRating, order);
+    const result = await foodService.searchFoods(
+      page,
+      limit,
+      search,
+      minRating,
+      order,
+      minPrice,
+      maxPrice,
+      area
+    );
 
     paginatedResponse(
       res,
