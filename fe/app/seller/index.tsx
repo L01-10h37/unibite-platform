@@ -15,7 +15,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronRight, Plus } from "lucide-react-native";
 
-import { SellerBottomTabBar } from "@/components/seller-bottom-tab-bar";
 import {
   getMySellerShop,
   getSellerMenu,
@@ -201,8 +200,6 @@ export default function SellerHomeScreen() {
           )}
         </View>
       </ScrollView>
-
-      <SellerBottomTabBar />
     </SafeAreaView>
   );
 }
