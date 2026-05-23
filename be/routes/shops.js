@@ -15,6 +15,36 @@ router.get('/', shopController.getAllShops);
 router.get('/my-shop', authenticate, authorize('seller'), shopController.getMyShop);
 
 /**
+ * POST sync any shop profit by shopId (admin only)
+ */
+router.post(
+    '/sync/profit/:shopId([0-9a-fA-F]{24})',
+    authenticate,
+    authorize('admin'),
+    shopController.syncShopProfitById
+);
+
+/**
+ * POST sync any shop average rating by shopId (admin only)
+ */
+router.post(
+    '/sync/average-rating/:shopId([0-9a-fA-F]{24})',
+    authenticate,
+    authorize('admin'),
+    shopController.syncShopAverageRatingById
+);
+
+/**
+ * POST sync any shop rating count by shopId (admin only)
+ */
+router.post(
+    '/sync/rating-count/:shopId([0-9a-fA-F]{24})',
+    authenticate,
+    authorize('admin'),
+    shopController.syncShopRatingCountById
+);
+
+/**
  * GET shop by id
  */
 router.get('/:id([0-9a-fA-F]{24})', shopController.getShopById);

@@ -185,6 +185,17 @@ export default function SellerHomeScreen() {
 
     return SHOP_AVATAR_FALLBACK;
   }, [shop?.avatar]);
+  const shopMetrics = useMemo(() => {
+    const profit = shop?.profit ?? 0;
+    const ratingCount = shop?.rating_count ?? 0;
+    const averageRating = shop?.average_rating ?? 0;
+
+    return {
+      profit: formatProfitMetric(profit),
+      ratingCount: String(ratingCount),
+      rating: ratingCount > 0 ? `${averageRating.toFixed(1)}/5` : "-/5",
+    };
+  }, [shop?.average_rating, shop?.profit, shop?.rating_count]);
   const orderStats = useMemo(() => getOrderStats(orders), [orders]);
 
   if (isLoading) {
@@ -226,9 +237,9 @@ export default function SellerHomeScreen() {
           <ChevronRight size={18} color="#8EA0B4" />
 
           <View style={styles.shopMetrics}>
-            <Metric value="-" label="Lợi nhuận" />
-            <Metric value="-" label="Khách" />
-            <Metric value="-" label="Tỷ lệ chuyển đổi" />
+            <Metric value={shopMetrics.profit} label="Lợi nhuận" />
+            <Metric value={shopMetrics.ratingCount} label="Lượt đánh giá" />
+            <Metric value={shopMetrics.rating} label="Đánh giá" />
           </View>
         </TouchableOpacity>
 
@@ -687,6 +698,20 @@ function FoodRow({
 
 function formatPrice(value: number) {
   return `${Number(value || 0).toLocaleString("vi-VN")} VNĐ`;
+}
+
+function formatProfitMetric(value: number) {
+  const amount = Number(value || 0);
+
+  if (amount >= 1000000) {
+    return `${(amount / 1000000).toFixed(1)}tr`;
+  }
+
+  if (amount >= 1000) {
+    return `${Math.round(amount / 1000)}k`;
+  }
+
+  return `${amount}`;
 }
 
 const styles = StyleSheet.create({

@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Food from '../models/Food.js';
 import * as foodService from './foodService.js';
+import * as shopService from './shopService.js';
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -308,6 +309,14 @@ export const updateOrderStatus = async (orderId, newStatus, userId) => {
 
         await order.save();
 
+        if (status === "COMPLETED") {
+            const firstFood = await Food.findById(order.items[0]?.food).select("shop").lean();
+
+            if (firstFood?.shop) {
+                await shopService.incrementShopProfit(firstFood.shop, order.totalPrice);
+            }
+        }
+
         return order.getFormattedData?.("detail") || order;
     } catch (error) {
         logger.error('Service: Error updating order status', error);
@@ -371,11 +380,17 @@ export const updateSellerOrderStatus = async (orderId, newStatus, sellerUserId) 
         await order.save();
 
         if (status === "COMPLETED") {
+            const firstFood = await Food.findById(order.items[0]?.food).select("shop").lean();
+
             await Promise.all(
                 order.items.map((item) =>
                     foodService.incrementFoodSoldCount(item.food, item.quantity)
                 )
             );
+
+            if (firstFood?.shop) {
+                await shopService.incrementShopProfit(firstFood.shop, order.totalPrice);
+            }
         }
 
         return order.getFormattedData?.("detail") || order;
