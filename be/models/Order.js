@@ -33,6 +33,12 @@ const orderSchema = new mongoose.Schema(
 			required: true,
 		},
 
+		seller: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "User",
+			required: true,
+		},
+
 		items: {
 			type: [orderItemSchema],
 			validate: [(val) => val.length > 0, "Order must have at least 1 item"],
@@ -88,13 +94,15 @@ const orderSchema = new mongoose.Schema(
 	}
 );
 
-orderSchema.index({ userId: 1, createdAt: -1});
+orderSchema.index({ user: 1, createdAt: -1});
+orderSchema.index({ seller: 1, createdAt: -1});
 orderSchema.index({ status: 1});
 
 orderSchema.methods.getFormattedData = function (type = "basic") {
 	if (type === "basic") {
 		return {
 			id: this._id,
+			seller: this.seller,
 			totalPrice: this.totalPrice,
 			status: this.status,
 		};
@@ -103,6 +111,8 @@ orderSchema.methods.getFormattedData = function (type = "basic") {
 	if (type === "detail") {
 		return {
 			id: this._id,
+			user: this.user,
+			seller: this.seller,
 			items: this.items,
 			totalPrice: this.totalPrice,
 			status: this.status,

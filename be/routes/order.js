@@ -1,6 +1,6 @@
 import express from 'express';
 import * as ordersController from '../controllers/ordersController.js';
-import { authenticate } from '../middleware/authMiddleware.js';
+import { authenticate, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -17,6 +17,17 @@ router.post('/', authenticate, ordersController.createOrder);
 router.get('/my', authenticate, ordersController.getMyOrders);
 
 /**
+ * Get all seller's orders
+ * GET api/orders/seller/my?fromDate=2026-05-01&toDate=2026-05-23&status=PENDING
+ */
+router.get(
+	'/seller/my',
+	authenticate,
+	authorize('seller'),
+	ordersController.getMySellerOrders
+);
+
+/**
  * Get order status by id
  * GET api/orders/:orderId
  */
@@ -27,6 +38,17 @@ router.get('/:orderId', authenticate, ordersController.getOrderById);
  * PATCH api/orders/:orderId/status
  */
 router.patch('/:orderId/status', authenticate, ordersController.updateOrderStatus);
+
+/**
+ * Update order status by assigned seller
+ * PATCH api/orders/:orderId/seller-status
+ */
+router.patch(
+	'/:orderId/seller-status',
+	authenticate,
+	authorize('seller'),
+	ordersController.updateSellerOrderStatus
+);
 
 /**
  * Cancel order by id 

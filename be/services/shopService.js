@@ -104,6 +104,7 @@ export const createShop = async (shopData) => {
             name: shopData.name,
             avatar: shopData.avatar,
             address: shopData.address,
+            openingHours: shopData.openingHours,
             about: shopData.about,
             userId: shopData.userId,
         };
@@ -141,6 +142,10 @@ export const updateShop = async (shopId, userId, updateData) => {
 
         if (updateData.address !== undefined) {
             allowedUpdateData.address = updateData.address;
+        }
+
+        if (updateData.openingHours !== undefined) {
+            allowedUpdateData.openingHours = updateData.openingHours;
         }
 
         if (updateData.about !== undefined) {

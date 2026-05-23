@@ -410,6 +410,42 @@ export const updateFood = async (foodId, userId, updateData) => {
 };
 
 /**
+ * Increment sold count for a food item.
+ */
+export const incrementFoodSoldCount = async (foodId, amount = 1) => {
+  try {
+    logger.info(`Service: Incrementing sold count for food ${foodId} by ${amount}`);
+
+    const increment = Number(amount);
+
+    if (!Number.isFinite(increment) || increment <= 0) {
+      const error = new Error("Increment amount must be a positive number");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const updatedFood = await Food.findByIdAndUpdate(
+      foodId,
+      { $inc: { sold_count: increment } },
+      { new: true, runValidators: true }
+    ).populate(["category", "shop"]);
+
+    if (!updatedFood) {
+      const error = new Error("Food not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    await foodSearchService.safeIndexFoodSearchDocument(updatedFood, logger);
+
+    return updatedFood.getFormattedData?.() || updatedFood;
+  } catch (error) {
+    logger.error("Service: Error incrementing food sold count", error);
+    throw error;
+  }
+};
+
+/**
  * Delete food (auth required)
  */
 export const deleteFood = async (foodId, userId) => {

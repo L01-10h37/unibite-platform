@@ -6,21 +6,25 @@ import {
   ActivityIndicator,
   Image,
   ImageSourcePropType,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ChevronRight, Plus } from "lucide-react-native";
+import { CalendarDays, ChevronLeft, ChevronRight, Plus } from "lucide-react-native";
 
 import {
   getMySellerShop,
+  getMySellerOrders,
   getSellerMenu,
   parseSellerTokens,
   updateSellerFood,
   type SellerFood,
+  type SellerOrder,
   type SellerShop,
 } from "@/services/seller-shop";
 
@@ -39,6 +43,61 @@ export default function SellerHomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [shop, setShop] = useState<SellerShop | null>(null);
   const [menu, setMenu] = useState<SellerFood[]>([]);
+  const [orders, setOrders] = useState<SellerOrder[]>([]);
+  const [orderRange, setOrderRange] = useState(() => getCurrentMonthRange());
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [draftFromDate, setDraftFromDate] = useState(orderRange.fromDate);
+  const [draftToDate, setDraftToDate] = useState(orderRange.toDate);
+  const [calendarTarget, setCalendarTarget] = useState<"from" | "to" | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState(() =>
+    parseApiDate(orderRange.toDate),
+  );
+
+  const openDateFilter = () => {
+    setDraftFromDate(orderRange.fromDate);
+    setDraftToDate(orderRange.toDate);
+    setCalendarTarget(null);
+    setShowDateFilter(true);
+  };
+
+  const applyDateFilter = () => {
+    if (!isValidApiDate(draftFromDate) || !isValidApiDate(draftToDate)) {
+      return;
+    }
+
+    setOrderRange({
+      fromDate: draftFromDate,
+      toDate: draftToDate,
+    });
+    setShowDateFilter(false);
+  };
+
+  const resetDateFilter = () => {
+    const currentMonthRange = getCurrentMonthRange();
+
+    setDraftFromDate(currentMonthRange.fromDate);
+    setDraftToDate(currentMonthRange.toDate);
+    setOrderRange(currentMonthRange);
+    setCalendarTarget(null);
+    setShowDateFilter(false);
+  };
+
+  const openCalendar = (target: "from" | "to") => {
+    const date = target === "from" ? draftFromDate : draftToDate;
+
+    setCalendarTarget(target);
+    setCalendarMonth(isValidApiDate(date) ? parseApiDate(date) : new Date());
+  };
+
+  const selectCalendarDate = (date: string) => {
+    if (calendarTarget === "from") {
+      setDraftFromDate(date);
+    } else if (calendarTarget === "to") {
+      setDraftToDate(date);
+    }
+
+    setCalendarTarget(null);
+  };
 
   const handleToggleAvailability = async (food: SellerFood) => {
     try {
@@ -87,10 +146,19 @@ export default function SellerHomeScreen() {
             console.error("Failed to load seller menu:", error);
             return [];
           });
+          const sellerOrders = await getMySellerOrders(tokens.accessToken, {
+            fromDate: orderRange.fromDate,
+            toDate: orderRange.toDate,
+            limit: 1000,
+          }).catch((error) => {
+            console.error("Failed to load seller orders:", error);
+            return { orders: [] };
+          });
 
           if (isActive) {
             setShop(currentShop);
             setMenu(foods);
+            setOrders(sellerOrders.orders);
           }
         } catch (error) {
           console.error("Error loading seller home:", error);
@@ -107,7 +175,7 @@ export default function SellerHomeScreen() {
       return () => {
         isActive = false;
       };
-    }, []),
+    }, [orderRange.fromDate, orderRange.toDate]),
   );
 
   const avatarSource = useMemo<ImageSourcePropType>(() => {
@@ -117,6 +185,7 @@ export default function SellerHomeScreen() {
 
     return SHOP_AVATAR_FALLBACK;
   }, [shop?.avatar]);
+  const orderStats = useMemo(() => getOrderStats(orders), [orders]);
 
   if (isLoading) {
     return (
@@ -168,16 +237,28 @@ export default function SellerHomeScreen() {
             <Text {...noFontScale} style={styles.cardTitle}>
               Đơn hàng
             </Text>
-            <Text {...noFontScale} style={styles.cardDate}>
-              12/04/2026
-            </Text>
-            <ChevronRight size={17} color="#8EA0B4" />
+            <TouchableOpacity
+              activeOpacity={0.78}
+              onPress={openDateFilter}
+              style={styles.dateResetButton}
+            >
+              <Text {...noFontScale} style={styles.cardDate}>
+                {formatDateRange(orderRange)}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.78}
+              onPress={openDateFilter}
+              style={styles.headerChevronButton}
+            >
+              <ChevronRight size={17} color="#8EA0B4" />
+            </TouchableOpacity>
           </View>
           <View style={styles.orderStats}>
-            <OrderStat active value="0" label="Đang chờ" />
-            <OrderStat value="0" label="Thành công" />
-            <OrderStat value="0" label="Thất bại" />
-            <OrderStat value="0" label="Đánh giá" />
+            <OrderStat active value={String(orderStats.pending)} label="Đang chờ" />
+            <OrderStat value={String(orderStats.completed)} label="Hoàn thành" />
+            <OrderStat value={String(orderStats.processing)} label="Đang xử lý" />
+            <OrderStat value={String(orderStats.total)} label="Tổng đơn" />
           </View>
         </View>
 
@@ -220,6 +301,70 @@ export default function SellerHomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={showDateFilter}
+        onRequestClose={() => setShowDateFilter(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.dateModal}>
+            <Text {...noFontScale} style={styles.modalTitle}>
+              Chọn ngày đơn hàng
+            </Text>
+            <DateInputRow
+              label="Từ ngày"
+              value={draftFromDate}
+              onChangeText={setDraftFromDate}
+              onOpenCalendar={() => openCalendar("from")}
+            />
+            <DateInputRow
+              label="Đến ngày"
+              value={draftToDate}
+              onChangeText={setDraftToDate}
+              onOpenCalendar={() => openCalendar("to")}
+            />
+            {calendarTarget ? (
+              <CalendarPicker
+                monthDate={calendarMonth}
+                selectedDate={calendarTarget === "from" ? draftFromDate : draftToDate}
+                onChangeMonth={setCalendarMonth}
+                onSelectDate={selectCalendarDate}
+              />
+            ) : null}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                activeOpacity={0.78}
+                onPress={resetDateFilter}
+                style={styles.modalSecondaryButton}
+              >
+                <Text {...noFontScale} numberOfLines={1} style={styles.modalSecondaryText}>
+                  Tháng này
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.78}
+                onPress={applyDateFilter}
+                style={styles.modalPrimaryButton}
+              >
+                <Text {...noFontScale} numberOfLines={1} style={styles.modalPrimaryText}>
+                  Áp dụng
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.78}
+              onPress={() => setShowDateFilter(false)}
+              style={styles.modalCloseButton}
+            >
+              <Text {...noFontScale} style={styles.modalCloseText}>
+                Đóng
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -256,6 +401,228 @@ function OrderStat({
       </Text>
     </View>
   );
+}
+
+function DateInputRow({
+  label,
+  onChangeText,
+  onOpenCalendar,
+  value,
+}: {
+  label: string;
+  onChangeText: (value: string) => void;
+  onOpenCalendar: () => void;
+  value: string;
+}) {
+  return (
+    <View style={styles.dateInputGroup}>
+      <Text {...noFontScale} style={styles.dateInputLabel}>
+        {label}
+      </Text>
+      <View style={styles.dateInputRow}>
+        <TextInput
+          {...noFontScale}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder="YYYY-MM-DD"
+          placeholderTextColor="#9AA6B9"
+          style={styles.dateInput}
+        />
+        <TouchableOpacity
+          activeOpacity={0.78}
+          onPress={onOpenCalendar}
+          style={styles.calendarButton}
+        >
+          <CalendarDays size={18} color={BLUE} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+function CalendarPicker({
+  monthDate,
+  onChangeMonth,
+  onSelectDate,
+  selectedDate,
+}: {
+  monthDate: Date;
+  onChangeMonth: (date: Date) => void;
+  onSelectDate: (date: string) => void;
+  selectedDate: string;
+}) {
+  const weeks = useMemo(() => buildCalendarWeeks(monthDate), [monthDate]);
+  const monthLabel = `${String(monthDate.getMonth() + 1).padStart(2, "0")}/${monthDate.getFullYear()}`;
+  const weekDays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+
+  const shiftMonth = (offset: number) => {
+    onChangeMonth(new Date(monthDate.getFullYear(), monthDate.getMonth() + offset, 1));
+  };
+
+  return (
+    <View style={styles.calendarPanel}>
+      <View style={styles.calendarHeader}>
+        <TouchableOpacity
+          activeOpacity={0.78}
+          onPress={() => shiftMonth(-1)}
+          style={styles.calendarNavButton}
+        >
+          <ChevronLeft size={18} color="#596879" />
+        </TouchableOpacity>
+        <Text {...noFontScale} style={styles.calendarMonthText}>
+          {monthLabel}
+        </Text>
+        <TouchableOpacity
+          activeOpacity={0.78}
+          onPress={() => shiftMonth(1)}
+          style={styles.calendarNavButton}
+        >
+          <ChevronRight size={18} color="#596879" />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.calendarWeekRow}>
+        {weekDays.map((day) => (
+          <Text {...noFontScale} key={day} style={styles.calendarWeekText}>
+            {day}
+          </Text>
+        ))}
+      </View>
+      {weeks.map((week, weekIndex) => (
+        <View key={`week-${weekIndex}`} style={styles.calendarWeekRow}>
+          {week.map((date, dateIndex) => {
+            const dateValue = date ? formatApiDate(date) : "";
+            const active = dateValue === selectedDate;
+
+            return (
+              <TouchableOpacity
+                activeOpacity={date ? 0.78 : 1}
+                disabled={!date}
+                key={`${weekIndex}-${dateIndex}`}
+                onPress={() => date && onSelectDate(dateValue)}
+                style={[styles.calendarDayButton, active && styles.calendarDayActive]}
+              >
+                <Text
+                  {...noFontScale}
+                  style={[styles.calendarDayText, active && styles.calendarDayTextActive]}
+                >
+                  {date ? date.getDate() : ""}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ))}
+      <View style={styles.calendarFooter}>
+        <TouchableOpacity
+          activeOpacity={0.78}
+          onPress={() => onSelectDate(formatApiDate(new Date()))}
+        >
+          <Text {...noFontScale} style={styles.calendarTodayText}>
+            Hôm nay
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+function getOrderStats(orders: SellerOrder[]) {
+  return orders.reduce(
+    (stats, order) => {
+      const status = order.status?.toUpperCase();
+
+      stats.total += 1;
+
+      if (status === "PENDING") {
+        stats.pending += 1;
+      } else if (status === "COMPLETED") {
+        stats.completed += 1;
+      } else if (status !== "CANCELLED") {
+        stats.processing += 1;
+      }
+
+      return stats;
+    },
+    {
+      pending: 0,
+      completed: 0,
+      processing: 0,
+      total: 0,
+    },
+  );
+}
+
+function getCurrentMonthRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  return {
+    fromDate: formatApiDate(start),
+    toDate: formatApiDate(now),
+  };
+}
+
+function parseApiDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function isValidApiDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const date = parseApiDate(value);
+  return formatApiDate(date) === value;
+}
+
+function buildCalendarWeeks(monthDate: Date) {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const leadingEmptyDays = (firstDay.getDay() + 6) % 7;
+  const cells: Array<Date | null> = [];
+
+  for (let index = 0; index < leadingEmptyDays; index += 1) {
+    cells.push(null);
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    cells.push(new Date(year, month, day));
+  }
+
+  while (cells.length % 7 !== 0) {
+    cells.push(null);
+  }
+
+  const weeks: Array<Array<Date | null>> = [];
+
+  for (let index = 0; index < cells.length; index += 7) {
+    weeks.push(cells.slice(index, index + 7));
+  }
+
+  return weeks;
+}
+
+function formatApiDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatDisplayDate(value: string) {
+  const date = parseApiDate(value);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+
+  return `${day}/${month}`;
+}
+
+function formatDateRange(range: { fromDate: string; toDate: string }) {
+  return `${formatDisplayDate(range.fromDate)} - ${formatDisplayDate(range.toDate)}`;
 }
 
 function FoodRow({
@@ -444,12 +811,232 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat-Medium",
     fontSize: 12,
     lineHeight: 16,
+  },
+  dateResetButton: {
     marginRight: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: "#F3F7FC",
+  },
+  headerChevronButton: {
+    width: 26,
+    height: 26,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dateFilterRow: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 10,
+  },
+  dateFilterButton: {
+    flex: 1,
+    minHeight: 25,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#D6E2EF",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  dateFilterButtonActive: {
+    flex: 1,
+    minHeight: 25,
+    borderRadius: 999,
+    backgroundColor: "#E8F1FF",
+    borderWidth: 1,
+    borderColor: "#AFCBFA",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  dateFilterText: {
+    color: "#7C8CA0",
+    fontFamily: "Montserrat-Medium",
+    fontSize: 10,
+    lineHeight: 13,
+  },
+  dateFilterTextActive: {
+    color: BLUE,
+    fontFamily: "Montserrat-Bold",
+    fontSize: 10,
+    lineHeight: 13,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.28)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 26,
+  },
+  dateModal: {
+    width: "100%",
+    maxWidth: 360,
+    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
+    padding: 18,
+  },
+  modalTitle: {
+    color: "#111111",
+    fontFamily: "Montserrat-ExtraBold",
+    fontSize: 17,
+    lineHeight: 22,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  dateInputGroup: {
+    marginBottom: 12,
+  },
+  dateInputLabel: {
+    color: "#4C5A68",
+    fontFamily: "Montserrat-Bold",
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 6,
+  },
+  dateInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D6E2EF",
+    borderRadius: 10,
+  },
+  dateInput: {
+    flex: 1,
+    height: 42,
+    paddingHorizontal: 12,
+    color: "#111111",
+    fontFamily: "Montserrat-Medium",
+    fontSize: 13,
+  },
+  calendarButton: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calendarPanel: {
+    borderWidth: 1,
+    borderColor: "#D6E2EF",
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 12,
+    backgroundColor: "#FFFFFF",
+  },
+  calendarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  calendarNavButton: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calendarMonthText: {
+    color: "#111111",
+    fontFamily: "Montserrat-Bold",
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  calendarWeekRow: {
+    flexDirection: "row",
+  },
+  calendarWeekText: {
+    flex: 1,
+    color: "#7C8CA0",
+    fontFamily: "Montserrat-Bold",
+    fontSize: 11,
+    lineHeight: 20,
+    textAlign: "center",
+  },
+  calendarDayButton: {
+    flex: 1,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+  },
+  calendarDayActive: {
+    backgroundColor: BLUE,
+  },
+  calendarDayText: {
+    color: "#334155",
+    fontFamily: "Montserrat-Medium",
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  calendarDayTextActive: {
+    color: "#FFFFFF",
+    fontFamily: "Montserrat-Bold",
+  },
+  calendarFooter: {
+    alignItems: "flex-end",
+    paddingTop: 8,
+  },
+  calendarTodayText: {
+    color: BLUE,
+    fontFamily: "Montserrat-Bold",
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4,
+  },
+  modalSecondaryButton: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#AFCBFA",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  modalPrimaryButton: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 999,
+    backgroundColor: BLUE,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  modalSecondaryText: {
+    color: BLUE,
+    fontFamily: "Montserrat-Bold",
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: "center",
+  },
+  modalPrimaryText: {
+    color: "#FFFFFF",
+    fontFamily: "Montserrat-Bold",
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: "center",
+  },
+  modalCloseButton: {
+    alignSelf: "center",
+    marginTop: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+  },
+  modalCloseText: {
+    color: "#7C8CA0",
+    fontFamily: "Montserrat-Medium",
+    fontSize: 12,
+    lineHeight: 16,
   },
   orderStats: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingTop: 13,
+    paddingTop: 12,
   },
   orderStat: {
     width: "24%",

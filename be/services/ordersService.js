@@ -3,6 +3,7 @@ import Order from '../models/Order.js';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Food from '../models/Food.js';
+import * as foodService from './foodService.js';
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -33,10 +34,24 @@ export const createOrder = async (orderData, userId) => {
 
         const foods = await Food.find({
             _id: { $in: orderData.items.map(i => i.food) }
-        });
+        }).populate("shop");
 
         if (foods.length !== orderData.items.length) {
             const error = new Error('Some foods not found');
+            error.statusCode = 404;
+            throw error;
+        };
+
+        const shopIds = new Set(foods.map((food) => food.shop?._id?.toString()));
+        if (shopIds.size !== 1) {
+            const error = new Error('Order can only contain foods from one shop');
+            error.statusCode = 400;
+            throw error;
+        };
+
+        const sellerId = foods[0]?.shop?.userId;
+        if (!sellerId) {
+            const error = new Error('Seller not found for this order');
             error.statusCode = 404;
             throw error;
         };
@@ -64,6 +79,7 @@ export const createOrder = async (orderData, userId) => {
 
         const order = await Order.create({
             user: userId,
+            seller: sellerId,
             items: orderItems,
             totalPrice,
             deliveryAddress: orderData.deliveryAddress,
@@ -109,6 +125,91 @@ export const getMyOrders = async (userId, page = 1, limit = 10) => {
         };
     } catch (error) {
         logger.error('Service: Error getting all orders', error);
+		throw error;
+    }
+};
+
+/**
+ * Get orders assigned to current seller with optional date/status filters
+ */
+export const getMySellerOrders = async (
+    sellerUserId,
+    page = 1,
+    limit = 10,
+    filters = {}
+) => {
+    try {
+        logger.info('Service: Getting seller orders for seller id: ', sellerUserId);
+
+        const skip = (page - 1) * limit;
+        const query = { seller: sellerUserId };
+        const { fromDate, toDate, status } = filters;
+
+        if (status && status.trim()) {
+            const normalizedStatus = status.toUpperCase().trim();
+            const validStatuses = [
+                "PENDING",
+                "CONFIRMED",
+                "PREPARING",
+                "DELIVERING",
+                "COMPLETED",
+                "CANCELLED",
+            ];
+
+            if (!validStatuses.includes(normalizedStatus)) {
+                const error = new Error("Invalid status value");
+                error.statusCode = 400;
+                throw error;
+            }
+
+            query.status = normalizedStatus;
+        }
+
+        if (fromDate || toDate) {
+            query.createdAt = {};
+
+            if (fromDate) {
+                const startDate = new Date(fromDate);
+
+                if (Number.isNaN(startDate.getTime())) {
+                    const error = new Error("Invalid fromDate value");
+                    error.statusCode = 400;
+                    throw error;
+                }
+
+                startDate.setHours(0, 0, 0, 0);
+                query.createdAt.$gte = startDate;
+            }
+
+            if (toDate) {
+                const endDate = new Date(toDate);
+
+                if (Number.isNaN(endDate.getTime())) {
+                    const error = new Error("Invalid toDate value");
+                    error.statusCode = 400;
+                    throw error;
+                }
+
+                endDate.setHours(23, 59, 59, 999);
+                query.createdAt.$lte = endDate;
+            }
+        }
+
+        const [orders, total] = await Promise.all([
+            Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Order.countDocuments(query),
+        ]);
+
+        return {
+            orders: orders.map(o => o.getFormattedData?.("detail") || o),
+            pagination: {
+                page,
+                limit,
+                total,
+            },
+        };
+    } catch (error) {
+        logger.error('Service: Error getting seller orders', error);
 		throw error;
     }
 };
@@ -210,6 +311,76 @@ export const updateOrderStatus = async (orderId, newStatus, userId) => {
         return order.getFormattedData?.("detail") || order;
     } catch (error) {
         logger.error('Service: Error updating order status', error);
+		throw error;
+    }
+};
+
+export const updateSellerOrderStatus = async (orderId, newStatus, sellerUserId) => {
+    try {
+        logger.info(`Service: Seller ${sellerUserId} updating order ${orderId} status to ${newStatus}`);
+        const sellerAllowedTransitions = {
+            PENDING: ["CONFIRMED", "CANCELLED"],
+            CONFIRMED: ["PREPARING", "CANCELLED"],
+            PREPARING: ["DELIVERING"],
+            DELIVERING: ["COMPLETED"],
+            COMPLETED: [],
+            CANCELLED: []
+        };
+
+        if (!isValidObjectId(orderId)) {
+            const error = new Error('Invalid orderId format');
+            error.statusCode = 400;
+            throw error;
+        };
+
+        const order = await Order.findById(orderId);
+
+        if (!order) {
+            const error = new Error('Order not found');
+            error.statusCode = 404;
+            throw error;
+        };
+
+        if (!order.seller || order.seller.toString() !== sellerUserId.toString()) {
+            const error = new Error('You do not have permission to update this order');
+            error.statusCode = 403;
+            throw error;
+        };
+
+        const status = newStatus.toUpperCase().trim();
+        if (!Object.values(sellerAllowedTransitions).flat().concat(Object.keys(sellerAllowedTransitions)).includes(status)) {
+            const error = new Error("Invalid status value");
+            error.statusCode = 400;
+            throw error;
+        };
+
+        const currentStatus = order.status;
+        if (!sellerAllowedTransitions[currentStatus]?.includes(status)) {
+            const error = new Error("Invalid status transition");
+            error.statusCode = 400;
+            throw error;
+        };
+
+        order.status = status;
+        order.statusHistory = order.statusHistory || [];
+        order.statusHistory.push({
+            status,
+            updatedAt: new Date(),
+        });
+
+        await order.save();
+
+        if (status === "COMPLETED") {
+            await Promise.all(
+                order.items.map((item) =>
+                    foodService.incrementFoodSoldCount(item.food, item.quantity)
+                )
+            );
+        }
+
+        return order.getFormattedData?.("detail") || order;
+    } catch (error) {
+        logger.error('Service: Error updating seller order status', error);
 		throw error;
     }
 };
