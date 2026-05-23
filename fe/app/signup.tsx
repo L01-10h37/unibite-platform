@@ -174,7 +174,7 @@ export default function SignUpScreen() {
                 activeOpacity={0.85}
               >
                 <User color="#FFFFFF" size={16} />
-                <Text {...noFontScale} style={styles.roleSwitchTextActive}>
+                <Text {...noFontScale} numberOfLines={1} style={styles.roleSwitchTextActive}>
                   Người mua
                 </Text>
               </TouchableOpacity>
@@ -184,7 +184,7 @@ export default function SignUpScreen() {
                 onPress={() => router.push("/seller/signup" as any)}
               >
                 <Store color="#459B5E" size={16} />
-                <Text {...noFontScale} style={styles.roleSwitchText}>
+                <Text {...noFontScale} numberOfLines={1} style={styles.roleSwitchText}>
                   Người bán
                 </Text>
               </TouchableOpacity>
@@ -328,15 +328,15 @@ export default function SignUpScreen() {
               style={styles.submitButton}
               onPress={handleSubmit}
             >
-              <Text {...noFontScale} style={styles.submitButtonText}>Đăng ký</Text>
+              <Text {...noFontScale} numberOfLines={1} style={styles.submitButtonText}>Đăng ký</Text>
             </TouchableOpacity>
 
             {/* Switch to Sign In */}
             <View style={styles.switchContainer}>
-              <Text {...noFontScale} style={styles.switchText}>
+              <Text {...noFontScale} numberOfLines={1} style={styles.switchText}>
                 Đã có tài khoản?{" "}
               </Text>
-              <Link {...noFontScale} href="/signin" style={styles.switchLink}>
+              <Link {...noFontScale} href="/signin" numberOfLines={1} style={styles.switchLink}>
                 Đăng nhập
               </Link>
             </View>
@@ -401,7 +401,9 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   formContainer: {
+    width: "100%",
     maxWidth: 448,
+    alignSelf: "center",
   },
   titleContainer: {
     marginBottom: 24,
@@ -445,6 +447,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     flexShrink: 0,
+    minWidth: 74,
     textAlign: "center",
     color: "#459B5E",
   },
@@ -453,6 +456,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     flexShrink: 0,
+    minWidth: 74,
     textAlign: "center",
     color: "#FFFFFF",
   },
@@ -547,7 +551,10 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontFamily: "Montserrat-Bold",
     fontSize: 18,
+    lineHeight: 24,
     color: "#F8F8FF",
+    minWidth: 78,
+    textAlign: "center",
   },
   switchContainer: {
     flexDirection: "row",
@@ -562,12 +569,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: "#9E9E9E",
-    flexShrink: 1,
+    flexShrink: 0,
+    minWidth: 124,
+    textAlign: "right",
   },
   switchLink: {
     fontFamily: "Montserrat-SemiBold",
     fontSize: 14,
     lineHeight: 20,
     color: "#459B5E",
+    flexShrink: 0,
+    minWidth: 82,
   },
 });
