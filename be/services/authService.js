@@ -11,8 +11,18 @@ import { validatePasswordStrength } from '../utils/validators.js';
 export const register = async (userData) => {
 	try {
 		logger.info("Registering new user");
+		const allowedRegisterRoles = ['user', 'seller'];
+		const role = userData.role || 'user';
+
+		if (!allowedRegisterRoles.includes(role)) {
+			const error = new Error('Invalid role');
+			error.statusCode = 400;
+			throw error;
+		}
 		// Kiểm tra username đã tồn tại
-		const existingUser = await User.findOne({ phone: userData.phone, username: userData.username });
+		const existingUser = await User.findOne({
+			$or: [{ phone: userData.phone }, { username: userData.username }],
+		});
 		if (existingUser) {
 			const error = new Error('Phone number or Username already exists');
 			error.statusCode = 409;
@@ -25,6 +35,7 @@ export const register = async (userData) => {
 			username: userData.username,
 			phone: userData.phone,
 			password: hashedPassword,
+			role,
 		});
 		await user.save();
 		return user.getFormattedData?.() || user;
