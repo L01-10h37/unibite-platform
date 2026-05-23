@@ -15,10 +15,17 @@ const environment = {
   log_level: process.env.LOG_LEVEL || 'info',
   elasticsearch_url: process.env.ELASTICSEARCH_URL,
   elastic_api_key: process.env.ELASTIC_API_KEY,
+  // Redis Configuration
+  redis_url: process.env.REDIS_URL,
   // Cloudinary Configuration
   cloudinary_cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   cloudinary_api_key: process.env.CLOUDINARY_API_KEY,
   cloudinary_api_secret: process.env.CLOUDINARY_API_SECRET,
+  // VNPay configuration
+  vnp_TmnCode: process.env.VNP_TMNCODE,
+  vnp_HashSecret: process.env.VNP_HASHSECRET,
+  vnp_Url: process.env.VNP_URL,
+  vnp_ReturnUrl: process.env.VNP_RETURNURL
 };
 
 export default environment;

@@ -2,6 +2,7 @@ import { logger } from '../utils/logger.js';
 import Order from '../models/Order.js';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
+import Food from '../models/Food.js';
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -30,46 +31,39 @@ export const createOrder = async (orderData, userId) => {
             throw error;
         };
 
-        // const foods = await Food.find({
-        //     _id: { $in: orderData.items.map(i => i.foodId) }
-        // });
+        const foods = await Food.find({
+            _id: { $in: orderData.items.map(i => i.food) }
+        });
 
-        // if (foods.length !== orderData.items.length) {
-        //     const error = new Error('Some foods not found');
-        //     error.statusCode = 404;
-        //     throw error;
-        // };
+        if (foods.length !== orderData.items.length) {
+            const error = new Error('Some foods not found');
+            error.statusCode = 404;
+            throw error;
+        };
 
         let totalPrice = 0;
         
-        // const orderItems = orderData.items.map(item => {
-        //     const food = foods.find(f => f._id.toString() === item.foodId);
+        const orderItems = orderData.items.map(item => {
+            const food = foods.find(f => f._id.toString() === item.food);
 
-        //     if (!food) {
-        //         const error = new Error(message = 'Food not found');
-        //         error.statusCode = 404;
-        //         throw error;    
-        //     }
+            if (!food) {
+                const error = new Error('Food not found');
+                error.statusCode = 404;
+                throw error;    
+            }
 
-        //     totalPrice += food.price * item.quantity;
+            totalPrice += food.price * item.quantity;
 
-        //     return {
-        //         foodId: food._id,
-        //         name: food.name,
-        //         price: food.price,
-        //         quantity: item.quantity,
-        //     };
-        // });
-
-        const orderItems = {
-            foodId: "bún bò",
-            name: "bún bò",
-            quantity: 1,
-            price: 25000
-        } // để test
+            return {
+                food: food._id,
+                name: food.name,
+                price: food.price,
+                quantity: item.quantity,
+            };
+        });
 
         const order = await Order.create({
-            userId: userId,
+            user: userId,
             items: orderItems,
             totalPrice,
             deliveryAddress: orderData.deliveryAddress,
@@ -83,8 +77,6 @@ export const createOrder = async (orderData, userId) => {
                 }
             ],
         });
-
-        // Tạo payment (tạm thời chưa xử lý)
 
         return order.getFormattedData?.("basic") || order;
     } catch (error) {
@@ -103,8 +95,8 @@ export const getMyOrders = async (userId, page = 1, limit = 10) => {
         const skip = (page - 1) * limit;
 
         const [orders, total] = await Promise.all([
-            Order.find({userId: userId}).sort({createdAt: -1}).skip(skip).limit(limit), 
-            Order.countDocuments({userId: userId})
+            Order.find({user: userId}).sort({createdAt: -1}).skip(skip).limit(limit), 
+            Order.countDocuments({user: userId})
         ]);
 
         return {
@@ -142,7 +134,7 @@ export const getOrderById = async (orderId, userId) => {
             throw error;
         };
 
-        if (order.userId.toString() !== userId) {
+        if (order.user.toString() !== userId) {
             const error = new Error('Not your order');
             error.statusCode = 403;
             throw error;
@@ -240,7 +232,7 @@ export const cancelOrder = async (orderId, userId) => {
             throw error;
         };
 
-        if (order.userId.toString() !== userId) {
+        if (order.user.toString() !== userId) {
             const error = new Error('Not your order');
             error.statusCode = 403;
             throw error;

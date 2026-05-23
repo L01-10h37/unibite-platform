@@ -5,16 +5,11 @@ import mongoose from 'mongoose';
 */
 const orderItemSchema = new mongoose.Schema(
 	{
-		foodId: { // Sẽ sửa sau khi có bảng Food
-			type: String,
-			default: "Bún bò",
+		food: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Food",
+			required: true,
 		},
-
-		// foodId: {
-		// 	type: mongoose.Schema.Types.ObjectId,
-		// 	ref: "Food",
-		// 	required: true,
-		// },
 
 		name: String, 
 
@@ -32,7 +27,7 @@ const orderItemSchema = new mongoose.Schema(
 
 const orderSchema = new mongoose.Schema(
 	{
-		userId: {
+		user: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "User",
 			required: true,

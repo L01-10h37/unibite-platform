@@ -59,15 +59,6 @@ export const refreshToken = async (req, res, next) => {
         
         const result = await authService.refreshToken(currentRefreshToken);
 
-        if (result.refreshToken) {
-            res.cookie("refreshToken", result.refreshToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production", // Tự động bật secure khi lên production
-                sameSite: "lax",
-            });
-            delete result.refreshToken; // Xóa khỏi payload trả về client giống như lúc login
-        }
-
         successResponse(res, result, "Access token refreshed successfully", 200);
     } catch (error) {
         logger.error("Error refreshing access token", error);

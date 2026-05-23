@@ -21,6 +21,8 @@ import shopRouter from './routes/shops.js';
 import categoriesRouter from './routes/categories.js';
 import foodsRouter from './routes/foods.js';
 import { checkElasticsearchConnection } from './config/elasticsearch.js';
+import paymentRouter from './routes/payment.js'
+import { connectRedis, disconnectRedis } from './config/redis.js';
 
 const app = express();
 const port = environment.port;
@@ -70,6 +72,7 @@ app.use('/api/comment', commentRouter);
 app.use('/api/shops', shopRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/foods', foodsRouter);
+app.use('/api/payments', paymentRouter);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Get raw Swagger JSON
@@ -110,6 +113,9 @@ const startServer = async () => {
   try {
     // Kết nối MongoDB
     await connectDB();
+
+    // Kết nối redis
+    await connectRedis();
 
     app.listen(port, "0.0.0.0", () => {
       logger.info(`✓ Server is running on port ${port} in ${environment.node_env} mode`);
