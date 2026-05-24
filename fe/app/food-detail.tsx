@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   ImageSourcePropType,
@@ -67,6 +68,8 @@ type FoodComment = {
   rating?: number;
   likeCount?: number;
   likes?: string[];
+  image?: string | null;
+  reply?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -471,6 +474,40 @@ export default function FoodDetailScreen() {
     }
   };
 
+  const handleDeleteComment = async (cmtId: string) => {
+    try {
+      const tokens = await readAuthTokens("tokens");
+      const accessToken = tokens?.accessToken ?? null;
+
+      if (!accessToken) {
+        Alert.alert("Lỗi", "Vui lòng đăng nhập để thực hiện xóa");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/comment/${foodId}/remove`, {
+        method: "DELETE",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ cmtId }),
+      });
+
+      const payload = await response.json();
+
+      if (response.ok && payload.success) {
+        Alert.alert("Thành công", "Đã xóa bình luận!");
+        setComments((current) => current.filter((c) => c.id !== cmtId));
+      } else {
+        Alert.alert("Thất bại", payload.message || "Không thể xóa bình luận");
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      Alert.alert("Lỗi", "Đã xảy ra lỗi khi xóa bình luận");
+    }
+  };
+
   const handleCommentAvatarError = (commentId: string) => {
     setFailedAvatarIds((current) => new Set(current).add(commentId));
   };
@@ -583,7 +620,20 @@ export default function FoodDetailScreen() {
 
             <View style={styles.divider} />
 
-            <Text style={styles.sectionTitle}>Bình luận</Text>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <Text style={[styles.sectionTitle, { paddingHorizontal: 0 }]}>Bình luận</Text>
+              <TouchableOpacity
+                style={styles.writeReviewHeaderButton}
+                activeOpacity={0.8}
+                onPress={() => router.push({
+                  pathname: "/review",
+                  params: { id: foodId, name: food?.name, image: food?.listUrlImg?.[0] }
+                })}
+              >
+                <MaterialCommunityIcons name="pencil-box-outline" size={16} color="#43A560" />
+                <Text style={styles.writeReviewHeaderText}>Viết đánh giá chi tiết</Text>
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.commentComposer}>
               <View style={styles.composerStars}>
@@ -660,8 +710,33 @@ export default function FoodDetailScreen() {
                   ? { uri: avatar }
                   : DEFAULT_REVIEW_AVATAR;
 
+              const commentOwnerId = typeof comment.userId === 'object' && comment.userId !== null
+                ? comment.userId._id
+                : comment.userId;
+              const isOwner = currentUserId && commentOwnerId && commentOwnerId.toString() === currentUserId.toString();
+
               return (
-                <View key={comment.id} style={styles.comment}>
+                <TouchableOpacity
+                  key={comment.id}
+                  style={styles.comment}
+                  activeOpacity={0.9}
+                  onLongPress={() => {
+                    if (isOwner) {
+                      Alert.alert(
+                        "Xóa bình luận",
+                        "Bạn có chắc chắn muốn xóa bình luận này không?",
+                        [
+                          { text: "Hủy", style: "cancel" },
+                          {
+                            text: "Xóa",
+                            style: "destructive",
+                            onPress: () => handleDeleteComment(comment.id),
+                          },
+                        ]
+                      );
+                    }
+                  }}
+                >
                   <Image
                     source={avatarSource}
                     style={styles.avatar}
@@ -687,7 +762,15 @@ export default function FoodDetailScreen() {
                         />
                       ))}
                     </View>
+                    
+                    {/* Content text */}
                     <Text style={styles.commentText}>{comment.content}</Text>
+
+                    {/* Attached Image (Optional) */}
+                    {comment.image && (
+                      <Image source={{ uri: comment.image }} style={styles.reviewAttachedImage} />
+                    )}
+
                     <View style={styles.commentActions}>
                       <TouchableOpacity
                         style={styles.likeRow}
@@ -715,8 +798,22 @@ export default function FoodDetailScreen() {
                         color="#806D6D"
                       />
                     </View>
+
+                    {/* Seller response drawer */}
+                    {comment.reply && (
+                      <View style={styles.merchantReplyBox}>
+                        <View style={styles.replyConnectorLine} />
+                        <View style={styles.merchantReplyContent}>
+                          <View style={styles.merchantReplyHeader}>
+                            <MaterialCommunityIcons name="storefront" size={12} color="#43A560" />
+                            <Text style={styles.merchantReplyTitle}>Phản hồi từ quán</Text>
+                          </View>
+                          <Text style={styles.merchantReplyText}>{comment.reply}</Text>
+                        </View>
+                      </View>
+                    )}
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
 
@@ -1084,6 +1181,60 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
+    fontFamily: "Montserrat-Bold",
+  },
+  reviewAttachedImage: {
+    marginTop: 10,
+    width: "90%",
+    height: 140,
+    borderRadius: 10,
+    resizeMode: "cover",
+    backgroundColor: "#F0F3F1",
+  },
+  merchantReplyBox: {
+    marginTop: 10,
+    flexDirection: "row",
+    paddingRight: 24,
+  },
+  replyConnectorLine: {
+    width: 2,
+    backgroundColor: "#43A560",
+    opacity: 0.3,
+    marginRight: 8,
+    borderRadius: 1,
+  },
+  merchantReplyContent: {
+    flex: 1,
+    backgroundColor: "#F7F9F7",
+    borderRadius: 10,
+    padding: 10,
+  },
+  merchantReplyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginBottom: 3,
+  },
+  merchantReplyTitle: {
+    fontSize: 11,
+    fontFamily: "Montserrat-Bold",
+    color: "#43A560",
+  },
+  merchantReplyText: {
+    fontSize: 11,
+    fontFamily: "Montserrat-Medium",
+    color: "#536078",
+    lineHeight: 15,
+  },
+  writeReviewHeaderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingRight: 24,
+  },
+  writeReviewHeaderText: {
+    fontSize: 11,
+    color: "#43A560",
     fontFamily: "Montserrat-Bold",
   },
 });

@@ -2,6 +2,8 @@ import { AppBottomTabBar } from "@/components/app-bottom-tab-bar";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { readAuthTokens } from "@/services/auth-session";
+import { Alert } from "react-native";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -90,6 +92,22 @@ function getDisplayPrice(food: Food) {
   return food.price;
 }
 
+function decodeJwtPayload(token: string): { id?: string; _id?: string; userId?: string; sub?: string } | null {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
 export default function ShopDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -101,6 +119,54 @@ export default function ShopDetailScreen() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [isReviewsLoading, setIsReviewsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const tokens = await readAuthTokens("tokens");
+        if (tokens?.accessToken) {
+          const payload = decodeJwtPayload(tokens.accessToken);
+          const userId = payload?.id || payload?._id || payload?.userId || payload?.sub || "";
+          setCurrentUserId(userId);
+        }
+      } catch (error) {
+        console.error("Error loading user ID in shop-detail:", error);
+      }
+    })();
+  }, []);
+
+  const handleDeleteReview = async (cmtId: string) => {
+    try {
+      const tokens = await readAuthTokens("tokens");
+      if (!tokens?.accessToken) {
+        Alert.alert("Lỗi", "Vui lòng đăng nhập để thực hiện xóa");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/comment/${shopId}/remove`, {
+        method: "DELETE",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tokens.accessToken}`,
+        },
+        body: JSON.stringify({ cmtId }),
+      });
+
+      const payload = await response.json();
+
+      if (response.ok && payload.success) {
+        Alert.alert("Thành công", "Đã xóa bình luận!");
+        setReviews((current) => current.filter((r) => r.id !== cmtId));
+      } else {
+        Alert.alert("Thất bại", payload.message || "Không thể xóa bình luận");
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      Alert.alert("Lỗi", "Đã xảy ra lỗi khi xóa bình luận");
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -382,9 +448,32 @@ export default function ShopDetailScreen() {
                       hour: '2-digit',
                       minute: '2-digit'
                     });
-
-                    return (
-                      <View key={c.id} style={styles.reviewItemCard}>
+                    const commentOwnerId = typeof c.userId === 'object' && c.userId !== null
+                      ? (c.userId._id || c.userId.id)
+                      : c.userId;
+                     const isOwner = currentUserId && commentOwnerId && commentOwnerId.toString() === currentUserId.toString();
+                     return (
+                      <TouchableOpacity
+                        key={c.id}
+                        style={styles.reviewItemCard}
+                        activeOpacity={0.9}
+                        onLongPress={() => {
+                          if (isOwner) {
+                            Alert.alert(
+                              "Xóa đánh giá",
+                              "Bạn có chắc chắn muốn xóa đánh giá này không?",
+                              [
+                                { text: "Hủy", style: "cancel" },
+                                {
+                                  text: "Xóa",
+                                  style: "destructive",
+                                  onPress: () => handleDeleteReview(c.id),
+                                },
+                              ]
+                            );
+                          }
+                        }}
+                      >
                         {/* Header details */}
                         <View style={styles.reviewItemHeader}>
                           <Image source={{ uri: avatarUrl }} style={styles.reviewerAvatar} />
@@ -425,8 +514,8 @@ export default function ShopDetailScreen() {
                             </View>
                           </View>
                         )}
-                      </View>
-                    );
+                      </TouchableOpacity>
+                     );
                   })}
                 </View>
               )}
