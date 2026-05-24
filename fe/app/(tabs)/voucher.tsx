@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 // ─── Color tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -290,7 +291,7 @@ export default function VoucherScreen() {
       <View style={styles.container}>
         {/* ── Header ── */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.backBtn} activeOpacity={0.7} onPress={() => router.back()}>
             <Feather name="chevron-left" size={22} color="#17181B" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Voucher</Text>

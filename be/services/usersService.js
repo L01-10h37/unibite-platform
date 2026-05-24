@@ -154,6 +154,31 @@ export const updateUserProfile = async (userId, profileData) => {
       allowedUpdates.phone = profileData.phone;
     }
 
+    if (Array.isArray(profileData.addresses)) {
+      allowedUpdates.addresses = profileData.addresses.map((addr) => ({
+        _id: addr.id || addr._id,
+        title: addr.title,
+        type: addr.type || 'other',
+        address: addr.address,
+        latitude: addr.latitude,
+        longitude: addr.longitude,
+      }));
+
+      if (profileData.defaultDeliveryAddressId) {
+        allowedUpdates.defaultDeliveryAddressId = profileData.defaultDeliveryAddressId;
+      } else if (allowedUpdates.addresses.length > 0) {
+        const firstAddressId =
+          allowedUpdates.addresses[0]._id ||
+          profileData.defaultDeliveryAddressId ||
+          null;
+        allowedUpdates.defaultDeliveryAddressId = firstAddressId;
+      } else {
+        allowedUpdates.defaultDeliveryAddressId = null;
+      }
+    } else if (profileData.defaultDeliveryAddressId !== undefined) {
+      allowedUpdates.defaultDeliveryAddressId = profileData.defaultDeliveryAddressId || null;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       allowedUpdates,

@@ -148,7 +148,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerButton}>
+        <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
           <View style={styles.backIconRotated}>
             <ChevronRight />
           </View>

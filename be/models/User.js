@@ -58,6 +58,47 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    addresses: {
+      type: [
+        {
+          _id: {
+            type: String,
+            default: () => new mongoose.Types.ObjectId().toString(),
+          },
+          title: {
+            type: String,
+            trim: true,
+            maxlength: [80, 'Address title must not exceed 80 characters'],
+          },
+          type: {
+            type: String,
+            enum: ['home', 'school', 'office', 'other'],
+            default: 'other',
+          },
+          address: {
+            type: String,
+            required: [true, 'Address is required'],
+            trim: true,
+            maxlength: [300, 'Address must not exceed 300 characters'],
+          },
+          latitude: {
+            type: Number,
+          },
+          longitude: {
+            type: Number,
+          },
+          isDefault: {
+            type: Boolean,
+            default: false,
+          },
+        },
+      ],
+      default: [],
+    },
+    defaultDeliveryAddressId: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true, // Tự động thêm createdAt, updatedAt
@@ -70,6 +111,10 @@ const userSchema = new mongoose.Schema(
  * Timestamps helper
  */
 userSchema.methods.getFormattedData = function () {
+  const defaultAddress = this.addresses?.find(
+    (addr) => this.defaultDeliveryAddressId && String(addr._id) === String(this.defaultDeliveryAddressId)
+  );
+
   return {
     id: this._id,
     name: this.name,
@@ -79,6 +124,29 @@ userSchema.methods.getFormattedData = function () {
     avatar: this.avatar,
     role: this.role,
     isActive: this.isActive,
+    addresses: (this.addresses || []).map((addr) => ({
+      id: addr._id,
+      title: addr.title,
+      type: addr.type,
+      address: addr.address,
+      latitude: addr.latitude,
+      longitude: addr.longitude,
+      isDefault:
+        !!this.defaultDeliveryAddressId && String(addr._id) === String(this.defaultDeliveryAddressId),
+      createdAt: addr.createdAt,
+      updatedAt: addr.updatedAt,
+    })),
+    defaultDeliveryAddressId: this.defaultDeliveryAddressId,
+    defaultDeliveryAddress: defaultAddress
+      ? {
+          id: defaultAddress._id,
+          title: defaultAddress.title,
+          type: defaultAddress.type,
+          address: defaultAddress.address,
+          latitude: defaultAddress.latitude,
+          longitude: defaultAddress.longitude,
+        }
+      : null,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };
