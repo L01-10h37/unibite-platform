@@ -72,7 +72,7 @@ export const getCommentsByPostId = async (postId, page = 1, limit = 10) => {
  * @param {string} content - Nội dung comment
  * @returns {object} comment đã tạo
  */
-export const addComment = async (postId, userId, content, rating = 5) => {
+export const addComment = async (postId, userId, content, rating = 5, image = null) => {
   try {
     logger.info(`Service: Adding comment to postId: ${postId} by userId: ${userId} with rating ${rating}`);
 
@@ -101,6 +101,7 @@ export const addComment = async (postId, userId, content, rating = 5) => {
       userId,
       content: content.trim(),
       rating: ratingValue,
+      image,
     });
 
     const isFoodComment = await Food.exists({ _id: postId });

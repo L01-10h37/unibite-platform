@@ -66,6 +66,12 @@ const commentSchema = new mongoose.Schema(
       default: null,
     },
 
+    /** Ảnh đính kèm (tùy chọn) */
+    image: {
+      type: String,
+      default: null,
+    },
+
     /** Soft delete: không xóa vật lý để giữ integrity */
     isDeleted: {
       type: Boolean,
@@ -91,6 +97,7 @@ commentSchema.methods.getFormattedData = function () {
     content: this.content,
     rating: this.rating,
     reply: this.reply,
+    image: this.image,
     likeCount: this.likeCount,
     likes: this.likes,
     createdAt: this.createdAt,

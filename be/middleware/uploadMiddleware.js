@@ -39,6 +39,7 @@ const upload = multer({
  * Usage: uploadMiddleware.single('avatar')(req, res, next)
  */
 export const uploadSingleFile = upload.single('avatar');
+export const uploadCommentImage = upload.single('image');
 
 /**
  * Middleware for multiple file upload

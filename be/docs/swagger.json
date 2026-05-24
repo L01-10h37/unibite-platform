@@ -4657,6 +4657,11 @@
             "nullable": true,
             "example": "Cảm ơn bạn đã ủng hộ quán ạ!"
           },
+          "image": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://res.cloudinary.com/demo/image/upload/v123/comment.jpg"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -4686,6 +4691,12 @@
             "default": 5,
             "example": 5,
             "description": "Số sao đánh giá (1-5)"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ảnh đính kèm bình luận (optional, có thể gửi string/file dạng multipart/form-data hoặc base64)",
+            "example": "https://res.cloudinary.com/demo/image/upload/v123/comment.jpg"
           }
         }
       },
