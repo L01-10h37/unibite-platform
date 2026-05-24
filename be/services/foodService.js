@@ -1,9 +1,11 @@
 import { logger } from "../utils/logger.js";
+import mongoose from "mongoose";
 import Food from "../models/Food.js";
 import Shop from "../models/Shop.js";
 import Category from "../models/Category.js";
 import * as categoryService from "./categoryService.js";
 import * as foodSearchService from "./foodSearchService.js";
+import * as shopService from "./shopService.js";
 import { uploadAvatarToS3, deleteAvatarFromS3, validateImageFile, validateFileSize } from '../utils/s3Upload.js';
 
 const buildFoodQuery = async ({
@@ -441,6 +443,85 @@ export const incrementFoodSoldCount = async (foodId, amount = 1) => {
     return updatedFood.getFormattedData?.() || updatedFood;
   } catch (error) {
     logger.error("Service: Error incrementing food sold count", error);
+    throw error;
+  }
+};
+
+/**
+ * Update food rating and its shop rating when a new comment is added.
+ */
+export const updateFoodRatingFromComment = async (foodId, rating, session = null) => {
+  if (!session) {
+    const localSession = await mongoose.startSession();
+    let updatedFood;
+
+    try {
+      await localSession.withTransaction(async () => {
+        updatedFood = await updateFoodRatingFromComment(foodId, rating, localSession);
+      });
+
+      await foodSearchService.safeIndexFoodSearchDocument(updatedFood, logger);
+
+      return updatedFood;
+    } catch (error) {
+      logger.error("Service: Error updating food rating", error);
+      throw error;
+    } finally {
+      localSession.endSession();
+    }
+  }
+
+  try {
+    logger.info(`Service: Updating food ${foodId} rating with ${rating}`);
+
+    const ratingValue = Number(rating);
+
+    if (!Number.isFinite(ratingValue) || ratingValue < 1 || ratingValue > 5) {
+      const error = new Error("Rating must be a number from 1 to 5");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const food = await Food.findById(foodId).select("shop").session(session);
+
+    if (!food) {
+      const error = new Error("Food not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const updatedFood = await Food.findByIdAndUpdate(
+      foodId,
+      [
+        {
+          $set: {
+            average_rating: {
+              $divide: [
+                {
+                  $add: [
+                    { $multiply: ["$average_rating", "$rating_count"] },
+                    ratingValue,
+                  ],
+                },
+                { $add: ["$rating_count", 1] },
+              ],
+            },
+            rating_count: { $add: ["$rating_count", 1] },
+          },
+        },
+      ],
+      { new: true, session }
+    ).populate(["category", "shop"]);
+
+    await shopService.updateShopRatingFromComment(food.shop, ratingValue, session);
+
+    if (!session) {
+      await foodSearchService.safeIndexFoodSearchDocument(updatedFood, logger);
+    }
+
+    return updatedFood.getFormattedData?.() || updatedFood;
+  } catch (error) {
+    logger.error("Service: Error updating food rating", error);
     throw error;
   }
 };

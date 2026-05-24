@@ -922,6 +922,63 @@
         }
       }
     },
+    "/api/comment/{id}/reply": {
+      "put": {
+        "tags": [
+          "comments"
+        ],
+        "summary": "Phản hồi comment từ người bán",
+        "operationId": "replyComment",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "shopId",
+            "schema": {
+              "type": "string",
+              "example": "6a11a867e1449235d923afda"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentReplyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Phản hồi comment thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Thiếu cmtId hoặc dữ liệu không hợp lệ"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found - Comment không tồn tại"
+          }
+        }
+      }
+    },
     "/api/orders": {
       "post": {
         "tags": [
@@ -2518,6 +2575,162 @@
         "responses": {
           "200": {
             "description": "Shop profit synced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid shopId format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shops/sync/rating/my-shop": {
+      "post": {
+        "tags": [
+          "shops"
+        ],
+        "summary": "Sync current seller shop rating",
+        "description": "Recalculate rating for all foods in the current seller shop, then recalculate the shop rating.",
+        "operationId": "syncMyShopRating",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop rating synced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Only seller can access this endpoint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop not found for current seller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shops/sync/rating/{shopId}": {
+      "post": {
+        "tags": [
+          "shops"
+        ],
+        "summary": "Sync any shop rating by shopId (admin only)",
+        "description": "Recalculate rating for all foods in the selected shop, then recalculate the shop rating.",
+        "operationId": "syncShopRatingById",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB ObjectId of the shop to sync",
+            "schema": {
+              "type": "string",
+              "example": "661fb4e9680c5e2a86f9f7b1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop rating synced successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -4432,6 +4645,18 @@
             },
             "description": "Danh sách userId đã like"
           },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "default": 5,
+            "example": 5
+          },
+          "reply": {
+            "type": "string",
+            "nullable": true,
+            "example": "Cảm ơn bạn đã ủng hộ quán ạ!"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -4453,6 +4678,14 @@
             "minLength": 1,
             "maxLength": 1000,
             "example": "Món ăn rất ngon, tôi rất thích!"
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "default": 5,
+            "example": 5,
+            "description": "Số sao đánh giá (1-5)"
           }
         }
       },
@@ -4489,6 +4722,26 @@
             ],
             "description": "'inc' để like, 'dec' để unlike",
             "example": "inc"
+          }
+        }
+      },
+      "CommentReplyInput": {
+        "type": "object",
+        "required": [
+          "cmtId",
+          "reply"
+        ],
+        "properties": {
+          "cmtId": {
+            "type": "string",
+            "description": "ID của comment cần phản hồi",
+            "example": "6630abcd1234567890abcdef"
+          },
+          "reply": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "example": "Cảm ơn bạn đã ủng hộ quán!"
           }
         }
       },

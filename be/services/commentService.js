@@ -2,6 +2,7 @@ import { logger } from '../utils/logger.js';
 import Comment from '../models/Comment.js';
 import Shop from '../models/Shop.js';
 import Food from '../models/Food.js';
+import * as foodService from './foodService.js';
 import mongoose from 'mongoose';
 
 /**
@@ -71,9 +72,9 @@ export const getCommentsByPostId = async (postId, page = 1, limit = 10) => {
  * @param {string} content - Nội dung comment
  * @returns {object} comment đã tạo
  */
-export const addComment = async (postId, userId, content) => {
+export const addComment = async (postId, userId, content, rating = 5) => {
   try {
-    logger.info(`Service: Adding comment to postId: ${postId} by userId: ${userId}`);
+    logger.info(`Service: Adding comment to postId: ${postId} by userId: ${userId} with rating ${rating}`);
 
     if (!isValidObjectId(postId)) {
       const error = new Error('Invalid postId format');
@@ -87,11 +88,25 @@ export const addComment = async (postId, userId, content) => {
       throw error;
     }
 
+    const ratingValue = Number(rating);
+
+    if (!Number.isFinite(ratingValue) || ratingValue < 1 || ratingValue > 5) {
+      const error = new Error('Rating must be a number from 1 to 5');
+      error.statusCode = 400;
+      throw error;
+    }
+
     const comment = await Comment.create({
       postId,
       userId,
       content: content.trim(),
+      rating: ratingValue,
     });
+
+    const isFoodComment = await Food.exists({ _id: postId });
+    if (isFoodComment) {
+      await foodService.updateFoodRatingFromComment(postId, ratingValue);
+    }
 
     // Populate userId để trả về đầy đủ thông tin
     await comment.populate('userId', 'username name avatar');
@@ -211,6 +226,42 @@ export const likeComment = async (cmtId, userId, type) => {
     return comment.getFormattedData?.() || comment;
   } catch (error) {
     logger.error('Service: Error liking/unliking comment', error);
+    throw error;
+  }
+};
+
+/**
+ * Trả lời/phản hồi comment (chỉ dành cho seller)
+ *
+ * @param {string} cmtId - ID của comment cần phản hồi
+ * @param {string} replyText - Nội dung phản hồi
+ * @returns {object} comment sau khi cập nhật
+ */
+export const replyToComment = async (cmtId, replyText) => {
+  try {
+    logger.info(`Service: Replying to comment ${cmtId} with: ${replyText}`);
+
+    if (!isValidObjectId(cmtId)) {
+      const error = new Error('Invalid cmtId format');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const comment = await Comment.findOne({ _id: cmtId, isDeleted: false });
+
+    if (!comment) {
+      const error = new Error('Comment not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    comment.reply = replyText ? replyText.trim() : null;
+    await comment.save();
+    await comment.populate('userId', 'username name avatar');
+
+    return comment.getFormattedData?.() || comment;
+  } catch (error) {
+    logger.error('Service: Error replying to comment', error);
     throw error;
   }
 };

@@ -51,6 +51,21 @@ const commentSchema = new mongoose.Schema(
       min: 0,
     },
 
+    /** Đánh giá sao từ 1 đến 5 */
+    rating: {
+      type: Number,
+      min: [1, 'Rating must be at least 1'],
+      max: [5, 'Rating must not exceed 5'],
+      default: 5,
+    },
+
+    /** Phản hồi của người bán (seller response) */
+    reply: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
     /** Soft delete: không xóa vật lý để giữ integrity */
     isDeleted: {
       type: Boolean,
@@ -74,6 +89,8 @@ commentSchema.methods.getFormattedData = function () {
     postId: this.postId,
     userId: this.userId,
     content: this.content,
+    rating: this.rating,
+    reply: this.reply,
     likeCount: this.likeCount,
     likes: this.likes,
     createdAt: this.createdAt,
