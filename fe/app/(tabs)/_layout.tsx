@@ -147,6 +147,13 @@ export default function RootLayout() {
       />
 
       <Tabs.Screen
+        name="orders"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
         name="explore"
         options={{
           href: null,
