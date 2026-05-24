@@ -110,6 +110,54 @@ export const validateProfileUpdate = (data) => {
     }
   }
 
+  if (data.addresses !== undefined) {
+    if (!Array.isArray(data.addresses)) {
+      errors.push('addresses must be an array');
+    } else {
+      data.addresses.forEach((address, index) => {
+        if (!address || typeof address !== 'object') {
+          errors.push(`addresses[${index}] must be an object`);
+          return;
+        }
+
+        if (address.address !== undefined && (typeof address.address !== 'string' || !address.address.trim())) {
+          errors.push(`addresses[${index}].address must be a non-empty string`);
+        }
+
+        if (address.title !== undefined && typeof address.title !== 'string') {
+          errors.push(`addresses[${index}].title must be a string`);
+        }
+
+        if (
+          address.type !== undefined &&
+          !['home', 'school', 'office', 'other'].includes(address.type)
+        ) {
+          errors.push(`addresses[${index}].type is invalid`);
+        }
+
+        if (address.latitude !== undefined && Number.isNaN(Number(address.latitude))) {
+          errors.push(`addresses[${index}].latitude must be a number`);
+        }
+
+        if (address.longitude !== undefined && Number.isNaN(Number(address.longitude))) {
+          errors.push(`addresses[${index}].longitude must be a number`);
+        }
+
+        if (!address.address && (address.latitude === undefined || address.longitude === undefined)) {
+          errors.push(`addresses[${index}] must have either address or latitude+longitude`);
+        }
+      });
+    }
+  }
+
+  if (
+    data.defaultDeliveryAddressId !== undefined &&
+    data.defaultDeliveryAddressId !== null &&
+    typeof data.defaultDeliveryAddressId !== 'string'
+  ) {
+    errors.push('defaultDeliveryAddressId must be a string');
+  }
+
   if (errors.length > 0) {
     return { valid: false, messages: errors };
   }

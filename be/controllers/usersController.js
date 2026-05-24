@@ -121,17 +121,27 @@ export const getMe = async (req, res, next) => {
 export const updateProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { name, phone } = req.body;
+    const { name, phone, addresses, defaultDeliveryAddressId } = req.body;
 
-    logger.info(`Updating user profile: ${userId}`, { name, phone });
+    logger.info(`Updating user profile: ${userId}`, {
+      name,
+      phone,
+      addressesCount: Array.isArray(addresses) ? addresses.length : undefined,
+      defaultDeliveryAddressId,
+    });
 
     // Validate input
-    const validation = validateProfileUpdate({ name, phone });
+    const validation = validateProfileUpdate({ name, phone, addresses, defaultDeliveryAddressId });
     if (!validation.valid) {
       return errorResponse(res, null, validation.messages?.join(', ') || 'Validation failed', 400);
     }
 
-    const updatedUser = await usersService.updateUserProfile(userId, { name, phone });
+    const updatedUser = await usersService.updateUserProfile(userId, {
+      name,
+      phone,
+      addresses,
+      defaultDeliveryAddressId,
+    });
 
     if (!updatedUser) {
       return errorResponse(res, null, 'User not found', 404);

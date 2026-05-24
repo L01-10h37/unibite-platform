@@ -40,7 +40,13 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "App cần vị trí của bạn để giao đồ ăn chính xác đến nơi."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
