@@ -174,51 +174,45 @@ export const vnpayIpnHandle = async (vnp_Params) => {
 
             if (!payment) {
                 result = { RspCode: "01", Message: "Order not found" };
-                console.log("aaaaaaaaaaaaaaaaa")
-                return;
-            }
-
-            if (payment.status === "SUCCESS") {
+            } else if (payment.status === "SUCCESS") {
                 result = { RspCode: "00", Message: "Already processed" };
-                console.log("bbbbbbbbbbbbbbbbbb")
-                return;
-            }
-
-            if (isSuccess) {
+            } else if (isSuccess) {
                 const order = await Order.findById(payment.order).session(session);
+
                 if (!order) {
                     result = { RspCode: "01", Message: "Order not found" };
-                    console.log("cccccccccccccccccc")
-                    return;
+                } else {
+                    payment.status = "SUCCESS";
+                    payment.paidAt = new Date();
+
+                    order.isPaid = true;
+
+                    await order.save({ session });
+
+                    if (payment.voucherId) {
+                        await voucherService.consumeVoucherForPayment(
+                            payment.voucherId,
+                            payment._id,
+                            order._id,
+                            { session }
+                        );
+                    }
+
+                    await payment.save({ session });
+
+                    result = { RspCode: "00", Message: "IPN processed successfully" };
                 }
-
-                payment.status = "SUCCESS";
-                payment.paidAt = new Date(); 
-
-                order.isPaid = true;
-                await order.save({ session });
-
-                if (payment.voucherId) {
-                    await voucherService.consumeVoucherForPayment(
-                        payment.voucherId,
-                        payment._id,
-                        order._id,
-                        { session }
-                    );
-                }
-
-                result = { RspCode: "00", Message: "IPN processed successfully" };
             } else {
                 payment.status = "FAILED";
 
                 if (payment.voucherId) {
                     await voucherService.releaseVoucherReservation(payment._id, { session });
                 }
-                console.log("dddddddddddddddddd")
+
+                await payment.save({ session });
+
                 result = { RspCode: "00", Message: "Failed handled" };
             }
-
-            await payment.save({ session });
         });
 
         console.log("result:", result);
