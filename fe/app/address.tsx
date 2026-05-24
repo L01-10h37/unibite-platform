@@ -869,7 +869,7 @@ export default function AddressScreen() {
   const isProgrammaticMoveRef = useRef(false);
   const mapRef = useRef<MapView | null>(null);
 
-  const [region, setRegion] = useState<Region | null>(null);
+  const [region, setRegion] = useState<any>(null);
 
   const [currentAddress, setCurrentAddress] = useState('');
   const [isFetchingAddress, setIsFetchingAddress] = useState(false);
