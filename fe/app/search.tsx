@@ -33,6 +33,7 @@ type SearchParams = {
 type SearchFood = {
   id: string;
   name: string;
+  shopName?: string | null;
   shop?: string | null;
   UrlImg?: string | null;
   listUrlImg?: string[] | null;
@@ -301,7 +302,7 @@ export default function SearchScreen() {
                       {food.name}
                     </Text>
                     <Text style={styles.cardSubtitle} numberOfLines={1}>
-                      {food.shop || "Quán ăn"}
+                      {food.shopName || food.shop || "Quán ăn"}
                     </Text>
 
                     <View style={styles.metaRow}>

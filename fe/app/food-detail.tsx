@@ -1,7 +1,8 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import * as SecureStore from "expo-secure-store";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -12,6 +13,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -20,6 +22,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const { width } = Dimensions.get("window");
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
 const DEFAULT_FOOD_ID = "69f73f1b97a704ff41e13e32";
+const COMMENT_PAGE_SIZE = 5;
+const DEFAULT_REVIEW_AVATAR = require("@/assets/images/review-avatar.png");
 
 const FALLBACK_FOOD_IMAGES = [
   require("@/assets/images/bun-bo-hue-detail-1.png"),
@@ -48,25 +52,121 @@ type FoodDetailResponse = {
   data: FoodDetail;
 };
 
-const COMMENTS = [
-  {
-    id: "1",
-    name: "Lương Ngọc Trung",
-    time: "Hôm nay, 08:40",
-    text: "Quán bán bún bò ngon nhất làng đại học. Quán bán bún bò ngon nhất làng đại học.",
-    likes: "68 lượt thích",
-  },
-  {
-    id: "2",
-    name: "Lương Ngọc Trung",
-    time: "Hôm nay, 08:40",
-    text: "Quán bán bún bò ngon nhất làng đại học. Quán bán bún bò ngon nhất làng đại học.",
-    likes: "68 lượt thích",
-  },
-];
+type FoodCommentUser = {
+  _id?: string;
+  username?: string;
+  name?: string;
+  avatar?: string | null;
+};
+
+type FoodComment = {
+  id: string;
+  postId: string;
+  userId: FoodCommentUser | string;
+  content: string;
+  rating?: number;
+  likeCount?: number;
+  likes?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+type CommentListResponse = {
+  success: boolean;
+  message: string;
+  data: FoodComment[];
+  pagination?: {
+    page?: number;
+    limit?: number;
+    total?: number;
+    pages?: number;
+  };
+};
+
+type CommentResponse = {
+  success: boolean;
+  message: string;
+  data: FoodComment;
+};
 
 function formatPrice(value: number) {
   return `${value.toLocaleString("vi-VN")}đ`;
+}
+
+function getCommentUserName(user: FoodComment["userId"]) {
+  if (typeof user === "string") {
+    return "Người dùng";
+  }
+
+  return user.name || user.username || "Người dùng";
+}
+
+function getCommentAvatar(user: FoodComment["userId"]) {
+  if (typeof user === "string") {
+    return null;
+  }
+
+  return user.avatar?.trim() || null;
+}
+
+function formatCommentTime(value?: string) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function getAccessTokenFromRaw(raw: string | null) {
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const tokens = JSON.parse(raw);
+    return typeof tokens?.accessToken === "string" ? tokens.accessToken : null;
+  } catch {
+    return null;
+  }
+}
+
+function decodeJwtPayload(token: string): { id?: string; _id?: string; userId?: string; sub?: string } | null {
+  try {
+    const payload = token.split(".")[1];
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    const decoded = globalThis.atob(padded);
+
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+}
+
+function getUserIdFromToken(token: string | null) {
+  if (!token) {
+    return "";
+  }
+
+  const payload = decodeJwtPayload(token);
+  return payload?.id || payload?._id || payload?.userId || payload?.sub || "";
+}
+
+function isCommentLikedByUser(comment: FoodComment, userId: string) {
+  if (!userId) {
+    return false;
+  }
+
+  return (comment.likes ?? []).some((id) => id?.toString() === userId);
 }
 
 function isCurrentTimeInRange(startTime?: string, endTime?: string) {
@@ -102,6 +202,23 @@ export default function FoodDetailScreen() {
   const [food, setFood] = useState<FoodDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [comments, setComments] = useState<FoodComment[]>([]);
+  const [commentsPage, setCommentsPage] = useState(1);
+  const [hasMoreComments, setHasMoreComments] = useState(true);
+  const [isCommentsLoading, setIsCommentsLoading] = useState(false);
+  const [commentsError, setCommentsError] = useState("");
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState("");
+  const [likingCommentIds, setLikingCommentIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [newCommentText, setNewCommentText] = useState("");
+  const [newCommentRating, setNewCommentRating] = useState(5);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [failedAvatarIds, setFailedAvatarIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const commentsLoadingRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -147,6 +264,85 @@ export default function FoodDetailScreen() {
     };
   }, [foodId]);
 
+  const loadComments = useCallback(
+    async (pageToLoad = 1) => {
+      if (commentsLoadingRef.current) {
+        return;
+      }
+
+      commentsLoadingRef.current = true;
+      setIsCommentsLoading(true);
+      setCommentsError("");
+
+      try {
+        const rawTokens = await SecureStore.getItemAsync("tokens");
+        const accessToken = getAccessTokenFromRaw(rawTokens);
+
+        if (!accessToken) {
+          throw new Error("Vui lòng đăng nhập để xem bình luận");
+        }
+
+        setAccessToken(accessToken);
+        setCurrentUserId(getUserIdFromToken(accessToken));
+
+        const response = await fetch(
+          `${API_URL}/api/comment/${foodId}?page=${pageToLoad}&limit=${COMMENT_PAGE_SIZE}`,
+          {
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const payload = (await response.json()) as CommentListResponse;
+
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || "Không lấy được bình luận");
+        }
+
+        const nextComments = payload.data ?? [];
+        const nextPage = payload.pagination?.page ?? pageToLoad;
+        const totalPages =
+          payload.pagination?.pages ??
+          Math.ceil(
+            (payload.pagination?.total ?? nextComments.length) /
+              COMMENT_PAGE_SIZE
+          );
+
+        setComments((current) => {
+          if (pageToLoad === 1) {
+            return nextComments;
+          }
+
+          const existingIds = new Set(current.map((comment) => comment.id));
+          return [
+            ...current,
+            ...nextComments.filter((comment) => !existingIds.has(comment.id)),
+          ];
+        });
+        setCommentsPage(nextPage);
+        setHasMoreComments(nextPage < totalPages);
+      } catch (error) {
+        setCommentsError(
+          error instanceof Error ? error.message : "Không lấy được bình luận"
+        );
+      } finally {
+        commentsLoadingRef.current = false;
+        setIsCommentsLoading(false);
+      }
+    },
+    [foodId]
+  );
+
+  useEffect(() => {
+    setComments([]);
+    setCommentsPage(1);
+    setHasMoreComments(true);
+    setCommentsError("");
+    setFailedAvatarIds(new Set());
+    loadComments(1);
+  }, [foodId, loadComments]);
+
   const unitPrice =
     food?.specialPrice != null &&
     isCurrentTimeInRange(food.startTime, food.endTime)
@@ -163,12 +359,129 @@ export default function FoodDetailScreen() {
     setActiveImage(nextIndex);
   };
 
+  const handlePageScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom =
+      contentSize.height - (contentOffset.y + layoutMeasurement.height);
+
+    if (
+      distanceFromBottom < 180 &&
+      hasMoreComments &&
+      !commentsLoadingRef.current
+    ) {
+      loadComments(commentsPage + 1);
+    }
+  };
+
   const decreaseQuantity = () => {
     setQuantity((current) => Math.max(1, current - 1));
   };
 
   const increaseQuantity = () => {
     setQuantity((current) => current + 1);
+  };
+
+  const handleToggleCommentLike = async (comment: FoodComment) => {
+    if (!accessToken) {
+      setCommentsError("Vui lòng đăng nhập để thích bình luận");
+      return;
+    }
+
+    if (likingCommentIds.has(comment.id)) {
+      return;
+    }
+
+    const alreadyLiked = isCommentLikedByUser(comment, currentUserId);
+    const type = alreadyLiked ? "dec" : "inc";
+
+    setLikingCommentIds((current) => new Set(current).add(comment.id));
+
+    try {
+      const response = await fetch(`${API_URL}/api/comment/${foodId}/like`, {
+        method: "PUT",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ cmtId: comment.id, type }),
+      });
+      const payload = (await response.json()) as CommentResponse;
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || "Không cập nhật được lượt thích");
+      }
+
+      setComments((current) =>
+        current.map((item) => (item.id === comment.id ? payload.data : item))
+      );
+      setCommentsError("");
+    } catch (error) {
+      setCommentsError(
+        error instanceof Error ? error.message : "Không cập nhật được lượt thích"
+      );
+    } finally {
+      setLikingCommentIds((current) => {
+        const next = new Set(current);
+        next.delete(comment.id);
+        return next;
+      });
+    }
+  };
+
+  const handleSubmitComment = async () => {
+    const content = newCommentText.trim();
+
+    if (!accessToken) {
+      setCommentsError("Vui lòng đăng nhập để bình luận");
+      return;
+    }
+
+    if (!content) {
+      setCommentsError("Vui lòng nhập nội dung bình luận");
+      return;
+    }
+
+    if (isSubmittingComment) {
+      return;
+    }
+
+    setIsSubmittingComment(true);
+    setCommentsError("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/comment/${foodId}`, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          content,
+          rating: newCommentRating,
+        }),
+      });
+      const payload = (await response.json()) as CommentResponse;
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || "Không thêm được bình luận");
+      }
+
+      setComments((current) => [payload.data, ...current]);
+      setNewCommentText("");
+      setNewCommentRating(5);
+    } catch (error) {
+      setCommentsError(
+        error instanceof Error ? error.message : "Không thêm được bình luận"
+      );
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const handleCommentAvatarError = (commentId: string) => {
+    setFailedAvatarIds((current) => new Set(current).add(commentId));
   };
 
   const openShop = () => {
@@ -189,6 +502,8 @@ export default function FoodDetailScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.pageContent}
+        scrollEventThrottle={16}
+        onScroll={handlePageScroll}
       >
         <View style={styles.hero}>
           <ScrollView
@@ -279,47 +594,146 @@ export default function FoodDetailScreen() {
 
             <Text style={styles.sectionTitle}>Bình luận</Text>
 
-            {COMMENTS.map((comment) => (
-              <View key={comment.id} style={styles.comment}>
-                <Image
-                  source={require("@/assets/images/review-avatar.png")}
-                  style={styles.avatar}
-                />
-                <View style={styles.commentBody}>
-                  <View style={styles.commentHeader}>
-                    <Text style={styles.commentName}>{comment.name}</Text>
-                    <Text style={styles.commentTime}>{comment.time}</Text>
-                  </View>
-                  <View style={styles.stars}>
-                    {Array.from({ length: 5 }).map((_, index) => (
+            <View style={styles.commentComposer}>
+              <View style={styles.composerStars}>
+                {Array.from({ length: 5 }).map((_, index) => {
+                  const value = index + 1;
+
+                  return (
+                    <TouchableOpacity
+                      key={value}
+                      activeOpacity={0.75}
+                      onPress={() => setNewCommentRating(value)}
+                    >
                       <MaterialCommunityIcons
-                        key={index}
                         name="star"
-                        size={14}
-                        color="#F7A714"
-                        style={styles.star}
+                        size={20}
+                        color={value <= newCommentRating ? "#F7A714" : "#D9DEE8"}
+                        style={styles.composerStar}
                       />
-                    ))}
-                  </View>
-                  <Text style={styles.commentText}>{comment.text}</Text>
-                  <View style={styles.commentActions}>
-                    <View style={styles.likeRow}>
-                      <MaterialCommunityIcons
-                        name="heart"
-                        size={16}
-                        color="#42A55D"
-                      />
-                      <Text style={styles.likeText}>{comment.likes}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={styles.composerInputRow}>
+                <TextInput
+                  value={newCommentText}
+                  onChangeText={setNewCommentText}
+                  placeholder="Viết bình luận..."
+                  placeholderTextColor="#9AA1AD"
+                  style={styles.commentInput}
+                  multiline
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.sendCommentButton,
+                    (!newCommentText.trim() || isSubmittingComment)
+                      ? styles.sendCommentButtonDisabled
+                      : null,
+                  ]}
+                  activeOpacity={0.85}
+                  disabled={!newCommentText.trim() || isSubmittingComment}
+                  onPress={handleSubmitComment}
+                >
+                  {isSubmittingComment ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Ionicons name="send" size={18} color="#FFFFFF" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {commentsError ? (
+              <Text style={styles.commentStateText}>{commentsError}</Text>
+            ) : null}
+
+            {!comments.length && isCommentsLoading ? (
+              <View style={styles.commentStateBox}>
+                <ActivityIndicator size="small" color="#43A560" />
+              </View>
+            ) : null}
+
+            {!comments.length && !isCommentsLoading && !commentsError ? (
+              <Text style={styles.commentStateText}>Chưa có bình luận</Text>
+            ) : null}
+
+            {comments.map((comment) => {
+              const avatar = getCommentAvatar(comment.userId);
+              const starCount = Math.round(comment.rating ?? 0);
+              const isLiked = isCommentLikedByUser(comment, currentUserId);
+              const isLiking = likingCommentIds.has(comment.id);
+              const avatarSource =
+                avatar && !failedAvatarIds.has(comment.id)
+                  ? { uri: avatar }
+                  : DEFAULT_REVIEW_AVATAR;
+
+              return (
+                <View key={comment.id} style={styles.comment}>
+                  <Image
+                    source={avatarSource}
+                    style={styles.avatar}
+                    onError={() => handleCommentAvatarError(comment.id)}
+                  />
+                  <View style={styles.commentBody}>
+                    <View style={styles.commentHeader}>
+                      <Text style={styles.commentName}>
+                        {getCommentUserName(comment.userId)}
+                      </Text>
+                      <Text style={styles.commentTime}>
+                        {formatCommentTime(comment.createdAt)}
+                      </Text>
                     </View>
-                    <MaterialCommunityIcons
-                      name="reply-outline"
-                      size={18}
-                      color="#806D6D"
-                    />
+                    <View style={styles.stars}>
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <MaterialCommunityIcons
+                          key={index}
+                          name="star"
+                          size={14}
+                          color={index < starCount ? "#F7A714" : "#D9DEE8"}
+                          style={styles.star}
+                        />
+                      ))}
+                    </View>
+                    <Text style={styles.commentText}>{comment.content}</Text>
+                    <View style={styles.commentActions}>
+                      <TouchableOpacity
+                        style={styles.likeRow}
+                        activeOpacity={0.75}
+                        disabled={isLiking}
+                        onPress={() => handleToggleCommentLike(comment)}
+                      >
+                        <MaterialCommunityIcons
+                          name={isLiked ? "heart" : "heart-outline"}
+                          size={16}
+                          color={isLiked ? "#42A55D" : "#806D6D"}
+                        />
+                        <Text
+                          style={[
+                            styles.likeText,
+                            !isLiked ? styles.likeTextInactive : null,
+                          ]}
+                        >
+                          {comment.likeCount ?? 0} lượt thích
+                        </Text>
+                      </TouchableOpacity>
+                      <MaterialCommunityIcons
+                        name="reply-outline"
+                        size={18}
+                        color="#806D6D"
+                      />
+                    </View>
                   </View>
                 </View>
+              );
+            })}
+
+            {comments.length && isCommentsLoading ? (
+              <View style={styles.commentStateBox}>
+                <ActivityIndicator size="small" color="#43A560" />
               </View>
-            ))}
+            ) : null}
           </View>
         </View>
       </ScrollView>
@@ -508,6 +922,65 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Montserrat-Bold",
   },
+  commentStateBox: {
+    minHeight: 54,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  commentStateText: {
+    paddingVertical: 18,
+    color: "#8993AA",
+    fontSize: 12,
+    textAlign: "center",
+    fontFamily: "Montserrat-Medium",
+  },
+  commentComposer: {
+    marginTop: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#EEF0F2",
+    borderRadius: 8,
+    backgroundColor: "#FAFBFC",
+  },
+  composerStars: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  composerStar: {
+    marginRight: 5,
+  },
+  composerInputRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 10,
+  },
+  commentInput: {
+    flex: 1,
+    minHeight: 38,
+    maxHeight: 90,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderWidth: 1,
+    borderColor: "#E2E6EC",
+    borderRadius: 8,
+    color: "#192851",
+    backgroundColor: "#FFFFFF",
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: "Montserrat-Medium",
+  },
+  sendCommentButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#43A560",
+  },
+  sendCommentButtonDisabled: {
+    opacity: 0.55,
+  },
   comment: {
     flexDirection: "row",
     paddingTop: 17,
@@ -571,6 +1044,9 @@ const styles = StyleSheet.create({
     color: "#42A55D",
     fontSize: 12,
     fontFamily: "Montserrat-Bold",
+  },
+  likeTextInactive: {
+    color: "#806D6D",
   },
   bottomBar: {
     position: "absolute",
