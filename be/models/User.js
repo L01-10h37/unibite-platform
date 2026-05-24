@@ -77,7 +77,6 @@ const userSchema = new mongoose.Schema(
           },
           address: {
             type: String,
-            required: [true, 'Address is required'],
             trim: true,
             maxlength: [300, 'Address must not exceed 300 characters'],
           },

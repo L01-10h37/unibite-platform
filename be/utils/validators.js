@@ -120,8 +120,8 @@ export const validateProfileUpdate = (data) => {
           return;
         }
 
-        if (!address.address || typeof address.address !== 'string' || !address.address.trim()) {
-          errors.push(`addresses[${index}].address is required`);
+        if (address.address !== undefined && (typeof address.address !== 'string' || !address.address.trim())) {
+          errors.push(`addresses[${index}].address must be a non-empty string`);
         }
 
         if (address.title !== undefined && typeof address.title !== 'string') {
@@ -141,6 +141,10 @@ export const validateProfileUpdate = (data) => {
 
         if (address.longitude !== undefined && Number.isNaN(Number(address.longitude))) {
           errors.push(`addresses[${index}].longitude must be a number`);
+        }
+
+        if (!address.address && (address.latitude === undefined || address.longitude === undefined)) {
+          errors.push(`addresses[${index}] must have either address or latitude+longitude`);
         }
       });
     }

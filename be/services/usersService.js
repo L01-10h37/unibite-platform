@@ -162,6 +162,7 @@ export const updateUserProfile = async (userId, profileData) => {
         address: addr.address,
         latitude: addr.latitude,
         longitude: addr.longitude,
+        isDefault: !!addr.isDefault,
       }));
 
       if (profileData.defaultDeliveryAddressId) {
