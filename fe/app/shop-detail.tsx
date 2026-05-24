@@ -98,6 +98,8 @@ export default function ShopDetailScreen() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [activeTab, setActiveTab] = useState<"foods" | "reviews">("foods");
   const [isLoading, setIsLoading] = useState(true);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [isReviewsLoading, setIsReviewsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -159,6 +161,34 @@ export default function ShopDetailScreen() {
       isMounted = false;
     };
   }, [shopId]);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (activeTab === "reviews") {
+      const loadReviews = async () => {
+        try {
+          setIsReviewsLoading(true);
+          const response = await fetch(`${API_URL}/api/comment/${shopId}?page=1&limit=15`, {
+            headers: { accept: "application/json" },
+          });
+          const payload = await response.json();
+          if (payload.success && isMounted) {
+            setReviews(payload.data?.comments || payload.data || []);
+          }
+        } catch (error) {
+          console.error("Error loading reviews:", error);
+        } finally {
+          if (isMounted) {
+            setIsReviewsLoading(false);
+          }
+        }
+      };
+      loadReviews();
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, shopId]);
 
   const heroImage: ImageSourcePropType = useMemo(() => {
     if (shop?.avatar) {
@@ -330,8 +360,76 @@ export default function ShopDetailScreen() {
               </ScrollView>
             </View>
           ) : (
-            <View style={styles.reviewEmpty}>
-              <Text style={styles.reviewEmptyText}>Chưa có đánh giá mới.</Text>
+            <View style={styles.reviewsSection}>
+              {isReviewsLoading ? (
+                <View style={styles.stateBox}>
+                  <ActivityIndicator color="#43A560" />
+                  <Text style={styles.stateText}>Đang tải đánh giá...</Text>
+                </View>
+              ) : reviews.length === 0 ? (
+                <View style={styles.reviewEmpty}>
+                  <Text style={styles.reviewEmptyText}>Chưa có đánh giá mới.</Text>
+                </View>
+              ) : (
+                <View style={styles.reviewsList}>
+                  {reviews.map((c) => {
+                    const avatarUrl = c.userId?.avatar || `https://api.dicebear.com/7.x/adventurer/png?seed=${c.userId?.username || 'Guest'}`;
+                    const reviewerName = c.userId?.name || c.userId?.username || "Khách hàng";
+                    const formattedDate = new Date(c.createdAt).toLocaleDateString("vi-VN", {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+
+                    return (
+                      <View key={c.id} style={styles.reviewItemCard}>
+                        {/* Header details */}
+                        <View style={styles.reviewItemHeader}>
+                          <Image source={{ uri: avatarUrl }} style={styles.reviewerAvatar} />
+                          <View style={styles.reviewerMeta}>
+                            <Text style={styles.reviewerNameText}>{reviewerName}</Text>
+                            <View style={styles.starsRowMini}>
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <MaterialCommunityIcons
+                                  key={s}
+                                  name="star"
+                                  size={13}
+                                  color={s <= (c.rating || 5) ? "#F7B500" : "#D0D5D2"}
+                                />
+                              ))}
+                            </View>
+                          </View>
+                          <Text style={styles.reviewDateText}>{formattedDate}</Text>
+                        </View>
+
+                        {/* Content text */}
+                        <Text style={styles.reviewBodyText}>{c.content}</Text>
+
+                        {/* Review Image (Optional) */}
+                        {c.image && (
+                          <Image source={{ uri: c.image }} style={styles.reviewAttachedImage} />
+                        )}
+
+                        {/* Seller response drawer */}
+                        {c.reply && (
+                          <View style={styles.merchantReplyBox}>
+                            <View style={styles.replyConnectorLine} />
+                            <View style={styles.merchantReplyContent}>
+                              <View style={styles.merchantReplyHeader}>
+                                <MaterialCommunityIcons name="storefront" size={14} color="#43A560" />
+                                <Text style={styles.merchantReplyTitle}>Phản hồi từ quán</Text>
+                              </View>
+                              <Text style={styles.merchantReplyText}>{c.reply}</Text>
+                            </View>
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -576,5 +674,104 @@ const styles = StyleSheet.create({
     color: "#8A94AA",
     fontSize: 13,
     fontFamily: "Montserrat-Medium",
+  },
+  reviewsSection: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+  },
+  reviewsList: {
+    gap: 16,
+  },
+  reviewItemCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#E8EFE9",
+    shadowColor: "#000",
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  reviewItemHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  reviewerAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#F0F3F1",
+  },
+  reviewerMeta: {
+    flex: 1,
+    marginLeft: 10,
+    justifyContent: "center",
+  },
+  reviewerNameText: {
+    fontSize: 13,
+    fontFamily: "Montserrat-Bold",
+    color: "#1B2B52",
+  },
+  starsRowMini: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+    gap: 1,
+  },
+  reviewDateText: {
+    fontSize: 10,
+    fontFamily: "Montserrat-Medium",
+    color: "#8A94AA",
+  },
+  reviewBodyText: {
+    marginTop: 10,
+    fontSize: 12,
+    fontFamily: "Montserrat-Medium",
+    color: "#536078",
+    lineHeight: 18,
+  },
+  reviewAttachedImage: {
+    marginTop: 10,
+    width: "100%",
+    height: 160,
+    borderRadius: 12,
+    resizeMode: "cover",
+    backgroundColor: "#F0F3F1",
+  },
+  merchantReplyBox: {
+    marginTop: 12,
+    flexDirection: "row",
+  },
+  replyConnectorLine: {
+    width: 2,
+    backgroundColor: "#43A560",
+    opacity: 0.3,
+    marginRight: 10,
+    borderRadius: 1,
+  },
+  merchantReplyContent: {
+    flex: 1,
+    backgroundColor: "#F7F9F7",
+    borderRadius: 12,
+    padding: 12,
+  },
+  merchantReplyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 4,
+  },
+  merchantReplyTitle: {
+    fontSize: 11,
+    fontFamily: "Montserrat-Bold",
+    color: "#43A560",
+  },
+  merchantReplyText: {
+    fontSize: 11,
+    fontFamily: "Montserrat-Medium",
+    color: "#536078",
+    lineHeight: 16,
   },
 });

@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
@@ -11,8 +11,12 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
+import { readAuthTokens } from "@/services/auth-session";
 
 const PRIMARY = "#1EA64A";
 const BG = "#F7F9F7";
@@ -31,14 +35,109 @@ const STAR_LABELS: Record<number, string> = {
 
 export default function WriteReviewScreen() {
   const insets = useSafeAreaInsets();
+  const { id, name: entityName, image: entityImage } = useLocalSearchParams<{
+    id?: string;
+    name?: string;
+    image?: string;
+  }>();
+
+  const targetId = id ?? "69f628db4e1b85b5b8730673"; // fallback to standard shop ID if none provided
+  const displayName = entityName ?? "UniBite Shop";
+  const displayImage = entityImage ?? "https://file.hstatic.net/200000700229/article/bun-bo-hue-1_da318989e7c2493f9e2c3e010e722466.jpg";
+
   const [rating, setRating] = useState(5);
   const [selectedTags, setSelectedTags] = useState<string[]>(["Đóng gói tốt", "Giá cả phù hợp", "Thức ăn ngon miệng"]);
   const [reviewText, setReviewText] = useState("");
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
+  };
+
+  const pickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImageUri(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Lỗi", "Không thể truy cập thư viện ảnh");
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!reviewText.trim()) {
+      Alert.alert("Thông báo", "Vui lòng nhập nhận xét chi tiết!");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const tokens = await readAuthTokens("tokens");
+      if (!tokens?.accessToken) {
+        Alert.alert("Lỗi", "Vui lòng đăng nhập để thực hiện đánh giá!");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // We support tags inside the content or append them nicely
+      const tagsText = selectedTags.length > 0 ? `[${selectedTags.join(", ")}] ` : "";
+      const finalContent = `${tagsText}${reviewText.trim()}`;
+
+      const formData = new FormData();
+      formData.append("content", finalContent);
+      formData.append("rating", rating.toString());
+
+      if (imageUri) {
+        const uriParts = imageUri.split('.');
+        const fileType = uriParts[uriParts.length - 1];
+        
+        // Construct the file payload
+        formData.append("image", {
+          uri: imageUri,
+          name: `review-image.${fileType}`,
+          type: `image/${fileType === 'jpg' ? 'jpeg' : fileType}`,
+        } as any);
+      }
+
+      const response = await fetch(`${API_URL}/api/comment/${targetId}`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${tokens.accessToken}`,
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        Alert.alert("Thành công", "Cảm ơn bạn đã gửi đánh giá!", [
+          { text: "Đóng", onPress: () => router.back() }
+        ]);
+      } else {
+        Alert.alert("Thất bại", result.message || "Gửi đánh giá thất bại!");
+      }
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      Alert.alert("Lỗi", "Đã xảy ra lỗi khi gửi đánh giá!");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -64,11 +163,11 @@ export default function WriteReviewScreen() {
         <View style={styles.productCard}>
           <View style={styles.productImageWrapper}>
             <Image
-              source={{ uri: "https://file.hstatic.net/200000700229/article/bun-bo-hue-1_da318989e7c2493f9e2c3e010e722466.jpg" }}
+              source={{ uri: displayImage }}
               style={styles.productImage}
             />
           </View>
-          <Text style={styles.productName}>Hồng trà Ngô Gia</Text>
+          <Text style={styles.productName}>{displayName}</Text>
           <View style={styles.verifiedRow}>
             <MaterialCommunityIcons name="check-decagram" size={16} color={PRIMARY} />
             <Text style={styles.verifiedText}>Đã xác minh mua hàng</Text>
@@ -133,22 +232,34 @@ export default function WriteReviewScreen() {
 
         {/* Media Upload */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thêm hình ảnh / video</Text>
-          <TouchableOpacity style={styles.mediaUpload} activeOpacity={0.8}>
-            <MaterialCommunityIcons name="camera-plus-outline" size={26} color="#7A9E82" />
-            <Text style={styles.mediaText}>Thêm ảnh hoặc video</Text>
+          <Text style={styles.sectionTitle}>Thêm hình ảnh (Không bắt buộc)</Text>
+          <TouchableOpacity style={styles.mediaUpload} activeOpacity={0.8} onPress={pickImage}>
+            {imageUri ? (
+              <Image source={{ uri: imageUri }} style={{ width: "100%", height: 160, borderRadius: 12, resizeMode: "cover" }} />
+            ) : (
+              <>
+                <MaterialCommunityIcons name="camera-plus-outline" size={26} color="#7A9E82" />
+                <Text style={styles.mediaText}>Thêm ảnh hoặc chụp hình</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
 
       {/* Bottom Buttons */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.btnSecondary} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.btnSecondary} activeOpacity={0.8} onPress={() => router.replace("/(tabs)")}>
           <Text style={styles.btnSecondaryText}>Về trang chủ</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.btnPrimary} activeOpacity={0.85}>
-          <Text style={styles.btnPrimaryText}>Gửi đánh giá</Text>
-          <Ionicons name="send" size={16} color="#fff" style={{ marginLeft: 6 }} />
+        <TouchableOpacity style={styles.btnPrimary} activeOpacity={0.85} onPress={handleSubmit} disabled={isSubmitting}>
+          {isSubmitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Text style={styles.btnPrimaryText}>Gửi đánh giá</Text>
+              <Ionicons name="send" size={16} color="#fff" style={{ marginLeft: 6 }} />
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

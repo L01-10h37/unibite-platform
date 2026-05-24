@@ -1,6 +1,7 @@
 import express from 'express';
 import * as commentController from '../controllers/commentController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
+import { uploadCommentImage, handleUploadError } from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
@@ -14,9 +15,9 @@ router.get('/:id', authenticate, commentController.getComments);
 /**
  * POST /api/comment/:id
  * Thêm comment mới
- * Auth: required | Body: { content: string }
+ * Auth: required | Body: { content: string, rating?: number, image?: string/file }
  */
-router.post('/:id', authenticate, commentController.addComment);
+router.post('/:id', authenticate, uploadCommentImage, handleUploadError, commentController.addComment);
 
 /**
  * DELETE /api/comment/:id/remove
