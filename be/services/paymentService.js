@@ -174,11 +174,13 @@ export const vnpayIpnHandle = async (vnp_Params) => {
 
             if (!payment) {
                 result = { RspCode: "01", Message: "Order not found" };
+                console.log("aaaaaaaaaaaaaaaaa")
                 return;
             }
 
             if (payment.status === "SUCCESS") {
                 result = { RspCode: "00", Message: "Already processed" };
+                console.log("bbbbbbbbbbbbbbbbbb")
                 return;
             }
 
@@ -186,6 +188,7 @@ export const vnpayIpnHandle = async (vnp_Params) => {
                 const order = await Order.findById(payment.order).session(session);
                 if (!order) {
                     result = { RspCode: "01", Message: "Order not found" };
+                    console.log("cccccccccccccccccc")
                     return;
                 }
 
@@ -211,13 +214,14 @@ export const vnpayIpnHandle = async (vnp_Params) => {
                 if (payment.voucherId) {
                     await voucherService.releaseVoucherReservation(payment._id, { session });
                 }
-
+                console.log("dddddddddddddddddd")
                 result = { RspCode: "00", Message: "Failed handled" };
             }
 
             await payment.save({ session });
         });
 
+        console.log("result:", result);
         return result;
     } catch (error) {
         console.error("IPN ERROR:", error);
