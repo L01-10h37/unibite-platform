@@ -50,6 +50,8 @@ export interface SellerReview {
     postId: string;
     userId: CommentUser | string;
     content: string;
+    rating: number;
+    reply: string | null;
     likeCount: number;
     likes: string[];
     createdAt: string;
@@ -190,11 +192,6 @@ export async function likeReview(
     return handleResponse<SellerReview>(res);
 }
 
-/**
- * Thêm comment / phản hồi mới.
- * POST /api/comment/:postId
- * Body: { content }
- */
 export async function addReview(
     postId: string,
     content: string,
@@ -204,6 +201,25 @@ export async function addReview(
         method: "POST",
         headers: { ...authHeaders(token), "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
+    });
+    return handleResponse<SellerReview>(res);
+}
+
+/**
+ * Phản hồi một review từ phía seller.
+ * PUT /api/comment/:postId/reply
+ * Body: { cmtId, reply }
+ */
+export async function replyToReview(
+    postId: string,
+    cmtId: string,
+    reply: string,
+    token: string
+): Promise<SellerReview> {
+    const res = await fetch(`${API_BASE}/api/comment/${postId}/reply`, {
+        method: "PUT",
+        headers: { ...authHeaders(token), "Content-Type": "application/json" },
+        body: JSON.stringify({ cmtId, reply }),
     });
     return handleResponse<SellerReview>(res);
 }
