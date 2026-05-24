@@ -39,9 +39,9 @@ export const vnpayReturnHandle = async (req, res, next) => {
     try {
         const vnp_Params = req.query;
 
-        const result = await paymentService.vnpayReurnHandle(vnp_Params);
+        const isSuccess = vnp_Params['vnp_ResponseCode'] === "00";
 
-        if (result?.success) {
+        if (isSuccess) {
             return res.redirect("http://localhost:3000/payment-success");
         } else {
             return res.redirect("http://localhost:3000/payment-failed");
@@ -52,7 +52,12 @@ export const vnpayReturnHandle = async (req, res, next) => {
 };
 
 export const vnpayIpnHandle = async (req, res, next) => {
-    try {} catch (error) {
+    try {
+        const vnp_Params = req.query;
+
+        const result = await paymentService.vnpayIpnHandle(vnp_Params);
+        res.json(result);
+    } catch (error) {
         next(error);
     }
 };
