@@ -66,7 +66,7 @@ class VNPayHelper {
 
         const signed = hmac.update(signData).digest("hex");
 
-        return signed !== secureHash 
+        return signed === secureHash 
     }
 }
 
