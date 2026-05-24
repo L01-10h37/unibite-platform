@@ -1080,7 +1080,7 @@ const styles = StyleSheet.create({
     width: 43,
     height: 43,
     borderRadius: 21.5,
-    marginLeft: 24,
+    marginLeft: 0,
     marginRight: 14,
   },
   commentBody: {
@@ -1194,7 +1194,7 @@ const styles = StyleSheet.create({
   merchantReplyBox: {
     marginTop: 10,
     flexDirection: "row",
-    paddingRight: 24,
+    paddingRight: 0,
   },
   replyConnectorLine: {
     width: 2,
@@ -1230,7 +1230,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingRight: 24,
+    paddingRight: 0,
   },
   writeReviewHeaderText: {
     fontSize: 11,

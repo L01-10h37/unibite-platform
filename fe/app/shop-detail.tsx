@@ -234,8 +234,16 @@ export default function ShopDetailScreen() {
       const loadReviews = async () => {
         try {
           setIsReviewsLoading(true);
+          const tokens = await readAuthTokens("tokens");
+          const accessToken = tokens?.accessToken ?? null;
+          
+          const headers: HeadersInit = { accept: "application/json" };
+          if (accessToken) {
+            headers["Authorization"] = `Bearer ${accessToken}`;
+          }
+
           const response = await fetch(`${API_URL}/api/comment/${shopId}?page=1&limit=15`, {
-            headers: { accept: "application/json" },
+            headers,
           });
           const payload = await response.json();
           if (payload.success && isMounted) {
