@@ -173,11 +173,13 @@ export const vnpayIpnHandle = async (vnp_Params) => {
             const payment = await Payment.findById(paymentId).session(session);
 
             if (!payment) {
-                return { RspCode: "01", Message: "Order not found" };
+                result = { RspCode: "01", Message: "Order not found" };
+                return;
             }
 
             if (payment.status === "SUCCESS") {
-                return { RspCode: "00", Message: "Already processed" };
+                result = { RspCode: "00", Message: "Already processed" };
+                return;
             }
 
             if (isSuccess) {
@@ -186,7 +188,8 @@ export const vnpayIpnHandle = async (vnp_Params) => {
 
                 const order = await Order.findById(payment.order).session(session);
                 if (!order) {
-                    return { RspCode: "01", Message: "Order not found" };
+                    result = { RspCode: "01", Message: "Order not found" };
+                    return;
                 }
 
                 order.isPaid = true;
@@ -209,11 +212,14 @@ export const vnpayIpnHandle = async (vnp_Params) => {
             }
 
             await payment.save({ session });
-        });
-        session.endSession();
 
-        return { RspCode: "00", Message: "IPN processed successfully" };
+            result = { RspCode: "00", Message: "IPN processed successfully" };
+        });
+
+        return result;
     } catch (error) {
         return { RspCode: "99", Message: "Unknown error" }   
+    } finally {
+        session.endSession();
     }
 }; 
