@@ -20,6 +20,7 @@ import commentRouter from './routes/comments.js';
 import shopRouter from './routes/shops.js';
 import categoriesRouter from './routes/categories.js';
 import foodsRouter from './routes/foods.js';
+import vouchersRouter from './routes/vouchers.js';
 import { checkElasticsearchConnection } from './config/elasticsearch.js';
 import paymentRouter from './routes/payment.js'
 import { connectRedis, disconnectRedis } from './config/redis.js';
@@ -72,6 +73,7 @@ app.use('/api/comment', commentRouter);
 app.use('/api/shops', shopRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/foods', foodsRouter);
+app.use('/api/vouchers', vouchersRouter);
 app.use('/api/payments', paymentRouter);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 

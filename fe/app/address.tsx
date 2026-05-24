@@ -74,11 +74,6 @@ interface PlaceSuggestion {
   longitude: number;
 }
 
-interface NormalizedAddressResult {
-  readable: string;
-  coordinateLabel: string;
-}
-
 function isCoordinateString(value?: string) {
   if (!value) {
     return false;
@@ -88,86 +83,6 @@ function isCoordinateString(value?: string) {
 
 function formatCoordinates(latitude: number, longitude: number) {
   return `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-}
-
-function normalizeVietnameseRegionName(value?: string) {
-  if (!value) {
-    return '';
-  }
-
-  const normalized = value.trim();
-  const lower = normalized.toLowerCase();
-
-  if (
-    lower.includes('ho chi minh') ||
-    lower.includes('hochiminh') ||
-    lower.includes('hcmc') ||
-    lower.includes('tp. ho chi minh') ||
-    lower.includes('thanh pho ho chi minh')
-  ) {
-    return 'TPHCM';
-  }
-
-  if (lower.includes('ha noi') || lower.includes('hanoi') || lower.includes('thanh pho ha noi')) {
-    return 'Hà Nội';
-  }
-
-  if (lower.includes('da nang') || lower.includes('danang') || lower.includes('thanh pho da nang')) {
-    return 'Đà Nẵng';
-  }
-
-  return normalized;
-}
-
-function normalizeVietnameseAddressParts(address: any, payload: any, latitude: number, longitude: number) {
-  const houseNumber = address?.house_number || address?.house || address?.unit || '';
-  const road = address?.road || address?.pedestrian || address?.street || address?.residential || '';
-  const hamlet = address?.hamlet || '';
-  const neighbourhood = address?.neighbourhood || address?.quarter || '';
-  const suburb = address?.suburb || address?.ward || address?.city_district || '';
-  const village = address?.village || address?.commune || '';
-  const town = address?.town || '';
-  const county = address?.county || address?.district || '';
-  const state = normalizeVietnameseRegionName(address?.city || address?.province || address?.state || payload?.display_name);
-
-  const street = [houseNumber, road].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
-
-  const locality = [
-    village,
-    suburb,
-    neighbourhood,
-    hamlet,
-    town,
-    county,
-    state,
-  ]
-    .filter(Boolean)
-    .map((part: string) => {
-      const text = part.trim();
-      const lowered = text.toLowerCase();
-
-      if (lowered.startsWith('ward ') || lowered.startsWith('phuong ')) {
-        return text.replace(/^ward\s+/i, 'Phường ').replace(/^phuong\s+/i, 'Phường ');
-      }
-      if (lowered.startsWith('commune ') || lowered.startsWith('xa ')) {
-        return text.replace(/^commune\s+/i, 'Xã ').replace(/^xa\s+/i, 'Xã ');
-      }
-      if (lowered.startsWith('district ') || lowered.startsWith('huyen ')) {
-        return text.replace(/^district\s+/i, 'Huyện ').replace(/^huyen\s+/i, 'Huyện ');
-      }
-      if (lowered.startsWith('township ') || lowered.startsWith('thi tran ')) {
-        return text.replace(/^township\s+/i, 'Thị trấn ').replace(/^thi tran\s+/i, 'Thị trấn ');
-      }
-      if (lowered.startsWith('city ') || lowered.startsWith('tp ') || lowered.startsWith('tp.') || lowered.startsWith('thanh pho ')) {
-        return normalizeVietnameseRegionName(text);
-      }
-
-      return text;
-    });
-
-  const readable = [street, ...locality].filter(Boolean).join(', ');
-
-  return readable || payload?.display_name || '';
 }
 
 async function readJsonSafely<T>(response: Response): Promise<T | null> {
@@ -181,16 +96,6 @@ async function readJsonSafely<T>(response: Response): Promise<T | null> {
   } catch {
     return null;
   }
-}
-
-function buildReadableAddress(payload: any, latitude: number, longitude: number): NormalizedAddressResult {
-  const address = payload?.address || {};
-  const readable = normalizeVietnameseAddressParts(address, payload, latitude, longitude);
-
-  return {
-    readable,
-    coordinateLabel: formatCoordinates(latitude, longitude),
-  };
 }
 
 function isSameRegion(a: Region, b: Region) {

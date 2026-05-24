@@ -261,7 +261,7 @@ export default function RestaurantDetailScreen() {
             <MaterialCommunityIcons name="sale" size={18} color={PRIMARY} />
             <Text style={styles.voucherText}>
               Tiết kiệm 5.000đ với mã giảm{" "}
-              <Text style={styles.voucherCode}>"UNIBITEO"</Text>
+              <Text style={styles.voucherCode}>"UNIBITE0"</Text>
             </Text>
             <Ionicons name="chevron-forward" size={16} color={PRIMARY} />
           </TouchableOpacity>

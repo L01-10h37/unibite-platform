@@ -18,6 +18,7 @@ router.get('/', (req, res, next) => {
       profile: '/api/users/me',
       shops: '/api/shops',
       foods: '/api/foods',
+      vouchers: '/api/vouchers',
       health: '/health'
     }
   }, 'API is running');

@@ -1,107 +1,199 @@
-/**
- * VoucherScreen - Screen 7
- * Màn hình quản lý Voucher cho food mobile app
- *
- * Dependencies cần cài:
- *   expo install react-native-safe-area-context @expo/vector-icons react-native-svg
- *
- * Fonts cần load (expo-font):
- *   - Be Vietnam Pro (Regular, Medium, Bold)
- *   - Plus Jakarta Sans (Bold)
- *   - Montserrat (ExtraBold)
- */
-
-import React, { useState } from 'react';
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  View,
-  Text,
+  ActivityIndicator,
   ScrollView,
+  StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-// ─── Color tokens ─────────────────────────────────────────────────────────────
+import {
+  clearSelectedVoucherCode,
+  getSelectedVoucherCode,
+  getVouchers,
+  lookupVoucherByCode,
+  saveSelectedVoucherCode,
+  type VoucherDto,
+  type VoucherStatus,
+} from "@/services/voucher-service";
+
 const C = {
-  bgMain: '#C5E0CD',
-  white: '#FFFFFF',
-  offWhite: '#FEFFFE',
-  primaryDark: '#176A21',
-  primaryDarker: '#006A38',
-  primaryMid: '#3E8C55',
-  primaryDeep: '#295D38',
-  lightGreen: '#9DF197',
-  paleLightGreen: 'rgba(157, 241, 151, 0.3)',
-  paleDeliveryGreen: 'rgba(134, 250, 172, 0.3)',
-  textDark: '#223131',
-  textMid: '#4E5F5E',
-  textLight: '#697A79',
-  textGrey: '#484C52',
-  textIconGrey: '#8E98A8',
-  accentRed: '#B02500',
-  accentRedBg: 'rgba(249, 86, 48, 0.1)',
-  borderLight: '#C8E2E1',
+  bgMain: "#C5E0CD",
+  white: "#FFFFFF",
+  offWhite: "#FEFFFE",
+  primaryDark: "#176A21",
+  primaryDarker: "#006A38",
+  primaryMid: "#3E8C55",
+  primaryDeep: "#295D38",
+  lightGreen: "#9DF197",
+  paleLightGreen: "rgba(157, 241, 151, 0.3)",
+  paleDeliveryGreen: "rgba(134, 250, 172, 0.3)",
+  textDark: "#223131",
+  textMid: "#4E5F5E",
+  textLight: "#697A79",
+  accentRed: "#B02500",
+  accentRedBg: "rgba(249, 86, 48, 0.1)",
+  borderLight: "#C8E2E1",
 };
 
-// ─── Voucher Card (active) ─────────────────────────────────────────────────────
-interface VoucherCardProps {
-  type: 'offer' | 'delivery';
-  title: string;
-  subtitle: string;
-  expiry: string;
-  isExpiringSoon?: boolean;
+const infoBannerText =
+  "Mỗi đơn chỉ dùng 1 voucher. Voucher sẽ hết hiệu lực khi được áp dụng thành công hoặc khi quá hạn.";
+
+function formatMoney(value: number) {
+  return `${value.toLocaleString("vi-VN")}đ`;
 }
 
-function VoucherCard({ type, title, subtitle, expiry, isExpiringSoon }: VoucherCardProps) {
-  const isOffer = type === 'offer';
-  const leftBg = isOffer ? C.paleLightGreen : C.paleDeliveryGreen;
-  const iconBg = isOffer ? C.primaryDark : C.primaryDarker;
-  const iconColor = isOffer ? '#D1FFC8' : '#CCFFD6';
-  const labelColor = isOffer ? C.primaryDark : C.primaryDarker;
-  const label = isOffer ? 'OFFER' : 'DELIVERY';
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function getVoucherTitle(voucher: VoucherDto) {
+  if (voucher.type === "FREE_SHIPPING") {
+    return "Miễn phí vận chuyển";
+  }
+
+  if (voucher.type === "PERCENT") {
+    return `Giảm ${voucher.value}%`;
+  }
+
+  return `Giảm ${formatMoney(voucher.value)}`;
+}
+
+function getVoucherSubtitle(voucher: VoucherDto) {
+  const parts = [voucher.description?.trim() || "Voucher từ ứng dụng"];
+
+  if (voucher.minOrderValue > 0) {
+    parts.push(`Đơn tối thiểu ${formatMoney(voucher.minOrderValue)}`);
+  } else {
+    parts.push("Áp dụng cho mọi đơn hợp lệ");
+  }
+
+  return parts.join(" • ");
+}
+
+function getStatusLabel(status: VoucherStatus) {
+  const labels: Record<VoucherStatus, string> = {
+    ACTIVE: "Còn hiệu lực",
+    RESERVED: "Đang giữ chỗ",
+    USED: "Đã dùng",
+    EXPIRED: "Hết hạn",
+    DISABLED: "Đã tắt",
+  };
+
+  return labels[status] ?? status;
+}
+
+function isExpired(voucher: VoucherDto) {
+  return new Date(voucher.expiresAt).getTime() < Date.now();
+}
+
+function isExpiringSoon(voucher: VoucherDto) {
+  const remainingMs = new Date(voucher.expiresAt).getTime() - Date.now();
+  return remainingMs > 0 && remainingMs <= 3 * 24 * 60 * 60 * 1000;
+}
+
+function getPalette(voucher: VoucherDto) {
+  const isOffer = voucher.type === "PERCENT" || voucher.type === "FIXED";
+
+  return {
+    leftBg: isOffer ? C.paleLightGreen : C.paleDeliveryGreen,
+    iconBg: isOffer ? C.primaryDark : C.primaryDarker,
+    iconColor: isOffer ? "#D1FFC8" : "#CCFFD6",
+    labelColor: isOffer ? C.primaryDark : C.primaryDarker,
+  };
+}
+
+function VoucherCard({
+  voucher,
+  selected,
+  onPress,
+}: {
+  voucher: VoucherDto;
+  selected: boolean;
+  onPress: (voucher: VoucherDto) => void;
+}) {
+  const expired = isExpired(voucher) || voucher.status !== "ACTIVE";
+  const palette = getPalette(voucher);
+  const iconName = voucher.type === "FREE_SHIPPING" ? "truck" : "percent";
 
   return (
-    <View style={voucherCardStyles.card}>
-      {/* Left icon section */}
-      <View style={[voucherCardStyles.leftSection, { backgroundColor: leftBg }]}>
-        <View style={[voucherCardStyles.iconBg, { backgroundColor: iconBg }]}>
-          {isOffer ? (
-            <MaterialCommunityIcons name="percent" size={20} color={iconColor} />
+    <View style={[voucherCardStyles.card, selected && voucherCardStyles.cardSelected]}>
+      <View style={[voucherCardStyles.leftSection, { backgroundColor: palette.leftBg }]}>
+        <View style={[voucherCardStyles.iconBg, { backgroundColor: palette.iconBg }]}>
+          {voucher.type === "FREE_SHIPPING" ? (
+            <Feather name={iconName as "truck"} size={18} color={palette.iconColor} />
           ) : (
-            <Feather name="truck" size={18} color={iconColor} />
+            <MaterialCommunityIcons name={iconName as "percent"} size={20} color={palette.iconColor} />
           )}
         </View>
-        <Text style={[voucherCardStyles.typeLabel, { color: labelColor }]}>{label}</Text>
+        <Text style={[voucherCardStyles.typeLabel, { color: palette.labelColor }]}> 
+          {voucher.type === "FREE_SHIPPING" ? "DELIVERY" : voucher.type}
+        </Text>
       </View>
 
-      {/* Content section */}
       <View style={voucherCardStyles.contentSection}>
-        {/* Title row */}
         <View style={voucherCardStyles.titleRow}>
-          <Text style={voucherCardStyles.title} numberOfLines={2}>
-            {title}
-          </Text>
-          <TouchableOpacity>
-            <Text style={voucherCardStyles.selectBtn}>Chọn</Text>
-          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={voucherCardStyles.title} numberOfLines={2}>
+              {getVoucherTitle(voucher)}
+            </Text>
+            <Text style={voucherCardStyles.codeText}>{voucher.code}</Text>
+          </View>
+
+          {!expired ? (
+            <TouchableOpacity
+              onPress={() => onPress(voucher)}
+              activeOpacity={0.8}
+              style={[voucherCardStyles.selectButton, selected && voucherCardStyles.selectButtonSelected]}
+            >
+              <Text style={[voucherCardStyles.selectBtn, selected && voucherCardStyles.selectBtnSelected]}>
+                {selected ? "Đã chọn" : "Chọn"}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={voucherCardStyles.statusPill}>
+              <Text style={voucherCardStyles.statusPillText}>{getStatusLabel(voucher.status)}</Text>
+            </View>
+          )}
         </View>
 
-        {/* Subtitle */}
-        <Text style={voucherCardStyles.subtitle}>{subtitle}</Text>
+        <Text style={voucherCardStyles.subtitle}>{getVoucherSubtitle(voucher)}</Text>
 
-        {/* Expiry */}
-        {isExpiringSoon ? (
-          <View style={voucherCardStyles.expiryWarning}>
-            <Feather name="clock" size={11} color={C.accentRed} />
-            <Text style={voucherCardStyles.expiryWarningText}>{expiry}</Text>
+        {voucher.status === "ACTIVE" && !isExpired(voucher) ? (
+          <View style={isExpiringSoon(voucher) ? voucherCardStyles.expiryWarning : voucherCardStyles.expiryNormal}>
+            <Feather
+              name={isExpiringSoon(voucher) ? "clock" : "calendar"}
+              size={11}
+              color={isExpiringSoon(voucher) ? C.accentRed : C.textLight}
+            />
+            <Text style={isExpiringSoon(voucher) ? voucherCardStyles.expiryWarningText : voucherCardStyles.expiryNormalText}>
+              {isExpiringSoon(voucher)
+                ? `Hết hạn trong ${Math.max(
+                    1,
+                    Math.ceil((new Date(voucher.expiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)),
+                  )} ngày`
+                : `Hết hạn: ${formatDate(voucher.expiresAt)}`}
+            </Text>
           </View>
         ) : (
           <View style={voucherCardStyles.expiryNormal}>
-            <Feather name="calendar" size={11} color={C.textLight} />
-            <Text style={voucherCardStyles.expiryNormalText}>{expiry}</Text>
+            <Feather name="slash" size={11} color={C.textLight} />
+            <Text style={voucherCardStyles.expiryNormalText}>
+              {voucher.status === "USED"
+                ? `Đã dùng ngày ${voucher.usedAt ? formatDate(voucher.usedAt) : formatDate(voucher.expiresAt)}`
+                : voucher.status === "RESERVED"
+                  ? "Đang chờ thanh toán hoàn tất"
+                  : `Đã hết hạn ngày ${formatDate(voucher.expiresAt)}`}
+            </Text>
           </View>
         )}
       </View>
@@ -113,37 +205,42 @@ const voucherCardStyles = StyleSheet.create({
   card: {
     backgroundColor: C.white,
     borderRadius: 32,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    shadowColor: '#223131',
+    flexDirection: "row",
+    overflow: "hidden",
+    shadowColor: "#223131",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.06,
     shadowRadius: 24,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  cardSelected: {
+    borderColor: C.primaryMid,
   },
   leftSection: {
     width: 96,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 24,
     paddingRight: 2,
     borderRightWidth: 2,
     borderRightColor: C.borderLight,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
   },
   iconBg: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 8,
   },
   typeLabel: {
     fontSize: 10,
     letterSpacing: 1,
-    textTransform: 'uppercase',
-    fontFamily: 'BeVietnamPro-Bold',
+    textTransform: "uppercase",
+    fontFamily: "BeVietnamPro-Bold",
   },
   contentSection: {
     flex: 1,
@@ -151,145 +248,226 @@ const voucherCardStyles = StyleSheet.create({
     gap: 4,
   },
   titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
   },
   title: {
     fontSize: 20,
     color: C.textDark,
     lineHeight: 28,
-    flex: 1,
-    marginRight: 8,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: "PlusJakartaSans-Bold",
+  },
+  codeText: {
+    marginTop: 4,
+    fontSize: 12,
+    color: C.primaryDeep,
+    letterSpacing: 1,
+    fontFamily: "Montserrat-Bold",
+  },
+  selectButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 9999,
+    backgroundColor: "rgba(41, 93, 56, 0.10)",
+  },
+  selectButtonSelected: {
+    backgroundColor: C.primaryDark,
   },
   selectBtn: {
     fontSize: 14,
     color: C.primaryDark,
-    fontFamily: 'BeVietnamPro-Bold',
+    fontFamily: "BeVietnamPro-Bold",
+  },
+  selectBtnSelected: {
+    color: C.white,
+  },
+  statusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 9999,
+    backgroundColor: C.accentRedBg,
+  },
+  statusPillText: {
+    fontSize: 12,
+    color: C.accentRed,
+    fontFamily: "BeVietnamPro-Bold",
   },
   subtitle: {
     fontSize: 14,
     color: C.textMid,
     lineHeight: 20,
-    fontFamily: 'BeVietnamPro-Regular',
-    paddingBottom: 8,
+    fontFamily: "BeVietnamPro-Regular",
+    paddingBottom: 4,
   },
   expiryWarning: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     backgroundColor: C.accentRedBg,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   expiryWarningText: {
     fontSize: 12,
     color: C.accentRed,
-    fontFamily: 'BeVietnamPro-Medium',
+    fontFamily: "BeVietnamPro-Medium",
   },
   expiryNormal: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     paddingTop: 8,
   },
   expiryNormalText: {
     fontSize: 12,
     color: C.textMid,
-    fontFamily: 'BeVietnamPro-Medium',
+    fontFamily: "BeVietnamPro-Medium",
   },
 });
 
-// ─── Expired Voucher Card ──────────────────────────────────────────────────────
-interface ExpiredCardProps {
+function SectionHeader({
+  title,
+  count,
+}: {
   title: string;
-  date: string;
-  status: 'used' | 'expired';
-}
-
-function ExpiredVoucherCard({ title, date, status }: ExpiredCardProps) {
+  count?: number;
+}) {
   return (
-    <View style={expiredStyles.card}>
-      {/* Icon */}
-      <View style={expiredStyles.iconWrapper}>
-        <View style={expiredStyles.iconCircle}>
-          <Feather name="slash" size={16} color={C.textLight} />
+    <View style={styles.sectionHead}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {typeof count === "number" ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{count} voucher</Text>
         </View>
-      </View>
-
-      {/* Content */}
-      <View style={expiredStyles.content}>
-        <Text style={expiredStyles.title}>{title}</Text>
-        <Text style={expiredStyles.date}>{date}</Text>
-      </View>
-
-      {/* Status badge */}
-      <Text style={expiredStyles.statusText}>
-        {status === 'used' ? 'ĐÃ DÙNG' : 'HẾT HẠN'}
-      </Text>
+      ) : null}
     </View>
   );
 }
 
-const expiredStyles = StyleSheet.create({
-  card: {
-    backgroundColor: '#E1F5F4',
-    borderRadius: 32,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 22,
-    paddingVertical: 18,
-    borderWidth: 2,
-    borderColor: C.borderLight,
-    borderStyle: 'dashed',
-  },
-  iconWrapper: {
-    marginRight: 16,
-  },
-  iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: C.borderLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 16,
-    color: C.textMid,
-    lineHeight: 24,
-    fontFamily: 'BeVietnamPro-Bold',
-  },
-  date: {
-    fontSize: 12,
-    color: C.textLight,
-    lineHeight: 16,
-    fontFamily: 'BeVietnamPro-Regular',
-  },
-  statusText: {
-    fontSize: 12,
-    color: C.textLight,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    fontFamily: 'BeVietnamPro-Bold',
-  },
-});
-
-// ─── Main Screen ───────────────────────────────────────────────────────────────
 export default function VoucherScreen() {
-  const [voucherCode, setVoucherCode] = useState('');
+  const [voucherCode, setVoucherCode] = useState("");
+  const [vouchers, setVouchers] = useState<VoucherDto[]>([]);
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<"success" | "error" | "info">("info");
+
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      setLoading(true);
+
+      try {
+        const [voucherList, storedSelectedCode] = await Promise.all([
+          getVouchers(),
+          getSelectedVoucherCode(),
+        ]);
+
+        if (!mounted) {
+          return;
+        }
+
+        setVouchers(voucherList);
+        setSelectedCode(storedSelectedCode?.toUpperCase() || null);
+      } catch (error) {
+        if (!mounted) {
+          return;
+        }
+
+        setMessage(error instanceof Error ? error.message : "Không thể tải voucher");
+        setMessageTone("error");
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const activeVouchers = useMemo(
+    () => vouchers.filter((voucher) => voucher.status === "ACTIVE" && !isExpired(voucher)),
+    [vouchers],
+  );
+
+  const inactiveVouchers = useMemo(
+    () => vouchers.filter((voucher) => voucher.status !== "ACTIVE" || isExpired(voucher)),
+    [vouchers],
+  );
+
+  const selectedVoucher = useMemo(
+    () => vouchers.find((voucher) => voucher.code === selectedCode) || null,
+    [selectedCode, vouchers],
+  );
+
+  const applySelectedVoucher = async (voucher: VoucherDto) => {
+    if (voucher.status !== "ACTIVE" || isExpired(voucher)) {
+      setMessage("Voucher này không còn hiệu lực.");
+      setMessageTone("error");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await saveSelectedVoucherCode(voucher.code);
+      setSelectedCode(voucher.code);
+      setVoucherCode(voucher.code);
+      setMessage(`Đã áp dụng ${voucher.code} cho lần thanh toán tới.`);
+      setMessageTone("success");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Không thể áp dụng voucher");
+      setMessageTone("error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleApplyCode = async () => {
+    const code = voucherCode.trim();
+
+    if (!code) {
+      setMessage("Vui lòng nhập mã voucher.");
+      setMessageTone("error");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const voucher = await lookupVoucherByCode(code);
+      await saveSelectedVoucherCode(voucher.code);
+      setSelectedCode(voucher.code);
+      setVoucherCode(voucher.code);
+      setMessage(`Đã áp dụng ${voucher.code} cho lần thanh toán tới.`);
+      setMessageTone("success");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Mã voucher không hợp lệ");
+      setMessageTone("error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleClearSelection = async () => {
+    await clearSelectedVoucherCode();
+    setSelectedCode(null);
+    setMessage("Đã bỏ chọn voucher.");
+    setMessageTone("info");
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      {/* Page background */}
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.container}>
-        {/* ── Header ── */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} activeOpacity={0.7} onPress={() => router.back()}>
             <Feather name="chevron-left" size={22} color="#17181B" />
@@ -298,15 +476,10 @@ export default function VoucherScreen() {
           <View style={styles.headerRight} />
         </View>
 
-        {/* ── Voucher Code Input ── */}
         <View style={styles.inputSection}>
           <View style={styles.inputRow}>
             <View style={styles.inputIconWrap}>
-              <MaterialCommunityIcons
-                name="ticket-percent-outline"
-                size={20}
-                color="#697A79"
-              />
+              <MaterialCommunityIcons name="ticket-percent-outline" size={20} color="#697A79" />
             </View>
             <TextInput
               style={styles.textInput}
@@ -315,62 +488,87 @@ export default function VoucherScreen() {
               value={voucherCode}
               onChangeText={setVoucherCode}
               returnKeyType="done"
+              autoCapitalize="characters"
             />
-            <TouchableOpacity style={styles.applyBtn} activeOpacity={0.85}>
-              <Text style={styles.applyBtnText}>Áp dụng</Text>
+            <TouchableOpacity style={styles.applyBtn} activeOpacity={0.85} onPress={handleApplyCode} disabled={submitting}>
+              {submitting ? <ActivityIndicator size="small" color={C.white} /> : <Text style={styles.applyBtnText}>Áp dụng</Text>}
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* ── Scrollable content ── */}
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Active vouchers heading */}
-          <View style={styles.sectionHead}>
-            <Text style={styles.sectionTitle}>Voucher hiện có</Text>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>2 voucher mới</Text>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.infoCard}>
+            <View style={styles.infoCardHeader}>
+              <View style={styles.infoIcon}>
+                <Feather name="info" size={16} color={C.primaryDark} />
+              </View>
+              <Text style={styles.infoTitle}>Cách dùng voucher</Text>
             </View>
+            <Text style={styles.infoText}>{infoBannerText}</Text>
+            {selectedVoucher ? (
+              <View style={styles.selectedChip}>
+                <Text style={styles.selectedChipText}>Đang chọn: {selectedVoucher.code}</Text>
+                <TouchableOpacity onPress={handleClearSelection} activeOpacity={0.8}>
+                  <Text style={styles.clearSelectionText}>Bỏ chọn</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
 
-          {/* Active voucher cards */}
-          <View style={styles.cardsGap}>
-            <VoucherCard
-              type="offer"
-              title="Giảm 5.000đ"
-              subtitle="Đơn tối thiểu 50.000đ"
-              expiry="Hết hạn trong 2 ngày"
-              isExpiringSoon
-            />
-            <VoucherCard
-              type="delivery"
-              title="Miễn phí vận chuyển"
-              subtitle="Đơn tối thiểu 0đ"
-              expiry="Hết hạn: 31/3/2026"
-            />
-          </View>
+          {message ? (
+            <View style={[styles.messageBox, messageTone === "success" && styles.messageSuccess, messageTone === "error" && styles.messageError]}>
+              <Text style={[styles.messageText, messageTone === "success" && styles.messageTextSuccess, messageTone === "error" && styles.messageTextError]}>
+                {message}
+              </Text>
+            </View>
+          ) : null}
 
-          {/* Expired vouchers section (60% opacity) */}
-          <View style={styles.expiredSection}>
-            <Text style={styles.expiredSectionTitle}>Voucher hết hiệu lực</Text>
+          <SectionHeader title="Voucher hiện có" count={activeVouchers.length} />
+
+          {loading ? (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator size="large" color={C.primaryDark} />
+              <Text style={styles.loadingText}>Đang tải voucher...</Text>
+            </View>
+          ) : activeVouchers.length > 0 ? (
             <View style={styles.cardsGap}>
-              <ExpiredVoucherCard
-                title="Giảm 50.000đ"
-                date="Đã sử dụng ngày 28/3/2026"
-                status="used"
-              />
-              <ExpiredVoucherCard
-                title="Miễn phí vận chuyển"
-                date="Đã hết hạn ngày 30/3/2026"
-                status="expired"
-              />
+              {activeVouchers.map((voucher) => (
+                <VoucherCard
+                  key={voucher.id}
+                  voucher={voucher}
+                  selected={selectedCode === voucher.code}
+                  onPress={applySelectedVoucher}
+                />
+              ))}
             </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Feather name="tag" size={22} color={C.textLight} />
+              <Text style={styles.emptyStateText}>Chưa có voucher đang hoạt động</Text>
+            </View>
+          )}
+
+          <View style={styles.expiredSection}>
+            <SectionHeader title="Voucher hết hiệu lực" count={inactiveVouchers.length} />
+            {inactiveVouchers.length > 0 ? (
+              <View style={styles.cardsGap}>
+                {inactiveVouchers.map((voucher) => (
+                  <VoucherCard
+                    key={voucher.id}
+                    voucher={voucher}
+                    selected={selectedCode === voucher.code}
+                    onPress={applySelectedVoucher}
+                  />
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <Feather name="shield" size={22} color={C.textLight} />
+                <Text style={styles.emptyStateText}>Chưa có voucher đã dùng hoặc hết hạn</Text>
+              </View>
+            )}
           </View>
 
-          {/* Bottom padding for nav */}
           <View style={{ height: 16 }} />
         </ScrollView>
       </View>
@@ -387,12 +585,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: C.bgMain,
   },
-
-  // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
@@ -400,32 +596,30 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 34,
     height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
     fontSize: 20,
-    color: '#17181B',
-    fontFamily: 'Montserrat-ExtraBold',
+    color: "#17181B",
+    fontFamily: "Montserrat-ExtraBold",
   },
   headerRight: {
     width: 34,
   },
-
-  // Voucher input
   inputSection: {
     marginHorizontal: 24,
     marginBottom: 16,
   },
   inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: C.white,
     borderRadius: 9999,
     paddingVertical: 6,
     paddingLeft: 6,
     paddingRight: 6,
-    shadowColor: '#223131',
+    shadowColor: "#223131",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
@@ -440,22 +634,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: C.textDark,
     paddingVertical: 10,
-    fontFamily: 'Montserrat-Medium',
+    fontFamily: "Montserrat-Medium",
   },
   applyBtn: {
+    minWidth: 96,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: C.primaryDark,
     borderRadius: 9999,
-    paddingHorizontal: 24,
+    paddingHorizontal: 22,
     paddingVertical: 12,
   },
   applyBtnText: {
-    color: '#D1FFC8',
+    color: C.white,
     fontSize: 14,
     letterSpacing: 0.35,
-    fontFamily: 'Montserrat-Bold',
+    fontFamily: "Montserrat-Bold",
   },
-
-  // Scroll
   scroll: {
     flex: 1,
   },
@@ -463,19 +658,97 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 4,
   },
-
-  // Section heading
+  infoCard: {
+    backgroundColor: C.offWhite,
+    borderRadius: 28,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: C.borderLight,
+    marginBottom: 16,
+  },
+  infoCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 8,
+  },
+  infoIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: C.paleLightGreen,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  infoTitle: {
+    fontSize: 16,
+    color: C.textDark,
+    fontFamily: "PlusJakartaSans-Bold",
+  },
+  infoText: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: C.textMid,
+    fontFamily: "BeVietnamPro-Regular",
+  },
+  selectedChip: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    backgroundColor: C.paleDeliveryGreen,
+    borderRadius: 9999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  selectedChipText: {
+    flex: 1,
+    fontSize: 13,
+    color: C.primaryDeep,
+    fontFamily: "BeVietnamPro-Bold",
+  },
+  clearSelectionText: {
+    fontSize: 13,
+    color: C.accentRed,
+    fontFamily: "BeVietnamPro-Bold",
+  },
+  messageBox: {
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 16,
+    backgroundColor: "rgba(41, 93, 56, 0.10)",
+  },
+  messageSuccess: {
+    backgroundColor: "rgba(157, 241, 151, 0.25)",
+  },
+  messageError: {
+    backgroundColor: C.accentRedBg,
+  },
+  messageText: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: C.primaryDeep,
+    fontFamily: "BeVietnamPro-Medium",
+  },
+  messageTextSuccess: {
+    color: C.primaryDeep,
+  },
+  messageTextError: {
+    color: C.accentRed,
+  },
   sectionHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 20,
     color: C.textDark,
     letterSpacing: -0.5,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: "PlusJakartaSans-Bold",
   },
   badge: {
     backgroundColor: C.lightGreen,
@@ -485,26 +758,41 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 12,
-    color: '#005C15',
+    color: "#005C15",
     lineHeight: 16,
-    fontFamily: 'BeVietnamPro-Bold',
+    fontFamily: "BeVietnamPro-Bold",
   },
-
   cardsGap: {
     gap: 16,
   },
-
-  // Expired section
   expiredSection: {
     marginTop: 20,
-    opacity: 0.6,
     gap: 8,
   },
-  expiredSectionTitle: {
-    fontSize: 18,
+  loadingBox: {
+    paddingVertical: 24,
+    alignItems: "center",
+    gap: 10,
+  },
+  loadingText: {
     color: C.textMid,
-    letterSpacing: -0.45,
-    fontFamily: 'PlusJakartaSans-Bold',
-    marginBottom: 4,
+    fontFamily: "BeVietnamPro-Medium",
+  },
+  emptyState: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: C.borderLight,
+    borderStyle: "dashed",
+    backgroundColor: "rgba(255,255,255,0.65)",
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    gap: 8,
+  },
+  emptyStateText: {
+    fontSize: 13,
+    color: C.textMid,
+    textAlign: "center",
+    fontFamily: "BeVietnamPro-Medium",
   },
 });

@@ -1,5 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import * as SecureStore from "expo-secure-store";
+import { readAuthTokens } from "@/services/auth-session";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -126,19 +126,6 @@ function formatCommentTime(value?: string) {
   });
 }
 
-function getAccessTokenFromRaw(raw: string | null) {
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    const tokens = JSON.parse(raw);
-    return typeof tokens?.accessToken === "string" ? tokens.accessToken : null;
-  } catch {
-    return null;
-  }
-}
-
 function decodeJwtPayload(token: string): { id?: string; _id?: string; userId?: string; sub?: string } | null {
   try {
     const payload = token.split(".")[1];
@@ -207,7 +194,6 @@ export default function FoodDetailScreen() {
   const [hasMoreComments, setHasMoreComments] = useState(true);
   const [isCommentsLoading, setIsCommentsLoading] = useState(false);
   const [commentsError, setCommentsError] = useState("");
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState("");
   const [likingCommentIds, setLikingCommentIds] = useState<Set<string>>(
     () => new Set()
@@ -275,14 +261,13 @@ export default function FoodDetailScreen() {
       setCommentsError("");
 
       try {
-        const rawTokens = await SecureStore.getItemAsync("tokens");
-        const accessToken = getAccessTokenFromRaw(rawTokens);
+        const tokens = await readAuthTokens("tokens");
+        const accessToken = tokens?.accessToken ?? null;
 
         if (!accessToken) {
           throw new Error("Vui lòng đăng nhập để xem bình luận");
         }
 
-        setAccessToken(accessToken);
         setCurrentUserId(getUserIdFromToken(accessToken));
 
         const response = await fetch(
@@ -382,12 +367,15 @@ export default function FoodDetailScreen() {
   };
 
   const handleToggleCommentLike = async (comment: FoodComment) => {
-    if (!accessToken) {
-      setCommentsError("Vui lòng đăng nhập để thích bình luận");
+    if (likingCommentIds.has(comment.id)) {
       return;
     }
 
-    if (likingCommentIds.has(comment.id)) {
+    const tokens = await readAuthTokens("tokens");
+    const accessToken = tokens?.accessToken ?? null;
+
+    if (!accessToken) {
+      setCommentsError("Vui lòng đăng nhập để thích bình luận");
       return;
     }
 
@@ -431,6 +419,9 @@ export default function FoodDetailScreen() {
 
   const handleSubmitComment = async () => {
     const content = newCommentText.trim();
+
+    const tokens = await readAuthTokens("tokens");
+    const accessToken = tokens?.accessToken ?? null;
 
     if (!accessToken) {
       setCommentsError("Vui lòng đăng nhập để bình luận");

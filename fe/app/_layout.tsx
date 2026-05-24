@@ -31,6 +31,7 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+// import '@/services/auth-session';
 
 export const unstable_settings = {
   anchor: '(tabs)',

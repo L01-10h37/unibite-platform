@@ -10,10 +10,9 @@ import {
   type OrderBasic,
   type OrderStatus,
 } from "@/services/seller-api";
-import { parseSellerTokens } from "@/services/seller-shop";
+import { readAuthTokens } from "@/services/auth-session";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -169,25 +168,9 @@ export default function OrderListScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const tokenRef = useRef<string>("");
   const pageRef = useRef(1);
   const hasMoreRef = useRef(true);
   const LIMIT = 20;
-
-  // ── Auth ──
-  useEffect(() => {
-    (async () => {
-      const raw = await SecureStore.getItemAsync("sellerTokens");
-      const tokens = parseSellerTokens(raw);
-      if (!tokens?.accessToken) {
-        setError("Bạn cần đăng nhập để xem đơn hàng.");
-        setLoading(false);
-        return;
-      }
-      tokenRef.current = tokens.accessToken;
-      await fetchOrders(true);
-    })();
-  }, []);
 
   const fetchOrders = useCallback(async (reset = false) => {
     if (reset) {
@@ -197,8 +180,15 @@ export default function OrderListScreen() {
     if (!hasMoreRef.current && !reset) return;
 
     try {
+      const tokens = await readAuthTokens("sellerTokens");
+
+      if (!tokens?.accessToken) {
+        router.replace("/seller/signin" as any);
+        return;
+      }
+
       const { orders: fetched, pagination } = await getMyOrders(
-        tokenRef.current,
+        tokens.accessToken,
         pageRef.current,
         LIMIT
       );
@@ -219,7 +209,20 @@ export default function OrderListScreen() {
       setRefreshing(false);
       setLoadingMore(false);
     }
-  }, []);
+  }, [router]);
+
+  // ── Auth ──
+  useEffect(() => {
+    (async () => {
+      const tokens = await readAuthTokens("sellerTokens");
+      if (!tokens?.accessToken) {
+        setError("Bạn cần đăng nhập để xem đơn hàng.");
+        setLoading(false);
+        return;
+      }
+      await fetchOrders(true);
+    })();
+  }, [fetchOrders]);
 
   const onRefresh = () => {
     setRefreshing(true);
