@@ -19,8 +19,8 @@ router.get('/vnpay-return', paymentController.vnpayReturnHandle);
 
 /**
  * VNPay ipn
- * POST api/payments/vnpay-ipn
+ * GET api/payments/vnpay-ipn
  */
-router.post('/vnpay-ipn', paymentController.vnpayIpnHandle);
+router.get('/vnpay-ipn', paymentController.vnpayIpnHandle);
 
 export default router;
