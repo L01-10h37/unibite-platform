@@ -1,6 +1,10 @@
 import { logger } from "../utils/logger.js";
+import mongoose from "mongoose";
 import Shop from "../models/Shop.js";
+import Food from "../models/Food.js";
+import Comment from "../models/Comment.js";
 import Order from "../models/Order.js";
+import * as foodSearchService from "./foodSearchService.js";
 import { uploadAvatarToS3, deleteAvatarFromS3, validateImageFile, validateFileSize } from '../utils/s3Upload.js';
 
 /**
@@ -216,6 +220,57 @@ export const incrementShopProfit = async (shopId, amount) => {
 };
 
 /**
+ * Update shop rating when a new rating is added.
+ */
+export const updateShopRatingFromComment = async (shopId, rating, session = null) => {
+    try {
+        logger.info(`Service: Updating shop ${shopId} rating with ${rating}`);
+
+        const ratingValue = Number(rating);
+
+        if (!Number.isFinite(ratingValue) || ratingValue < 1 || ratingValue > 5) {
+            const error = new Error("Rating must be a number from 1 to 5");
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const updatedShop = await Shop.findByIdAndUpdate(
+            shopId,
+            [
+                {
+                    $set: {
+                        average_rating: {
+                            $divide: [
+                                {
+                                    $add: [
+                                        { $multiply: ["$average_rating", "$rating_count"] },
+                                        ratingValue,
+                                    ],
+                                },
+                                { $add: ["$rating_count", 1] },
+                            ],
+                        },
+                        rating_count: { $add: ["$rating_count", 1] },
+                    },
+                },
+            ],
+            { new: true, session }
+        );
+
+        if (!updatedShop) {
+            const error = new Error("Shop not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        return updatedShop.getFormattedData?.() || updatedShop;
+    } catch (error) {
+        logger.error("Service: Error updating shop rating", error);
+        throw error;
+    }
+};
+
+/**
  * Sync shop profit from completed orders.
  */
 export const syncShopProfit = async (shopId) => {
@@ -256,48 +311,125 @@ export const syncShopProfit = async (shopId) => {
 };
 
 /**
- * Placeholder: sync shop average rating.
+ * Sync rating for all foods in a shop, then sync the shop rating from those foods.
  */
-export const syncShopAverageRating = async (shopId) => {
+export const syncShopRating = async (shopId) => {
+    const session = await mongoose.startSession();
+    let syncedShop;
+    let foodsToIndex = [];
+
     try {
-        logger.info(`Service: Syncing average rating for shop ${shopId}`);
+        logger.info(`Service: Syncing rating for shop ${shopId}`);
 
-        const shop = await Shop.findById(shopId);
+        await session.withTransaction(async () => {
+            const shop = await Shop.findById(shopId).session(session);
 
-        if (!shop) {
-            const error = new Error("Shop not found");
-            error.statusCode = 404;
-            throw error;
-        }
+            if (!shop) {
+                const error = new Error("Shop not found");
+                error.statusCode = 404;
+                throw error;
+            }
 
-        return shop.getFormattedData?.() || shop;
+            const foods = await Food.find({ shop: shop._id })
+                .select("_id")
+                .session(session);
+            const foodIds = foods.map((food) => food._id);
+
+            const ratingStats = foodIds.length
+                ? await Comment.aggregate([
+                    {
+                        $match: {
+                            postId: { $in: foodIds },
+                            isDeleted: false,
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: "$postId",
+                            average_rating: { $avg: "$rating" },
+                            rating_count: { $sum: 1 },
+                        },
+                    },
+                ]).session(session)
+                : [];
+
+            const statsByFoodId = new Map(
+                ratingStats.map((stat) => [
+                    stat._id.toString(),
+                    {
+                        average_rating: stat.average_rating || 0,
+                        rating_count: stat.rating_count || 0,
+                    },
+                ])
+            );
+
+            if (foodIds.length) {
+                await Food.bulkWrite(
+                    foodIds.map((foodId) => {
+                        const stats = statsByFoodId.get(foodId.toString()) || {
+                            average_rating: 0,
+                            rating_count: 0,
+                        };
+
+                        return {
+                            updateOne: {
+                                filter: { _id: foodId },
+                                update: {
+                                    $set: {
+                                        average_rating: stats.average_rating,
+                                        rating_count: stats.rating_count,
+                                    },
+                                },
+                            },
+                        };
+                    }),
+                    { session }
+                );
+            }
+
+            const totalRatingCount = ratingStats.reduce(
+                (total, stat) => total + (stat.rating_count || 0),
+                0
+            );
+            const totalRatingScore = ratingStats.reduce(
+                (total, stat) => total + ((stat.average_rating || 0) * (stat.rating_count || 0)),
+                0
+            );
+
+            const updatedShop = await Shop.findByIdAndUpdate(
+                shop._id,
+                {
+                    $set: {
+                        average_rating: totalRatingCount ? totalRatingScore / totalRatingCount : 0,
+                        rating_count: totalRatingCount,
+                    },
+                },
+                { new: true, runValidators: true, session }
+            );
+
+            syncedShop = updatedShop.getFormattedData?.() || updatedShop;
+        });
+
+        foodsToIndex = await Food.find({ shop: shopId })
+            .populate("category")
+            .populate("shop");
+
+        await Promise.all(
+            foodsToIndex.map((food) => foodSearchService.safeIndexFoodSearchDocument(food, logger))
+        );
+
+        return syncedShop;
     } catch (error) {
-        logger.error("Service: Error syncing shop average rating", error);
+        logger.error("Service: Error syncing shop rating", error);
         throw error;
+    } finally {
+        session.endSession();
     }
 };
 
-/**
- * Placeholder: sync shop rating count.
- */
-export const syncShopRatingCount = async (shopId) => {
-    try {
-        logger.info(`Service: Syncing rating count for shop ${shopId}`);
+export const syncShopAverageRating = async (shopId) => syncShopRating(shopId);
 
-        const shop = await Shop.findById(shopId);
-
-        if (!shop) {
-            const error = new Error("Shop not found");
-            error.statusCode = 404;
-            throw error;
-        }
-
-        return shop.getFormattedData?.() || shop;
-    } catch (error) {
-        logger.error("Service: Error syncing shop rating count", error);
-        throw error;
-    }
-};
+export const syncShopRatingCount = async (shopId) => syncShopRating(shopId);
 
 /**
  * Update shop avatar

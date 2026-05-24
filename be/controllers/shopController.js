@@ -162,6 +162,32 @@ export const syncShopProfitById = async (req, res, next) => {
 };
 
 /**
+ * Sync any shop rating by shopId (admin only)
+ */
+export const syncShopRatingById = async (req, res, next) => {
+    try {
+        const userId = req.user?.id;
+        const { shopId } = req.params;
+
+        if (!userId) {
+            return errorResponse(res, null, "User is required to sync shop rating", 401);
+        }
+
+        if (!shopId) {
+            return errorResponse(res, null, "shopId is required to sync shop rating", 400);
+        }
+
+        const syncedShop = await shopService.syncShopRating(shopId);
+
+        successResponse(res, syncedShop, "Shop rating synced successfully", 200);
+    } catch (error) {
+        logger.error("Error syncing shop rating by shopId", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to sync shop rating", statusCode);
+    }
+};
+
+/**
  * Sync any shop average rating by shopId (admin only)
  */
 export const syncShopAverageRatingById = async (req, res, next) => {
@@ -210,6 +236,28 @@ export const syncShopRatingCountById = async (req, res, next) => {
         logger.error("Error syncing shop rating count by shopId", error);
         const statusCode = error.statusCode || 500;
         errorResponse(res, error, error.message || "Failed to sync shop rating count", statusCode);
+    }
+};
+
+/**
+ * Sync current seller shop rating
+ */
+export const syncMyShopRating = async (req, res, next) => {
+    try {
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return errorResponse(res, null, "User is required to sync shop rating", 401);
+        }
+
+        const shop = await shopService.getShopByUserId(userId);
+        const syncedShop = await shopService.syncShopRating(shop.id);
+
+        successResponse(res, syncedShop, "Shop rating synced successfully", 200);
+    } catch (error) {
+        logger.error("Error syncing shop rating", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to sync shop rating", statusCode);
     }
 };
 

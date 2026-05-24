@@ -2,6 +2,7 @@ import { logger } from '../utils/logger.js';
 import Comment from '../models/Comment.js';
 import Shop from '../models/Shop.js';
 import Food from '../models/Food.js';
+import * as foodService from './foodService.js';
 import mongoose from 'mongoose';
 
 /**
@@ -87,12 +88,25 @@ export const addComment = async (postId, userId, content, rating = 5) => {
       throw error;
     }
 
+    const ratingValue = Number(rating);
+
+    if (!Number.isFinite(ratingValue) || ratingValue < 1 || ratingValue > 5) {
+      const error = new Error('Rating must be a number from 1 to 5');
+      error.statusCode = 400;
+      throw error;
+    }
+
     const comment = await Comment.create({
       postId,
       userId,
       content: content.trim(),
-      rating,
+      rating: ratingValue,
     });
+
+    const isFoodComment = await Food.exists({ _id: postId });
+    if (isFoodComment) {
+      await foodService.updateFoodRatingFromComment(postId, ratingValue);
+    }
 
     // Populate userId để trả về đầy đủ thông tin
     await comment.populate('userId', 'username name avatar');

@@ -25,6 +25,26 @@ router.post(
 );
 
 /**
+ * POST sync current seller shop rating
+ */
+router.post(
+    '/sync/rating/my-shop',
+    authenticate,
+    authorize('seller'),
+    shopController.syncMyShopRating
+);
+
+/**
+ * POST sync any shop rating by shopId (admin only)
+ */
+router.post(
+    '/sync/rating/:shopId([0-9a-fA-F]{24})',
+    authenticate,
+    authorize('admin'),
+    shopController.syncShopRatingById
+);
+
+/**
  * POST sync any shop average rating by shopId (admin only)
  */
 router.post(
