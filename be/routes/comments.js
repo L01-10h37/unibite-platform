@@ -32,4 +32,11 @@ router.delete('/:id/remove', authenticate, commentController.removeComment);
  */
 router.put('/:id/like', authenticate, commentController.likeComment);
 
+/**
+ * PUT /api/comment/:id/reply
+ * Phản hồi comment từ người bán
+ * Auth: required | Body: { cmtId: string, reply: string }
+ */
+router.put('/:id/reply', authenticate, commentController.replyComment);
+
 export default router;

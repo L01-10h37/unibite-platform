@@ -47,16 +47,16 @@ export const getComments = async (req, res, next) => {
 export const addComment = async (req, res, next) => {
   try {
     const { id: postId } = req.params;
-    const { content } = req.body;
+    const { content, rating } = req.body;
     const userId = req.user?.id;
 
     if (!content || content.trim().length === 0) {
       return errorResponse(res, null, 'Content is required', 400);
     }
 
-    logger.info(`Adding comment to postId: ${postId} by userId: ${userId}`);
+    logger.info(`Adding comment to postId: ${postId} by userId: ${userId} with rating ${rating}`);
 
-    const comment = await commentService.addComment(postId, userId, content);
+    const comment = await commentService.addComment(postId, userId, content, rating || 5);
 
     successResponse(res, comment, 'Comment added successfully', 201);
   } catch (error) {
@@ -126,5 +126,32 @@ export const likeComment = async (req, res, next) => {
     logger.error('Error liking/unliking comment', error);
     const statusCode = error.statusCode || 500;
     errorResponse(res, error, 'Failed to update like', statusCode);
+  }
+};
+
+/**
+ * PUT /api/comment/:id/reply
+ * Phản hồi comment từ người bán
+ *
+ * @param {string} req.body.cmtId - ID của comment cần phản hồi
+ * @param {string} req.body.reply - Nội dung phản hồi
+ */
+export const replyComment = async (req, res, next) => {
+  try {
+    const { cmtId, reply } = req.body;
+
+    if (!cmtId) {
+      return errorResponse(res, null, 'cmtId is required', 400);
+    }
+
+    logger.info(`Replying to comment ${cmtId} with: ${reply}`);
+
+    const comment = await commentService.replyToComment(cmtId, reply);
+
+    successResponse(res, comment, 'Comment replied successfully', 200);
+  } catch (error) {
+    logger.error('Error replying to comment', error);
+    const statusCode = error.statusCode || 500;
+    errorResponse(res, error, 'Failed to add reply', statusCode);
   }
 };
