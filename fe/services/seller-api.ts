@@ -52,6 +52,7 @@ export interface SellerReview {
     content: string;
     rating: number;
     reply: string | null;
+    image?: string | null;
     likeCount: number;
     likes: string[];
     createdAt: string;

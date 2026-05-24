@@ -195,8 +195,17 @@ function ReviewCard({
         )}
       </TouchableOpacity>
 
-      {/* Optional image thumbnail (exactly matching Tuấn card from mockup) */}
-      {name.includes("Tuấn") && (
+      {/* Optional image thumbnail */}
+      {item.image ? (
+        <View style={styles.thumbnailRow}>
+          <View style={styles.thumbnailWrapper}>
+            <Image
+              source={{ uri: item.image }}
+              style={styles.reviewThumbnail}
+            />
+          </View>
+        </View>
+      ) : name.includes("Tuấn") ? (
         <View style={styles.thumbnailRow}>
           <View style={styles.thumbnailWrapper}>
             <Image
@@ -208,7 +217,7 @@ function ReviewCard({
             </View>
           </View>
         </View>
-      )}
+      ) : null}
 
       {/* Likes & Actions */}
       <View style={styles.reviewActions}>
