@@ -5,9 +5,8 @@ import crypto from 'crypto'
 
 class VNPayHelper {
     static buildPaymentUrl(orderId, amount, paymentId) {
-        const date = new Date();
-        const createDate = moment(date).format('YYYYMMDDHHmmss');
-        const expireDate = moment(date).add(15, 'minutes').format('YYYYMMDDHHmmss');
+        const createDate = moment.utc.format('YYYYMMDDHHmmss');
+        const expireDate = moment.utc.add(15, 'minutes').format('YYYYMMDDHHmmss');
 
         const vnp_Params = {
             vnp_Version: '2.1.0',
