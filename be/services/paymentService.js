@@ -3,7 +3,7 @@ import Order from '../models/Order.js';
 import Payment from '../models/Payment.js';
 import mongoose from 'mongoose';
 import VNPayHelper from '../config/vnpay.js';
-import qs from 'qs';
+import * as voucherService from './voucherService.js';
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -12,7 +12,7 @@ export const createPayment = async (paymentData, userId) => {
 
     let result = {};
 
-    const { orderId, method } = paymentData;
+    const { orderId, method, voucherCode, shippingFee = 0 } = paymentData;
 
     try {
         await session.withTransaction(async () => { 
@@ -70,12 +70,59 @@ export const createPayment = async (paymentData, userId) => {
                 return;
             }
 
+            const baseAmount = Number(order.totalPrice) || 0;
+            const shippingValue = Number(shippingFee) || 0;
+
+            let voucherDocument = null;
+            let discountAmount = 0;
+            let shippingDiscount = 0;
+            let finalAmount = baseAmount + shippingValue;
+
+            if (voucherCode) {
+                voucherDocument = await voucherService.getVoucherByCode(voucherCode);
+
+                const benefit = voucherService.calculateVoucherBenefit(
+                    voucherDocument,
+                    baseAmount,
+                    shippingValue,
+                );
+
+                discountAmount = benefit.discountAmount;
+                shippingDiscount = benefit.shippingDiscount;
+                finalAmount = benefit.finalAmount;
+            }
+
             const payment = await Payment.create([{
                 order: order._id,
-                amount: order.totalPrice,
+                amount: finalAmount,
+                baseAmount,
+                shippingFee: shippingValue,
+                discountAmount,
+                shippingDiscount,
+                finalAmount,
+                voucherId: voucherDocument?._id,
+                voucherCode: voucherDocument?.code,
+                voucherType: voucherDocument?.type,
                 method: normalizedMethod,
                 status: 'PENDING',
             }], {session});
+
+            if (voucherDocument) {
+                if (normalizedMethod === "COD") {
+                    await voucherService.consumeVoucherForPayment(
+                        voucherDocument._id,
+                        payment[0]._id,
+                        order._id,
+                        { session }
+                    );
+                } else {
+                    await voucherService.reserveVoucherForPayment(
+                        voucherDocument._id,
+                        payment[0]._id,
+                        { session }
+                    );
+                }
+            }
 
             if (normalizedMethod === "COD") {
                 payment[0].status = "SUCCESS";
@@ -85,7 +132,7 @@ export const createPayment = async (paymentData, userId) => {
                 await order.save({session});
                 await payment[0].save({session});   
             } else if (normalizedMethod === "VNPAY") {
-                const paymentUrl = VNPayHelper.buildPaymentUrl(order._id, order.totalPrice, payment[0]._id);
+                const paymentUrl = VNPayHelper.buildPaymentUrl(order._id, payment[0].amount, payment[0]._id);
 
                 result.paymentUrl = paymentUrl;
             }
@@ -123,7 +170,7 @@ export const vnpayIpnHandle = async (vnp_Params) => {
         let result = {};
 
         await session.withTransaction(async () => {
-            const payment = await Payment.findById(paymentId);
+            const payment = await Payment.findById(paymentId).session(session);
 
             if (!payment) {
                 return { RspCode: "01", Message: "Order not found" };
@@ -137,13 +184,31 @@ export const vnpayIpnHandle = async (vnp_Params) => {
                 payment.status = "SUCCESS";
                 payment.paidAt = new Date();    
 
-                const order = await Order.findById(payment.order);
+                const order = await Order.findById(payment.order).session(session);
+                if (!order) {
+                    return { RspCode: "01", Message: "Order not found" };
+                }
+
                 order.isPaid = true;
+                await order.save({ session });
+
+                if (payment.voucherId) {
+                    await voucherService.consumeVoucherForPayment(
+                        payment.voucherId,
+                        payment._id,
+                        order._id,
+                        { session }
+                    );
+                }
             } else {
                 payment.status = "FAILED";
+
+                if (payment.voucherId) {
+                    await voucherService.releaseVoucherReservation(payment._id, { session });
+                }
             }
 
-            await payment.save();
+            await payment.save({ session });
         });
         session.endSession();
 

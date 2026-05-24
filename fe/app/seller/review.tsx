@@ -11,10 +11,9 @@ import {
   replyToReview,
   type SellerReview,
 } from "@/services/seller-api";
-import { parseSellerTokens } from "@/services/seller-shop";
+import { readAuthTokens } from "@/services/auth-session";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -102,14 +101,12 @@ function ReviewCard({
   item,
   myUserId,
   shopId,
-  token,
   onLikeChange,
   onReply,
 }: {
   item: SellerReview;
   myUserId: string;
   shopId: string;
-  token: string;
   onLikeChange: (id: string, delta: number, liked: boolean) => void;
   onReply: (review: SellerReview) => void;
 }) {
@@ -139,13 +136,21 @@ function ReviewCard({
     const newLiked = !liked;
     const delta = newLiked ? 1 : -1;
 
+    const tokens = await readAuthTokens("sellerTokens");
+
+    if (!tokens?.accessToken) {
+      setLikePending(false);
+      Alert.alert("Lỗi", "Bạn cần đăng nhập để thao tác.");
+      return;
+    }
+
     // Optimistic UI
     setLiked(newLiked);
     setLikeCount((c) => c + delta);
     onLikeChange(item.id, delta, newLiked);
 
     try {
-      await likeReview(shopId, item.id, type, token);
+      await likeReview(shopId, item.id, type, tokens.accessToken);
     } catch {
       // Rollback on error
       setLiked(liked);
@@ -251,14 +256,12 @@ function ReplyModal({
   visible,
   targetReview,
   shopId,
-  token,
   onClose,
   onSuccess,
 }: {
   visible: boolean;
   targetReview: SellerReview | null;
   shopId: string;
-  token: string;
   onClose: () => void;
   onSuccess: (comment: SellerReview) => void;
 }) {
@@ -270,7 +273,13 @@ function ReplyModal({
     if (!text.trim() || !targetReview) return;
     setSending(true);
     try {
-      const comment = await replyToReview(shopId, targetReview.id, text.trim(), token);
+      const tokens = await readAuthTokens("sellerTokens");
+
+      if (!tokens?.accessToken) {
+        throw new Error("missing token");
+      }
+
+      const comment = await replyToReview(shopId, targetReview.id, text.trim(), tokens.accessToken);
       onSuccess(comment);
       setText("");
       onClose();
@@ -368,7 +377,6 @@ export default function ReviewListScreen() {
   const [replyModalVisible, setReplyModalVisible] = useState(false);
 
   // Auth & shop info
-  const tokenRef = useRef<string>("");
   const shopIdRef = useRef<string>("");
   const myUserIdRef = useRef<string>("");
 
@@ -380,14 +388,12 @@ export default function ReviewListScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const raw = await SecureStore.getItemAsync("sellerTokens");
-        const tokens = parseSellerTokens(raw);
+        const tokens = await readAuthTokens("sellerTokens");
         if (!tokens?.accessToken) {
           setError("Bạn cần đăng nhập để xem đánh giá.");
           setLoading(false);
           return;
         }
-        tokenRef.current = tokens.accessToken;
 
         // Lấy shopId từ my-shop
         const API_BASE =
@@ -434,9 +440,16 @@ export default function ReviewListScreen() {
     if (!hasMoreRef.current && !reset) return;
 
     try {
+      const tokens = await readAuthTokens("sellerTokens");
+
+      if (!tokens?.accessToken) {
+        router.replace("/seller/signin" as any);
+        return;
+      }
+
       const { reviews: fetched, pagination } = await getReviews(
         shopIdRef.current,
-        tokenRef.current,
+        tokens.accessToken,
         pageRef.current,
         LIMIT
       );
@@ -571,7 +584,6 @@ export default function ReviewListScreen() {
               item={item}
               myUserId={myUserIdRef.current}
               shopId={shopIdRef.current}
-              token={tokenRef.current}
               onLikeChange={() => { }}
               onReply={(r) => {
                 setReplyTarget(r);
@@ -626,7 +638,6 @@ export default function ReviewListScreen() {
         visible={replyModalVisible}
         targetReview={replyTarget}
         shopId={shopIdRef.current}
-        token={tokenRef.current}
         onClose={() => setReplyModalVisible(false)}
         onSuccess={(updatedComment) => {
           setReviews((prev) =>

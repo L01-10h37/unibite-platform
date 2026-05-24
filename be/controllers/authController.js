@@ -49,7 +49,7 @@ export const logout = async (req, res, next) => {
  */
 export const refreshToken = async (req, res, next) => {
     try {
-        const currentRefreshToken = req.cookies?.refreshToken;
+        const currentRefreshToken = req.body?.refreshToken || req.cookies?.refreshToken;
         
         if (!currentRefreshToken) {
             return errorResponse(res, null, "Refresh token is missing or expired", 401);

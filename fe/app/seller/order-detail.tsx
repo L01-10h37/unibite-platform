@@ -14,11 +14,10 @@ import {
   type OrderDetail,
   type OrderStatus,
 } from "@/services/seller-api";
-import { parseSellerTokens } from "@/services/seller-shop";
+import { readAuthTokens } from "@/services/auth-session";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -120,19 +119,15 @@ export default function OrderDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const tokenRef = useRef("");
-
   useEffect(() => {
     (async () => {
       try {
-        const raw = await SecureStore.getItemAsync("sellerTokens");
-        const tokens = parseSellerTokens(raw);
+        const tokens = await readAuthTokens("sellerTokens");
         if (!tokens?.accessToken || !orderId) {
           setError("Không tìm thấy thông tin đơn hàng.");
           setLoading(false);
           return;
         }
-        tokenRef.current = tokens.accessToken;
         const data = await getOrderById(orderId, tokens.accessToken);
         setOrder(data);
       } catch (e: any) {
@@ -159,7 +154,13 @@ export default function OrderDetailScreen() {
           onPress: async () => {
             setUpdating(true);
             try {
-              const updated = await updateOrderStatus(order.id, next, tokenRef.current);
+              const tokens = await readAuthTokens("sellerTokens");
+
+              if (!tokens?.accessToken) {
+                throw new Error("missing token");
+              }
+
+              const updated = await updateOrderStatus(order.id, next, tokens.accessToken);
               setOrder(updated);
             } catch {
               Alert.alert("Lỗi", "Không thể cập nhật. Thử lại sau.");
@@ -182,7 +183,13 @@ export default function OrderDetailScreen() {
         onPress: async () => {
           setUpdating(true);
           try {
-            const updated = await cancelOrder(order.id, tokenRef.current);
+            const tokens = await readAuthTokens("sellerTokens");
+
+            if (!tokens?.accessToken) {
+              throw new Error("missing token");
+            }
+
+            const updated = await cancelOrder(order.id, tokens.accessToken);
             setOrder(updated);
           } catch {
             Alert.alert("Lỗi", "Không thể hủy đơn.");
