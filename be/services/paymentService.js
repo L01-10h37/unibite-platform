@@ -157,6 +157,8 @@ export const createPayment = async (paymentData, userId) => {
 };
 
 export const vnpayIpnHandle = async (vnp_Params) => {
+    const session = await mongoose.startSession();
+    
     try {
         if (!VNPayHelper.verifySignature(vnp_Params)) {
             return { RspCode: "97", Message: "Invalid signature" };
@@ -164,8 +166,6 @@ export const vnpayIpnHandle = async (vnp_Params) => {
 
         const paymentId = vnp_Params['vnp_TxnRef'];
         const isSuccess = vnp_Params['vnp_ResponseCode'] === "00";
-
-        const session = await mongoose.startSession();
 
         let result = {};
 
@@ -183,14 +183,14 @@ export const vnpayIpnHandle = async (vnp_Params) => {
             }
 
             if (isSuccess) {
-                payment.status = "SUCCESS";
-                payment.paidAt = new Date();    
-
                 const order = await Order.findById(payment.order).session(session);
                 if (!order) {
                     result = { RspCode: "01", Message: "Order not found" };
                     return;
                 }
+
+                payment.status = "SUCCESS";
+                payment.paidAt = new Date(); 
 
                 order.isPaid = true;
                 await order.save({ session });
@@ -203,21 +203,24 @@ export const vnpayIpnHandle = async (vnp_Params) => {
                         { session }
                     );
                 }
+
+                result = { RspCode: "00", Message: "IPN processed successfully" };
             } else {
                 payment.status = "FAILED";
 
                 if (payment.voucherId) {
                     await voucherService.releaseVoucherReservation(payment._id, { session });
                 }
+
+                result = { RspCode: "00", Message: "Failed handled" };
             }
 
             await payment.save({ session });
-
-            result = { RspCode: "00", Message: "IPN processed successfully" };
         });
 
         return result;
     } catch (error) {
+        console.error("IPN ERROR:", error);
         return { RspCode: "99", Message: "Unknown error" }   
     } finally {
         session.endSession();
