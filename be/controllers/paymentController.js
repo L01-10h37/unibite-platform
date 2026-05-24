@@ -56,6 +56,7 @@ export const vnpayIpnHandle = async (req, res, next) => {
         const vnp_Params = req.query;
 
         const result = await paymentService.vnpayIpnHandle(vnp_Params);
+        console.log("IPN RESULT", result);
         res.json(result);
     } catch (error) {
         next(error);
