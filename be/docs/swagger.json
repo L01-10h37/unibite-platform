@@ -4522,6 +4522,14 @@
             "minLength": 1,
             "maxLength": 1000,
             "example": "Món ăn rất ngon, tôi rất thích!"
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "default": 5,
+            "example": 5,
+            "description": "Số sao đánh giá (1-5)"
           }
         }
       },
