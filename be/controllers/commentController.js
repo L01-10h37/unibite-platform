@@ -1,6 +1,7 @@
 import { successResponse, paginatedResponse, errorResponse } from '../utils/responseHandler.js';
 import { logger } from '../utils/logger.js';
 import * as commentService from '../services/commentService.js';
+import { uploadAvatarToS3 } from '../utils/s3Upload.js';
 
 /**
  * GET /api/comment/:id
@@ -47,16 +48,21 @@ export const getComments = async (req, res, next) => {
 export const addComment = async (req, res, next) => {
   try {
     const { id: postId } = req.params;
-    const { content, rating } = req.body;
+    const { content, rating, image: bodyImage } = req.body;
     const userId = req.user?.id;
 
     if (!content || content.trim().length === 0) {
       return errorResponse(res, null, 'Content is required', 400);
     }
 
-    logger.info(`Adding comment to postId: ${postId} by userId: ${userId} with rating ${rating}`);
+    let imageUrl = bodyImage || null;
+    if (req.file) {
+      imageUrl = await uploadAvatarToS3(req.file.buffer, req.file.originalname);
+    }
 
-    const comment = await commentService.addComment(postId, userId, content, rating || 5);
+    logger.info(`Adding comment to postId: ${postId} by userId: ${userId} with rating ${rating} and image ${imageUrl}`);
+
+    const comment = await commentService.addComment(postId, userId, content, rating || 5, imageUrl);
 
     successResponse(res, comment, 'Comment added successfully', 201);
   } catch (error) {

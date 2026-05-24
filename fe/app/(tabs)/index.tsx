@@ -1,7 +1,8 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   ScrollView,
@@ -14,6 +15,7 @@ import {
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 52) / 2;
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
 
 const CATEGORIES = [
   { id: "all", label: "Tất cả", icon: "🍽️" },
@@ -23,52 +25,125 @@ const CATEGORIES = [
   { id: "drink", label: "Giải khát", icon: "🥤" },
 ];
 
-const POPULAR_FOODS = [
-  {
-    id: "1",
-    name: "Cơm gà xối mỡ",
-    subtitle: "Cơm gà Nguyên Ký",
-    rating: "4.8",
-    time: "10 - 15p",
-    price: "50.000đ",
-    image:
-      "https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:format(webp):quality(75)/2023_12_6_638374928096209198_com-ga-xoi-mo-bao-nhieu-calo.jpg",
-  },
-  {
-    id: "2",
-    name: "Bún bò Huế",
-    subtitle: "Bún bò Huế Duy Bảo",
-    rating: "4.5",
-    time: "13 - 15p",
-    price: "45.000đ",
-    image:
-      "https://file.hstatic.net/200000700229/article/bun-bo-hue-1_da318989e7c2493f9e2c3e010e722466.jpg",
-  },
-  {
-    id: "3",
-    name: "Bún riêu cua",
-    subtitle: "Bún riêu Minh Nhựt",
-    rating: "4.5",
-    time: "13 - 15p",
-    price: "43.000đ",
-    image:
-      "https://i-giadinh.vnecdn.net/2024/02/22/Bc8Thnhphm18-1708574950-2889-1708574962.jpg",
-  },
-  {
-    id: "4",
-    name: "Mì cay 7 cấp độ",
-    subtitle: "Mì cay Seoul",
-    rating: "4.9",
-    time: "15 - 20p",
-    price: "60.000đ",
-    image:
-      "https://static.vinwonders.com/production/mi-cay-quy-nhon-1.jpg",
-  },
-];
+type HomeFood = {
+  id: string;
+  name: string;
+  shopName?: string | null;
+  categoryName?: string | null;
+  listUrlImg?: string[] | null;
+  price?: number | null;
+  specialPrice?: number | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  average_rating?: number | null;
+  sold_count?: number | null;
+};
+
+type FoodsResponse = {
+  success: boolean;
+  message: string;
+  data: HomeFood[];
+};
+
+function formatPrice(value?: number | null) {
+  if (value == null) {
+    return "Liên hệ";
+  }
+
+  return `${value.toLocaleString("vi-VN")}đ`;
+}
+
+function isCurrentTimeInRange(startTime?: string | null, endTime?: string | null) {
+  if (!startTime || !endTime) {
+    return false;
+  }
+
+  const toMinutes = (time: string) => {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const now = new Date();
+  const current = now.getHours() * 60 + now.getMinutes();
+  const start = toMinutes(startTime);
+  const end = toMinutes(endTime);
+
+  if (Number.isNaN(start) || Number.isNaN(end)) {
+    return false;
+  }
+
+  return start <= end ? current >= start && current <= end : current >= start || current <= end;
+}
+
+function getDisplayPrice(food: HomeFood) {
+  if (food.specialPrice != null && isCurrentTimeInRange(food.startTime, food.endTime)) {
+    return food.specialPrice;
+  }
+
+  return food.price;
+}
+
+function getEstimatedDeliveryTime(food: HomeFood) {
+  const hasImages = (food.listUrlImg?.length ?? 0) > 0;
+  const baseMinutes = hasImages ? 20 : 25;
+  const maxMinutes = baseMinutes + 15;
+
+  return `${baseMinutes} - ${maxMinutes}p`;
+}
+
+function getFoodImageSource(food: HomeFood) {
+  const firstImage = food.listUrlImg?.find(Boolean);
+
+  return firstImage
+    ? { uri: firstImage }
+    : require("@/assets/images/bun-bo-hue-detail-2.png");
+}
 
 export default function HomeScreen() {
   const router = useRouter();
   const [searchText, setSearchText] = useState("");
+  const [foods, setFoods] = useState<HomeFood[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadFoods = async () => {
+      try {
+        setIsLoading(true);
+        setErrorMessage("");
+
+        const response = await fetch(`${API_URL}/api/foods?page=1&limit=8&order=recent`, {
+          headers: { accept: "application/json" },
+        });
+        const payload = (await response.json()) as FoodsResponse;
+
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || "Không lấy được món ăn");
+        }
+
+        if (isMounted) {
+          setFoods(payload.data ?? []);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setFoods([]);
+          setErrorMessage(error instanceof Error ? error.message : "Không lấy được món ăn");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadFoods();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const openSearch = () => {
     const query = searchText.trim();
@@ -80,6 +155,24 @@ export default function HomeScreen() {
     router.push({
       pathname: "/search",
       params: { query },
+    });
+  };
+
+  const openAllFoods = () => {
+    router.push("/search");
+  };
+
+  const openQuickSearch = (categoryId: string, label: string) => {
+    if (categoryId === "all") {
+      openAllFoods();
+      return;
+    }
+
+    router.push({
+      pathname: "/search",
+      params: {
+        query: label,
+      },
     });
   };
 
@@ -118,6 +211,7 @@ export default function HomeScreen() {
                 styles.categoryChip,
                 index === 0 ? styles.categoryChipActive : null,
               ]}
+              onPress={() => openQuickSearch(category.id, category.label)}
             >
               <Text style={styles.categoryIcon}>{category.icon}</Text>
               <Text
@@ -146,13 +240,28 @@ export default function HomeScreen() {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Món ăn phổ biến</Text>
-          <TouchableOpacity activeOpacity={0.8}>
+          <TouchableOpacity activeOpacity={0.8} onPress={openAllFoods}>
             <Text style={styles.seeAll}>Xem tất cả</Text>
           </TouchableOpacity>
         </View>
 
+        {isLoading ? (
+          <View style={styles.stateBox}>
+            <ActivityIndicator color="#1EA64A" />
+            <Text style={styles.stateText}>Đang tải món ăn...</Text>
+          </View>
+        ) : errorMessage ? (
+          <View style={styles.stateBox}>
+            <Text style={styles.stateText}>{errorMessage}</Text>
+          </View>
+        ) : foods.length === 0 ? (
+          <View style={styles.stateBox}>
+            <Text style={styles.stateText}>Chưa có món ăn nào trong database.</Text>
+          </View>
+        ) : null}
+
         <View style={styles.grid}>
-          {POPULAR_FOODS.map((food) => (
+          {foods.map((food) => (
             <TouchableOpacity
               key={food.id}
               style={styles.card}
@@ -160,17 +269,17 @@ export default function HomeScreen() {
               onPress={() =>
                 router.push({
                   pathname: "/food-detail",
-                  params: { id: "69f73f1b97a704ff41e13e32" },
+                  params: { id: food.id },
                 })
               }
             >
-              <Image source={{ uri: food.image }} style={styles.cardImage} />
+              <Image source={getFoodImageSource(food)} style={styles.cardImage} />
               <View style={styles.cardBody}>
                 <Text style={styles.cardTitle} numberOfLines={1}>
                   {food.name}
                 </Text>
                 <Text style={styles.cardSubtitle} numberOfLines={1}>
-                  {food.subtitle}
+                  {food.shopName || food.categoryName || "Quán ăn"}
                 </Text>
 
                 <View style={styles.metaRow}>
@@ -179,17 +288,17 @@ export default function HomeScreen() {
                     size={16}
                     color="#F7B500"
                   />
-                  <Text style={styles.metaText}>{food.rating}</Text>
+                  <Text style={styles.metaText}>{(food.average_rating ?? 0).toFixed(1)}</Text>
                   <MaterialCommunityIcons
                     name="clock-outline"
                     size={16}
                     color="#555"
                     style={styles.clockIcon}
                   />
-                  <Text style={styles.metaText}>{food.time}</Text>
+                  <Text style={styles.metaText}>{getEstimatedDeliveryTime(food)}</Text>
                 </View>
 
-                <Text style={styles.price}>{food.price}</Text>
+                <Text style={styles.price}>{formatPrice(getDisplayPrice(food))}</Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -362,5 +471,17 @@ const styles = StyleSheet.create({
     color: "#0BAF29",
     fontSize: 15,
     fontFamily: "Montserrat-Bold",
+  },
+  stateBox: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 18,
+  },
+  stateText: {
+    marginTop: 10,
+    color: "#4D4D4D",
+    fontSize: 14,
+    fontFamily: "Montserrat-Medium",
+    textAlign: "center",
   },
 });

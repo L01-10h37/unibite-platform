@@ -236,7 +236,10 @@ export const getOrderById = async (orderId, userId) => {
             throw error;
         };
 
-        if (order.user.toString() !== userId && order.seller.toString() !== userId) {
+        const orderUserId = order.user?._id?.toString?.() || order.user?.toString?.() || String(order.user);
+        const orderSellerId = order.seller?._id?.toString?.() || order.seller?.toString?.() || String(order.seller);
+
+        if (orderUserId !== userId && orderSellerId !== userId) {
             const error = new Error('Not your order');
             error.statusCode = 403;
             throw error;
