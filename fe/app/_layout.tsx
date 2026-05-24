@@ -114,6 +114,8 @@ export default function RootLayout() {
         <Stack.Screen name="filter" options={{ headerShown: false }} />
         <Stack.Screen name="food-detail" options={{ headerShown: false }} />
         <Stack.Screen name="shop-detail" options={{ headerShown: false }} />
+        <Stack.Screen name="history-order" options={{ headerShown: false }} />
+        <Stack.Screen name="delivering-orders" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false, title: 'Thông tin' }} />
       </Stack>
       <StatusBar style="auto" />

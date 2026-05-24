@@ -204,8 +204,8 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ĐƠN HÀNG CỦA TÔI</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon={<History size={22} stroke="rgba(34,49,49,0.8)" />} title="Lịch sử đơn hàng" showBorder onPress={() => router.push('/(tabs)/orders')} />
-            <MenuItem icon={<Truck size={22} stroke="rgba(34,49,49,0.8)" />} title="Đơn hàng đang giao" badge="1" />
+            <MenuItem icon={<History size={22} stroke="rgba(34,49,49,0.8)" />} title="Lịch sử đơn hàng" showBorder onPress={() => router.push('/history-order')} />
+            <MenuItem icon={<Truck size={22} stroke="rgba(34,49,49,0.8)" />} title="Đơn hàng đang giao" badge="1" onPress={() => router.push('/delivering-orders')} />
           </View>
         </View>
 
