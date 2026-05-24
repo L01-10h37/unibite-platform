@@ -1,5 +1,5 @@
 import environment from './environment.js';
-import moment from 'moment'
+import moment from 'moment-timezone';
 import qs from 'qs'
 import crypto from 'crypto'
 
