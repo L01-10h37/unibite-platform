@@ -21,7 +21,7 @@ class VNPayHelper {
             vnp_OrderType: "food",
             vnp_Amount: amount * 100, 
             vnp_ReturnUrl: encodeURIComponent(environment.vnp_ReturnUrl),
-            vnp_IpAddr: "127.0.0.1",
+            vnp_IpAddr: "20.255.57.186",
             vnp_CreateDate: createDate,
         };
 
