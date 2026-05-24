@@ -120,35 +120,42 @@ export const vnpayIpnHandle = async (vnp_Params) => {
 
         const session = await mongoose.startSession();
 
-        let result = {};
+        let result;
 
         await session.withTransaction(async () => {
-            const payment = await Payment.findById(paymentId);
+            const payment = await Payment.findById(paymentId).session(session);
 
             if (!payment) {
-                return { RspCode: "01", Message: "Order not found" };
+                result = { RspCode: "01", Message: "Order not found" };
+                return;
             }
 
             if (payment.status === "SUCCESS") {
-                return { RspCode: "00", Message: "Already processed" };
+                result = { RspCode: "00", Message: "Already processed" };
+                return;
             }
 
             if (isSuccess) {
                 payment.status = "SUCCESS";
                 payment.paidAt = new Date();    
 
-                const order = await Order.findById(payment.order);
+                const order = await Order.findById(payment.order).session(session);
                 order.isPaid = true;
+
+                await order.save({session});
             } else {
                 payment.status = "FAILED";
             }
 
             await payment.save();
-        });
-        session.endSession();
 
-        return { RspCode: "00", Message: "IPN processed successfully" };
+            result = { RspCode: "00", Message: "IPN processed successfully" };
+        });
+
+        return result;
     } catch (error) {
         return { RspCode: "99", Message: "Unknown error" }   
+    } finally {
+        session.endSession();
     }
 }; 
