@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   ImageSourcePropType,
@@ -67,6 +68,8 @@ type FoodComment = {
   rating?: number;
   likeCount?: number;
   likes?: string[];
+  image?: string | null;
+  reply?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -708,7 +711,7 @@ export default function FoodDetailScreen() {
                   : DEFAULT_REVIEW_AVATAR;
 
               const commentOwnerId = typeof comment.userId === 'object' && comment.userId !== null
-                ? (comment.userId._id || comment.userId.id)
+                ? comment.userId._id
                 : comment.userId;
               const isOwner = currentUserId && commentOwnerId && commentOwnerId.toString() === currentUserId.toString();
 
