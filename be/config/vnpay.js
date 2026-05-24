@@ -64,11 +64,10 @@ class VNPayHelper {
         const signData = qs.stringify(sortedParams, { encode: false });
     
         const hmac = crypto.createHmac("sha512", environment.vnp_HashSecret);
+
         const signed = hmac.update(signData).digest("hex");
 
-        if (signed !== secureHash) {
-            throw new Error("Invalid signature");
-        }
+        return signed !== secureHash 
     }
 }
 

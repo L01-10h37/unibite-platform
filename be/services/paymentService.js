@@ -109,57 +109,46 @@ export const createPayment = async (paymentData, userId) => {
     }
 };
 
-export const vnpayReurnHandle = async (vnp_Params) => {
-    VNPayHelper.verifySignature(vnp_Params);
-
-    const paymentId = vnp_Params['vnp_TxnRef'];
-    const isSuccess = vnp_Params['vnp_ResponseCode'] === "00";
-
-    const session = await mongoose.startSession();
-
-    let result = { success: false };
-
-    await session.withTransaction(async () => {
-        const payment = await Payment.findById(paymentId).session(session);
-
-        if (!payment) throw new Error("Payment not found");
-
-        if (payment.status === "SUCCESS") {
-            result.success = true;
-            return;
+export const vnpayIpnHandle = async (vnp_Params) => {
+    try {
+        if (!VNPayHelper.verifySignature(vnp_Params)) {
+            return { RspCode: "97", Message: "Invalid signature" };
         }
 
-        if (isSuccess) {
-            payment.status = "SUCCESS";
-            payment.paidAt = new Date();
+        const paymentId = vnp_Params['vnp_TxnRef'];
+        const isSuccess = vnp_Params['vnp_ResponseCode'] === "00";
 
-            const order = await Order.findById(payment.order).session(session);
-            order.isPaid = true;
+        const session = await mongoose.startSession();
 
-            await order.save({ session });
+        let result = {};
 
-            result.success = true;
-        } else {
-            payment.status = "FAILED";
-        }
+        await session.withTransaction(async () => {
+            const payment = await Payment.findById(paymentId);
 
-        await payment.save({ session });
-    });
+            if (!payment) {
+                return { RspCode: "01", Message: "Order not found" };
+            }
 
-    session.endSession();
+            if (payment.status === "SUCCESS") {
+                return { RspCode: "00", Message: "Already processed" };
+            }
 
-    return result;
-};
+            if (isSuccess) {
+                payment.status = "SUCCESS";
+                payment.paidAt = new Date();    
 
-// export const vnpayIpnHandle = async (vnp_Params) => {
-//     try {
-//         const secureHash = vnp_Params['vnp_SecureHash'];
-//         delete vnp_Params['vnp_SecureHash'];
-//         delete vnp_Params['vnp_SecureHashType'];
+                const order = await Order.findById(payment.order);
+                order.isPaid = true;
+            } else {
+                payment.status = "FAILED";
+            }
 
-        
-//     } catch (error) {
-//         logger.error('Error handling VNPay IPN', error);
-//         throw error;    
-//     }
-// }; 
+            await payment.save();
+        });
+        session.endSession();
+
+        return { RspCode: "00", Message: "IPN processed successfully" };
+    } catch (error) {
+        return { RspCode: "99", Message: "Unknown error" }   
+    }
+}; 
