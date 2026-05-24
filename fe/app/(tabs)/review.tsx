@@ -142,7 +142,7 @@ export default function WriteReviewScreen() {
       </ScrollView>
 
       {/* Bottom Buttons */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
+      <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.btnSecondary} activeOpacity={0.8}>
           <Text style={styles.btnSecondaryText}>Về trang chủ</Text>
         </TouchableOpacity>
@@ -324,10 +324,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 16,
     paddingTop: 12,
+    paddingBottom: 12,
     gap: 12,
     backgroundColor: CARD_BG,
-    borderTopWidth: 1,
-    borderTopColor: BORDER,
+    // borderTopWidth: 1,
+    // borderTopColor: BORDER,
   },
   btnSecondary: {
     flex: 1,
