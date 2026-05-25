@@ -316,7 +316,7 @@ export default function CheckoutScreen() {
                 style={styles.orderBtn}
                 onPress={() => {
                   setSuccessModalVisible(false);
-                  router.push('/order');
+                  router.push('/history-order');
                 }}
               >
                 <Text style={styles.orderBtnText}>Đơn mua</Text>
