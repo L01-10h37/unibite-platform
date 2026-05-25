@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +12,8 @@ import {
   ActivityIndicator, // Thêm component này để làm loading spinner
 } from 'react-native';
 import * as SecureStore from "expo-secure-store";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
 
 interface FoodShop {
   _id: string;
@@ -49,7 +52,7 @@ export default function CartScreen() {
 
   const shippingFee = 15000;
 
-  const fetchCartData = async () => {
+  const fetchCartData = useCallback(async () => {
     try {
       const tokensRaw = await SecureStore.getItemAsync("tokens");
       const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
@@ -57,7 +60,7 @@ export default function CartScreen() {
 
       setLoading(true);
       const response = await fetch(
-        'http://192.168.1.92:8080/api/cart/',
+        `${API_URL}/api/cart/`,
         {
           method: 'GET',
           headers: {
@@ -81,17 +84,21 @@ export default function CartScreen() {
           image: item.image,
         }));
         setCartItems(mappedItems);
+      } else {
+        setCartItems([]);
       }
     } catch (error) {
       console.error("Lỗi khi fetch giỏ hàng:", error);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchCartData();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchCartData();
+    }, [fetchCartData])
+  );
 
   // Hàm cập nhật số lượng (Bạn nên tối ưu gọi thêm API update số lượng ở đây nếu cần)
   const updateQuantity = (id: string, change: number) => {
