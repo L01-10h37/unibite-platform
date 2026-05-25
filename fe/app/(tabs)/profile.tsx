@@ -6,16 +6,17 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from "expo-secure-store";
+import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   ChevronRight,
   Settings,
   ShoppingBasket,
-  Award,
   UserRoundPen,
   MapPin,
   History,
@@ -51,6 +52,16 @@ type ProfileResponse = {
   data: UserProfile;
 };
 
+type AvatarResponse = {
+  success: boolean;
+  message: string;
+  data?: {
+    avatarURL?: string;
+    avatar?: string;
+    user?: UserProfile;
+  };
+};
+
 type CachedProfile = {
   profile: UserProfile;
   cachedAt: string;
@@ -59,6 +70,7 @@ type CachedProfile = {
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -135,6 +147,96 @@ export default function ProfileScreen() {
     return AVATAR_FALLBACK;
   }, [profile?.avatar]);
 
+  const handlePickAvatar = async () => {
+    if (isUploadingAvatar) {
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert("Thiếu quyền", "Vui lòng cấp quyền truy cập ảnh để đổi avatar.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      mediaTypes: ["images"],
+      quality: 0.85,
+    });
+
+    if (result.canceled) {
+      return;
+    }
+
+    try {
+      setIsUploadingAvatar(true);
+
+      const tokensRaw = await SecureStore.getItemAsync("tokens");
+      const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
+      const accessToken = tokens?.accessToken;
+
+      if (!accessToken) {
+        router.push("/signin");
+        return;
+      }
+
+      const asset = result.assets[0];
+      const fallbackName = `user-avatar-${Date.now()}.jpg`;
+      const formData = new FormData();
+
+      formData.append("avatar", {
+        uri: asset.uri,
+        name: asset.fileName || fallbackName,
+        type: asset.mimeType || "image/jpeg",
+      } as unknown as Blob);
+
+      const response = await fetch(`${API_URL}/api/users/me/avatar`, {
+        method: "PATCH",
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      });
+
+      const payload = (await response.json()) as AvatarResponse;
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || "Cập nhật avatar thất bại");
+      }
+
+      const nextProfile = payload.data?.user;
+      const nextAvatar = payload.data?.avatarURL || payload.data?.avatar || nextProfile?.avatar;
+
+      if (!nextAvatar && !nextProfile) {
+        throw new Error("Không nhận được avatar mới");
+      }
+
+      setProfile((current) => {
+        const updated = nextProfile || (current ? { ...current, avatar: nextAvatar } : current);
+
+        if (updated) {
+          void AsyncStorage.setItem(
+            PROFILE_CACHE_KEY,
+            JSON.stringify({
+              profile: updated,
+              cachedAt: new Date().toISOString(),
+            }),
+          );
+        }
+
+        return updated;
+      });
+    } catch (error) {
+      console.error("Failed to upload user avatar", error);
+      Alert.alert("Lỗi", error instanceof Error ? error.message : "Cập nhật avatar thất bại. Vui lòng thử lại.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   if (isLoading && !profile) {
     return (
       <View style={styles.loadingContainer}>
@@ -168,14 +270,24 @@ export default function ProfileScreen() {
         {/* Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.profileImageContainer}>
-            <View style={styles.profileImageWrapper}>
+            <TouchableOpacity
+              style={styles.profileImageWrapper}
+              activeOpacity={0.85}
+              onPress={handlePickAvatar}
+              disabled={isUploadingAvatar}
+            >
               <Image
                 source={avatarSource}
                 style={styles.profileImage}
               />
-            </View>
+              {isUploadingAvatar ? (
+                <View style={styles.avatarUploadingOverlay}>
+                  <ActivityIndicator color="#FFFFFF" />
+                </View>
+              ) : null}
+            </TouchableOpacity>
             <View style={styles.badge}>
-              <Award size={20} stroke="#D1FFC8" />
+              <UserRoundPen size={18} stroke="#D1FFC8" />
             </View>
           </View>
 
@@ -347,6 +459,12 @@ const styles = StyleSheet.create({
   profileImage: {
     width: '100%',
     height: '100%',
+  },
+  avatarUploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(23,106,33,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   badge: {
     position: 'absolute',

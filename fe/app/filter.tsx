@@ -175,7 +175,7 @@ export default function FilterScreen() {
     const initialPath = findCategoryPath(categories, initialCategoryId);
 
     if (initialPath.length > 0) {
-      setCategoryPath(initialPath);
+      setCategoryPath(initialPath.slice(0, -1));
     }
   }, [categories, categoryPath.length, initialCategoryId]);
 
