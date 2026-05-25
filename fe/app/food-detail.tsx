@@ -1,3 +1,6 @@
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/store/store'; 
+import { fetchCart } from '@/store/cartSlice';
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { readAuthTokens } from "@/services/auth-session";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -214,6 +217,7 @@ export default function FoodDetailScreen() {
     () => new Set()
   );
   const commentsLoadingRef = useRef(false);
+  const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
     let isMounted = true;
@@ -530,45 +534,45 @@ export default function FoodDetailScreen() {
   };
 
   const handleAddToCart = async () => {
-    if (!foodId || isAddingToCart) {
-      return;
-    }
-
-    const tokens = await readAuthTokens("tokens");
-    const accessToken = tokens?.accessToken ?? null;
-
-    if (!accessToken) {
-      Alert.alert("Lỗi", "Vui lòng đăng nhập để thêm vào giỏ hàng");
-      return;
-    }
+    if (isAddingToCart) return;
 
     setIsAddingToCart(true);
-
     try {
+      const tokens = await readAuthTokens("tokens");
+      if (!tokens?.accessToken) {
+        Alert.alert("Thông báo", "Vui lòng đăng nhập để thêm vào giỏ hàng");
+        router.push("/signin");
+        return;
+      }
+
+      // Gọi API POST thêm món ăn hiện tại của bạn
       const response = await fetch(`${API_URL}/api/cart/items`, {
         method: "POST",
         headers: {
-          accept: "application/json",
+          Authorization: `Bearer ${tokens.accessToken}`,
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          foodId,
-          quantity,
+          foodId: food?.id ?? id,
+          quantity: quantity,
         }),
       });
-      const payload = (await response.json().catch(() => null)) as CartAddResponse | null;
 
-      if (!response.ok || !payload?.success) {
-        throw new Error(payload?.message || "Không thêm được món vào giỏ hàng");
+      const json = await response.json();
+
+      if (json.success) {
+        // ==================== ĐOẠN CODE QUAN TRỌNG ĐỂ CẬP NHẬT BADGE ====================
+        // Sau khi server báo thêm thành công, dispatch fetchCart() để tải lại dữ liệu giỏ hàng mới
+        await dispatch(fetchCart());
+        // ==============================================================================
+
+        Alert.alert("Thành công", "Đã thêm món ăn vào giỏ hàng!");
+      } else {
+        Alert.alert("Thất bại", json.message || "Không thể thêm vào giỏ hàng");
       }
-
-      Alert.alert("Thành công", "Đã thêm món vào giỏ hàng");
     } catch (error) {
-      Alert.alert(
-        "Lỗi",
-        error instanceof Error ? error.message : "Không thêm được món vào giỏ hàng"
-      );
+      console.error("Error adding to cart:", error);
+      Alert.alert("Lỗi", "Có lỗi xảy ra, vui lòng thử lại sau");
     } finally {
       setIsAddingToCart(false);
     }

@@ -1,3 +1,5 @@
+import { Provider } from 'react-redux';
+import { store } from '../store/store';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
@@ -103,22 +105,24 @@ export default function RootLayout() {
   }, [fontsLoaded, router]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="signin" options={{ presentation: 'modal', headerShown: false, title: 'Sign In' }} />
-        <Stack.Screen name="signup" options={{ presentation: 'modal', headerShown: false, title: 'Sign Up' }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="address" options={{ headerShown: false }} />
-        <Stack.Screen name="seller" options={{ headerShown: false }} />
-        <Stack.Screen name="search" options={{ headerShown: false }} />
-        <Stack.Screen name="filter" options={{ headerShown: false }} />
-        <Stack.Screen name="food-detail" options={{ headerShown: false }} />
-        <Stack.Screen name="shop-detail" options={{ headerShown: false }} />
-        <Stack.Screen name="history-order" options={{ headerShown: false }} />
-        <Stack.Screen name="delivering-orders" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false, title: 'Thông tin' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Provider store={store}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="signin" options={{ presentation: 'modal', headerShown: false, title: 'Sign In' }} />
+          <Stack.Screen name="signup" options={{ presentation: 'modal', headerShown: false, title: 'Sign Up' }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="address" options={{ headerShown: false }} />
+          <Stack.Screen name="seller" options={{ headerShown: false }} />
+          <Stack.Screen name="search" options={{ headerShown: false }} />
+          <Stack.Screen name="filter" options={{ headerShown: false }} />
+          <Stack.Screen name="food-detail" options={{ headerShown: false }} />
+          <Stack.Screen name="shop-detail" options={{ headerShown: false }} />
+          <Stack.Screen name="history-order" options={{ headerShown: false }} />
+          <Stack.Screen name="delivering-orders" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false, title: 'Thông tin' }} />
+        </Stack>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </Provider>
   );
 }
