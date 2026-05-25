@@ -1,11 +1,13 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { AppBottomTabBar } from "@/components/app-bottom-tab-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 52) / 2;
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
+const PAGE_SIZE = 10;
 
 type SearchParams = {
   query?: string;
@@ -71,7 +74,12 @@ function getImageSource(item: SearchFood) {
     : require("@/assets/images/bun-bo-hue-detail-2.png");
 }
 
-function buildRequestUrl(apiUrl: string, pathname: "/api/foods/search" | "/api/foods", params: SearchParams) {
+function buildRequestUrl(
+  apiUrl: string,
+  pathname: "/api/foods/search" | "/api/foods",
+  params: SearchParams,
+  page: number,
+) {
   const url = new URL(`${apiUrl}${pathname}`);
 
   if (params.query?.trim()) {
@@ -100,17 +108,17 @@ function buildRequestUrl(apiUrl: string, pathname: "/api/foods/search" | "/api/f
     url.searchParams.set("maxPrice", params.maxPrice.trim());
   }
 
-  url.searchParams.set("page", "1");
-  url.searchParams.set("limit", "20");
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("limit", String(PAGE_SIZE));
 
   return url.toString();
 }
 
-async function fetchFoods(apiUrl: string, params: SearchParams) {
+async function fetchFoods(apiUrl: string, params: SearchParams, page = 1) {
   const hasCategory = Boolean(params.categoryId?.trim() || params.category?.trim());
 
   if (hasCategory) {
-    const categoryResponse = await fetch(buildRequestUrl(apiUrl, "/api/foods", params), {
+    const categoryResponse = await fetch(buildRequestUrl(apiUrl, "/api/foods", params, page), {
       headers: { accept: "application/json" },
     });
 
@@ -123,7 +131,7 @@ async function fetchFoods(apiUrl: string, params: SearchParams) {
     return categoryPayload;
   }
 
-  const searchResponse = await fetch(buildRequestUrl(apiUrl, "/api/foods/search", params), {
+  const searchResponse = await fetch(buildRequestUrl(apiUrl, "/api/foods/search", params, page), {
     headers: { accept: "application/json" },
   });
 
@@ -133,7 +141,7 @@ async function fetchFoods(apiUrl: string, params: SearchParams) {
     return searchPayload;
   }
 
-  const fallbackResponse = await fetch(buildRequestUrl(apiUrl, "/api/foods", params), {
+  const fallbackResponse = await fetch(buildRequestUrl(apiUrl, "/api/foods", params, page), {
     headers: { accept: "application/json" },
   });
 
@@ -166,8 +174,12 @@ export default function SearchScreen() {
   const [searchText, setSearchText] = useState(query);
   const [foods, setFoods] = useState<SearchFood[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const isLoadingMoreRef = useRef(false);
 
   useEffect(() => {
     setSearchText(query);
@@ -188,16 +200,20 @@ export default function SearchScreen() {
           minRating,
           minPrice,
           maxPrice,
-        });
+        }, 1);
 
         if (isMounted) {
           setFoods(payload.data ?? []);
           setTotal(payload.pagination?.total ?? payload.data?.length ?? 0);
+          setPage(payload.pagination?.page ?? 1);
+          setTotalPages(payload.pagination?.pages ?? 1);
         }
       } catch (error) {
         if (isMounted) {
           setFoods([]);
           setTotal(0);
+          setPage(1);
+          setTotalPages(1);
           setErrorMessage(error instanceof Error ? error.message : "Không tìm được món ăn phù hợp");
         }
       } finally {
@@ -213,6 +229,50 @@ export default function SearchScreen() {
       isMounted = false;
     };
   }, [query, categoryId, sort, minRating, minPrice, maxPrice]);
+
+  const loadMoreFoods = useCallback(async () => {
+    if (isLoading || isLoadingMoreRef.current || page >= totalPages) {
+      return;
+    }
+
+    const nextPage = page + 1;
+    isLoadingMoreRef.current = true;
+    setIsLoadingMore(true);
+
+    try {
+      const payload = await fetchFoods(API_URL, {
+        query,
+        categoryId,
+        sort,
+        minRating,
+        minPrice,
+        maxPrice,
+      }, nextPage);
+
+      setFoods((current) => {
+        const existingIds = new Set(current.map((food) => food.id));
+        const nextFoods = (payload.data ?? []).filter((food) => !existingIds.has(food.id));
+        return [...current, ...nextFoods];
+      });
+      setTotal(payload.pagination?.total ?? total);
+      setPage(payload.pagination?.page ?? nextPage);
+      setTotalPages(payload.pagination?.pages ?? totalPages);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Không tải được trang tiếp theo");
+    } finally {
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  }, [categoryId, isLoading, maxPrice, minPrice, minRating, page, query, sort, total, totalPages]);
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
+
+    if (distanceFromBottom < 220) {
+      loadMoreFoods();
+    }
+  };
 
   const submitSearch = () => {
     const nextQuery = searchText.trim();
@@ -281,7 +341,12 @@ export default function SearchScreen() {
           </View>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        >
           <View style={styles.titleRow}>
             <Text style={styles.title}>{`Kết quả tìm kiếm (${total})`}</Text>
 
@@ -344,6 +409,12 @@ export default function SearchScreen() {
               ))}
             </View>
           )}
+
+          {isLoadingMore ? (
+            <View style={styles.loadMoreBox}>
+              <ActivityIndicator color="#1EA64A" />
+            </View>
+          ) : null}
         </ScrollView>
       </SafeAreaView>
 
@@ -483,6 +554,11 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
     rowGap: 14,
+  },
+  loadMoreBox: {
+    paddingVertical: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
   card: {
     width: CARD_WIDTH,
