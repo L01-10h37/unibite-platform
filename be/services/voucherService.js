@@ -1,62 +1,6 @@
 import mongoose from "mongoose";
-
 import Voucher from "../models/Voucher.js";
 import { logger } from "../utils/logger.js";
-
-const DEFAULT_VOUCHERS = [
-  {
-    code: "UNIBITE0",
-    title: "Giảm 5.000đ",
-    description: "Áp dụng cho mọi đơn từ 50.000đ trở lên.",
-    type: "FIXED",
-    value: 5000,
-    minOrderValue: 50000,
-    expiresAt: new Date("2026-06-30T23:59:59.999Z"),
-    status: "ACTIVE",
-  },
-  {
-    code: "SHIPFREE",
-    title: "Miễn phí vận chuyển",
-    description: "Trừ 100% phí ship cho đơn hàng đủ điều kiện.",
-    type: "FREE_SHIPPING",
-    value: 100,
-    minOrderValue: 0,
-    expiresAt: new Date("2026-06-30T23:59:59.999Z"),
-    status: "ACTIVE",
-  },
-  {
-    code: "SAVE10P",
-    title: "Giảm 10%",
-    description: "Giảm 10% tổng giá trị đơn, tối đa 20.000đ.",
-    type: "PERCENT",
-    value: 10,
-    minOrderValue: 100000,
-    expiresAt: new Date("2026-06-30T23:59:59.999Z"),
-    status: "ACTIVE",
-  },
-  {
-    code: "OLD2025",
-    title: "Voucher cũ",
-    description: "Voucher đã hết hạn để hiển thị trong nhóm không hiệu lực.",
-    type: "FIXED",
-    value: 10000,
-    minOrderValue: 50000,
-    expiresAt: new Date("2025-12-31T23:59:59.999Z"),
-    status: "EXPIRED",
-    usedAt: new Date("2025-12-31T23:00:00.000Z"),
-  },
-  {
-    code: "USEDONE",
-    title: "Voucher đã dùng",
-    description: "Mẫu voucher đã được tiêu thụ sau một đơn hàng.",
-    type: "FIXED",
-    value: 15000,
-    minOrderValue: 75000,
-    expiresAt: new Date("2026-06-30T23:59:59.999Z"),
-    status: "USED",
-    usedAt: new Date("2026-05-20T10:00:00.000Z"),
-  },
-];
 
 const VALID_STATUSES = ["ACTIVE", "RESERVED", "USED", "EXPIRED", "DISABLED"];
 

@@ -120,6 +120,8 @@ export default function RootLayout() {
           <Stack.Screen name="history-order" options={{ headerShown: false }} />
           <Stack.Screen name="delivering-orders" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false, title: 'Thông tin' }} />
+          <Stack.Screen name="checkout" options={{ headerShown: false }} />
+          <Stack.Screen name="voucher" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
