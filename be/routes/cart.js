@@ -14,4 +14,9 @@ router.get('/', authenticate, cartController.getCart);
  */
 router.post('/items', authenticate, cartController.addItemToCart);
 
+/**
+ * DELETE /api/cart/items/:id
+ */
+router.delete('/items/:id', authenticate, cartController.removeItemFromCart);
+
 export default router;

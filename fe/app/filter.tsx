@@ -129,6 +129,7 @@ export default function FilterScreen() {
   const [categoryId, setCategoryId] = useState(initialCategoryId);
   const [categoryName, setCategoryName] = useState(initialCategoryName);
   const [categoryPath, setCategoryPath] = useState<SellerCategory[]>([]);
+  const [restoredCategoryId, setRestoredCategoryId] = useState("");
   const [minPrice, setMinPrice] = useState(initialMinPrice);
   const [maxPrice, setMaxPrice] = useState(initialMaxPrice);
   const [minRating, setMinRating] = useState(initialMinRating);
@@ -168,16 +169,17 @@ export default function FilterScreen() {
   }, []);
 
   useEffect(() => {
-    if (!initialCategoryId || categories.length === 0 || categoryPath.length > 0) {
+    if (!initialCategoryId || categories.length === 0 || restoredCategoryId === initialCategoryId) {
       return;
     }
 
     const initialPath = findCategoryPath(categories, initialCategoryId);
 
     if (initialPath.length > 0) {
-      setCategoryPath(initialPath);
+      setCategoryPath(initialPath.slice(0, -1));
     }
-  }, [categories, categoryPath.length, initialCategoryId]);
+    setRestoredCategoryId(initialCategoryId);
+  }, [categories, initialCategoryId, restoredCategoryId]);
 
   const currentCategory = categoryPath[categoryPath.length - 1] ?? null;
   const visibleCategories = currentCategory ? getCategoryChildren(currentCategory) : categories;
@@ -201,6 +203,7 @@ export default function FilterScreen() {
     setCategoryId("");
     setCategoryName("");
     setCategoryPath([]);
+    setRestoredCategoryId("");
   };
 
   const applyFilters = () => {

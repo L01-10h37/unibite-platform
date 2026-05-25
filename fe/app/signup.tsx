@@ -48,6 +48,8 @@ export default function SignUpScreen() {
   };
 
   const handleSubmit = async () => {
+    const normalizedUsername = username.trim();
+    const normalizedPhone = phoneNumber.trim();
     const newErrors: {
       username?: string;
       phoneNumber?: string;
@@ -55,15 +57,15 @@ export default function SignUpScreen() {
       confirmPassword?: string;
     } = {};
 
-    if (!username) {
+    if (!normalizedUsername) {
       newErrors.username = "Tên tài khoản là bắt buộc";
-    } else if (!validateUsername(username)) {
+    } else if (!validateUsername(normalizedUsername)) {
       newErrors.username = "Tên tài khoản phải có từ 6 đến 20 ký tự";
     }
 
-    if (!phoneNumber) {
+    if (!normalizedPhone) {
       newErrors.phoneNumber = "Số điện thoại là bắt buộc";
-    } else if (!validatePhone(phoneNumber)) {
+    } else if (!validatePhone(normalizedPhone)) {
       newErrors.phoneNumber = "Số điện thoại không hợp lệ";
     }
 
@@ -91,20 +93,30 @@ export default function SignUpScreen() {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: JSON.stringify({ username, phoneNumber, password }),
+          body: JSON.stringify({
+            username: normalizedUsername,
+            phone: normalizedPhone,
+            password,
+            role: "user",
+          }),
         });
 
         if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(
-            `Registration failed: ${res.status} ${res.statusText} ${text}`,
-          );
+          const payload = await res.json().catch(() => null);
+          const message =
+            payload?.message ||
+            payload?.error ||
+            `Registration failed: ${res.status} ${res.statusText}`;
+          throw new Error(message);
         }
 
         router.replace("/signin");
       } catch (error) {
         console.error("Error during sign up:", error);
-        setErrors({ username: "Có lỗi xảy ra. Vui lòng thử lại." });
+        const message = error instanceof Error ? error.message : "Có lỗi xảy ra. Vui lòng thử lại.";
+        const lowerMessage = message.toLowerCase();
+
+        setErrors(lowerMessage.includes("phone") ? { phoneNumber: message } : { username: message });
       }
     }
   };
