@@ -109,7 +109,7 @@ export default function SellerHomeScreen() {
       }
 
       const updated = await updateSellerFood(tokens.accessToken, food.id, {
-        isAvailble: !food.isAvailble,
+        isAvailable: !food.isAvailable,
       });
 
       setMenu((current) =>
@@ -675,11 +675,11 @@ function FoodRow({
           onPress={() => onToggleAvailability(food)}
           style={[
             styles.statusPill,
-            !food.isAvailble && styles.statusPillUnavailable,
+            !food.isAvailable && styles.statusPillUnavailable,
           ]}
         >
           <Text {...noFontScale} style={styles.statusText}>
-            {food.isAvailble ? "Hiện có" : "Hết món"}
+            {food.isAvailable ? "Hiện có" : "Hết món"}
           </Text>
         </TouchableOpacity>
       </View>
