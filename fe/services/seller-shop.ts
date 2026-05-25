@@ -17,7 +17,7 @@ export type SellerFood = {
   categoryId?: string | null;
   categoryName?: string | null;
   listUrlImg?: string[];
-  isAvailble?: boolean;
+  isAvailable?: boolean;
   isDraft?: boolean;
   price: number;
   specialPrice?: number | null;
@@ -83,6 +83,33 @@ async function parsePaginatedJsonResponse(res: Response) {
     data: data?.data ?? [],
     pagination: data?.pagination,
   };
+}
+
+function coerceAvailability(value: unknown) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    return value.toLowerCase() !== "false";
+  }
+
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+
+  return true;
+}
+
+function normalizeSellerFood(food: SellerFood) {
+  return {
+    ...food,
+    isAvailable: coerceAvailability(food.isAvailable),
+  };
+}
+
+function normalizeSellerFoods(foods: SellerFood[]) {
+  return foods.map(normalizeSellerFood);
 }
 
 export function parseSellerTokens(value: string | null): SellerTokens | null {
@@ -185,7 +212,8 @@ export async function getSellerMenu(accessToken: string, limit = 10) {
     throw new Error(`Get seller menu failed: ${res.status} ${text}`);
   }
 
-  return parseJsonResponse(res) as Promise<SellerFood[]>;
+  const foods = await parseJsonResponse(res) as SellerFood[];
+  return normalizeSellerFoods(foods);
 }
 
 export async function getMySellerOrders(
@@ -273,7 +301,7 @@ export async function createSellerFood(
     category: string;
     price: number;
     specialPrice?: number | null;
-    isAvailble?: boolean;
+    isAvailable?: boolean;
     isDraft?: boolean;
     startTime?: string | null;
     endTime?: string | null;
@@ -293,7 +321,8 @@ export async function createSellerFood(
     throw new Error(`Create food failed: ${res.status} ${text}`);
   }
 
-  return parseJsonResponse(res) as Promise<SellerFood>;
+  const food = await parseJsonResponse(res) as SellerFood;
+  return normalizeSellerFood(food);
 }
 
 export async function updateSellerFood(
@@ -305,7 +334,7 @@ export async function updateSellerFood(
     category?: string;
     price?: number;
     specialPrice?: number | null;
-    isAvailble?: boolean;
+    isAvailable?: boolean;
     isDraft?: boolean;
     startTime?: string | null;
     endTime?: string | null;
@@ -325,7 +354,8 @@ export async function updateSellerFood(
     throw new Error(`Update food failed: ${res.status} ${text}`);
   }
 
-  return parseJsonResponse(res) as Promise<SellerFood>;
+  const food = await parseJsonResponse(res) as SellerFood;
+  return normalizeSellerFood(food);
 }
 
 export async function deleteSellerFood(accessToken: string, foodId: string) {

@@ -87,7 +87,7 @@ foodSchema.methods.getFormattedData = function () {
     shopId: shopData?._id || shopData || null,
     shopName: shopData?.name || null,
     listUrlImg: this.listUrlImg,
-    isAvailble: this.isAvailble,
+    isAvailable: this.isAvailable,
     isDraft: this.isDraft,
     price: this.price,
     specialPrice: this.specialPrice,

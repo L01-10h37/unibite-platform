@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import {
   Dimensions,
   Image,
+  KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   Text,
@@ -122,9 +123,15 @@ export default function SignUpScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      behavior="padding"
+      style={styles.container}
+    >
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {/* 1. Phần Wavy Header với màu xanh chủ đạo */}
@@ -355,7 +362,7 @@ export default function SignUpScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -366,6 +373,10 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 32,
   },
   svg: {
     backgroundColor: "transparent",

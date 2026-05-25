@@ -8,7 +8,6 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -196,7 +195,7 @@ export default function SellerCreateFoodScreen() {
         category: selectedCategory.id,
         price: parsedPrice,
         specialPrice: parsedSpecialPrice,
-        isAvailble: isAvailable,
+        isAvailable: isAvailable,
         isDraft,
         startTime: startTime.trim() || null,
         endTime: endTime.trim() || null,
@@ -227,7 +226,7 @@ export default function SellerCreateFoodScreen() {
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior="padding"
         style={styles.keyboardView}
       >
         <View style={styles.header}>
@@ -240,6 +239,7 @@ export default function SellerCreateFoodScreen() {
 
         <ScrollView
           contentContainerStyle={styles.content}
+          keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >

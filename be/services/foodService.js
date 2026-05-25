@@ -17,7 +17,7 @@ const buildFoodQuery = async ({
   maxPrice = null,
   area = "",
 }) => {
-  const query = { isDraft: false };
+  const query = { isDraft: false, isAvailable: true };
 
   if (search && search.trim()) {
     query.name = { $regex: search.trim(), $options: "i" };
@@ -237,7 +237,7 @@ export const searchFoods = async (
       };
     }
 
-    const mongoQuery = { _id: { $in: foodIds }, isDraft: false };
+    const mongoQuery = { _id: { $in: foodIds }, isDraft: false, isAvailable: true };
 
     if (minRating > 0) {
       mongoQuery.average_rating = { $gte: minRating };

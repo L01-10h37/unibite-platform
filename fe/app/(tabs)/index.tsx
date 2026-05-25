@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   Text,
@@ -177,10 +178,12 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView behavior="padding" style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.searchBar}>
           <TouchableOpacity onPress={openSearch} activeOpacity={0.8} hitSlop={10} style={styles.searchIconButton}>
@@ -304,7 +307,7 @@ export default function HomeScreen() {
           ))}
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

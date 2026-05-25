@@ -7,7 +7,6 @@ import {
   Image,
   ImageSourcePropType,
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -45,7 +44,7 @@ export default function SellerEditFoodScreen() {
   );
   const [startTime, setStartTime] = useState(initialFood?.startTime || "");
   const [endTime, setEndTime] = useState(initialFood?.endTime || "");
-  const [isAvailable, setIsAvailable] = useState(Boolean(initialFood?.isAvailble));
+  const [isAvailable, setIsAvailable] = useState(Boolean(initialFood?.isAvailable));
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -62,7 +61,7 @@ export default function SellerEditFoodScreen() {
     );
     setStartTime(initialFood.startTime || "");
     setEndTime(initialFood.endTime || "");
-    setIsAvailable(Boolean(initialFood.isAvailble));
+    setIsAvailable(Boolean(initialFood.isAvailable));
   }, [initialFood?.id]);
 
   const imageSource: ImageSourcePropType = initialFood?.listUrlImg?.[0]
@@ -102,7 +101,7 @@ export default function SellerEditFoodScreen() {
         description: description.trim(),
         price: parsedPrice,
         specialPrice: parsedSpecialPrice,
-        isAvailble: isAvailable,
+        isAvailable: isAvailable,
         startTime: startTime.trim() || null,
         endTime: endTime.trim() || null,
       });
@@ -170,7 +169,7 @@ export default function SellerEditFoodScreen() {
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior="padding"
         style={styles.keyboardView}
       >
         <View style={styles.header}>
@@ -189,6 +188,7 @@ export default function SellerEditFoodScreen() {
 
         <ScrollView
           contentContainerStyle={styles.content}
+          keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >

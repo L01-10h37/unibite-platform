@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Image,
   ImageSourcePropType,
+  KeyboardAvoidingView,
   Modal,
   ScrollView,
   StyleSheet,
@@ -109,7 +110,7 @@ export default function SellerHomeScreen() {
       }
 
       const updated = await updateSellerFood(tokens.accessToken, food.id, {
-        isAvailble: !food.isAvailble,
+        isAvailable: !food.isAvailable,
       });
 
       setMenu((current) =>
@@ -319,7 +320,7 @@ export default function SellerHomeScreen() {
         visible={showDateFilter}
         onRequestClose={() => setShowDateFilter(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView behavior="padding" style={styles.modalOverlay}>
           <View style={styles.dateModal}>
             <Text {...noFontScale} style={styles.modalTitle}>
               Chọn ngày đơn hàng
@@ -374,7 +375,7 @@ export default function SellerHomeScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -675,11 +676,11 @@ function FoodRow({
           onPress={() => onToggleAvailability(food)}
           style={[
             styles.statusPill,
-            !food.isAvailble && styles.statusPillUnavailable,
+            !food.isAvailable && styles.statusPillUnavailable,
           ]}
         >
           <Text {...noFontScale} style={styles.statusText}>
-            {food.isAvailble ? "Hiện có" : "Hết món"}
+            {food.isAvailable ? "Hiện có" : "Hết món"}
           </Text>
         </TouchableOpacity>
       </View>
