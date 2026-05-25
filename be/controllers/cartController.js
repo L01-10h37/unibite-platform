@@ -30,3 +30,18 @@ export const addItemToCart = async (req, res, next) => {
         errorResponse(res, error, error.message || "Failed to add item to cart", statusCode);
     }
 };
+
+export const removeItemFromCart = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const itemId = req.params.id;
+
+        const result = await cartService.removeItemFromCart(userId, itemId);
+
+        successResponse(res, result.data, result.message, 200);
+    } catch (error) {
+        logger.error("Error removing item from cart", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to remove item from cart", statusCode);
+    }   
+};

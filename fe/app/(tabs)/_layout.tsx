@@ -1,3 +1,8 @@
+import { Provider } from "react-redux"; // 1. Thêm import này
+import { store } from "../../store/store"; // Import store vừa tạo
+import { useSelector, useDispatch } from "react-redux"; // Để lấy dữ liệu và kích hoạt fetch
+import { RootState, AppDispatch } from "../../store/store";
+import { fetchCart } from "../../store/cartSlice";
 import {
   styles,
   tabBarLabelStyle,
@@ -13,51 +18,16 @@ import OnboardingScreen from "./onboarding";
 const STORAGE_KEY = "has_launched";
 const PRIMARY_COLOR = "#1EA64A";
 
-export default function RootLayout() {
-  // Onboarding logic: Kiểm tra lần đầu mở app và lưu trạng thái vào SecureStore
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
-
-  const distinctItemsCount = 2;
+function MainTabsLayout() {
+  const dispatch = useDispatch<AppDispatch>();
+  
+  const distinctItemsCount = useSelector((state: RootState) => state.cart.items.length);
 
   useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const value = await SecureStore.getItemAsync(STORAGE_KEY);
-        setIsFirstLaunch(value === null);
-      } catch {
-        setIsFirstLaunch(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkStatus();
-  }, []);
+    // Tự động gọi API lấy giỏ hàng ngay khi mở app
+    dispatch(fetchCart());
+  }, [dispatch]);
 
-  const handleOnboardingDone = async () => {
-    try {
-      await SecureStore.setItemAsync(STORAGE_KEY, "true");
-      setIsFirstLaunch(false);
-    } catch (error) {
-      console.error("Error saving status:", error);
-    }
-  };
-
-  // 1. Hiệu ứng chờ khi đang kiểm tra bộ nhớ
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={PRIMARY_COLOR} />
-      </View>
-    );
-  }
-
-  // 2. Nếu là lần đầu mở app -> Hiển thị Onboarding
-  if (isFirstLaunch) {
-    return <OnboardingScreen onDone={handleOnboardingDone} />;
-  }
-
-  // 3. Đã vào App chính -> Cấu hình các Tabs và Icon
   return (
     <Tabs
       screenOptions={{
@@ -179,6 +149,56 @@ export default function RootLayout() {
         }}
       />
     </Tabs>
+  );
+}
+
+export default function RootLayout() {
+  // Onboarding logic: Kiểm tra lần đầu mở app và lưu trạng thái vào SecureStore
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const value = await SecureStore.getItemAsync(STORAGE_KEY);
+        setIsFirstLaunch(value === null);
+      } catch {
+        setIsFirstLaunch(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkStatus();
+  }, []);
+
+  const handleOnboardingDone = async () => {
+    try {
+      await SecureStore.setItemAsync(STORAGE_KEY, "true");
+      setIsFirstLaunch(false);
+    } catch (error) {
+      console.error("Error saving status:", error);
+    }
+  };
+
+  // 1. Hiệu ứng chờ khi đang kiểm tra bộ nhớ
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={PRIMARY_COLOR} />
+      </View>
+    );
+  }
+
+  // 2. Nếu là lần đầu mở app -> Hiển thị Onboarding
+  if (isFirstLaunch) {
+    return <OnboardingScreen onDone={handleOnboardingDone} />;
+  }
+
+  // 3. Đã vào App chính -> Cấu hình các Tabs và Icon
+  return (
+    <Provider store={store}>
+      <MainTabsLayout />
+    </Provider>
   );
 }
 

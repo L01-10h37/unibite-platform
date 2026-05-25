@@ -2,6 +2,9 @@ import { logger } from "../utils/logger.js";
 import Food from "../models/Food.js"
 import Shop from "../models/Shop.js";
 import Cart from "../models/Cart.js";
+import mongoose from "mongoose";
+
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 export const getCartByUserId = async (userId) => {
     try {
@@ -89,6 +92,42 @@ export const addItemToCart = async (userId, foodId, quantity) => {
         }
     } catch (error) {
         logger.error("Error adding item to cart", error);
+        throw error;
+    }
+};
+
+export const removeItemFromCart = async (userId, itemId) => {
+    try {
+        if (!isValidObjectId(itemId)) {
+            const error = new Error('Invalid item ID');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const cart = await Cart.findOne({ user: userId });
+        if (!cart) {
+            const error = new Error('Cart not found');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const itemIndex = cart.items.findIndex(item => item._id.toString() === itemId);
+        if (itemIndex === -1) {
+            const error = new Error('Cart item not found');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        cart.items.splice(itemIndex, 1);
+        await cart.save();
+
+        return {
+            success: true,
+            message: "Item removed from cart successfully",
+            data: cart.getFormattedData()
+        };
+    } catch (error) {
+        logger.error("Error removing item from cart", error);
         throw error;
     }
 };

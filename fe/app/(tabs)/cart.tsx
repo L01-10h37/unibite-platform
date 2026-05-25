@@ -1,5 +1,7 @@
-import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '../../store/store';
+import { fetchCart, incrementQuantity, decrementQuantity, deleteCartItem } from '../../store/cartSlice';
 import {
   View,
   Text,
@@ -8,123 +10,23 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  StatusBar,
   ActivityIndicator, // Thêm component này để làm loading spinner
 } from 'react-native';
-import * as SecureStore from "expo-secure-store";
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
-
-interface FoodShop {
-  _id: string;
-  name: string;
-  avatar: string;
-  address: string;
-}
-
-interface FoodDetails {
-  _id: string;
-  name: string;
-  description: string;
-  shop: FoodShop;
-  listUrlImg: string[];
-  price: number;
-}
-
-interface CartItem {
-  id: string;
-  name: string;
-  restaurant: string;
-  price: number;
-  quantity: number;
-  image: string;
-}
-
-// Cấu trúc nhóm theo từng Shop
-interface CartGroup {
-  restaurantName: string;
-  items: CartItem[];
-}
 
 export default function CartScreen() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const dispatch = useDispatch<AppDispatch>();
+
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const loading = useSelector((state: RootState) => state.cart.loading);
 
   const shippingFee = 15000;
 
-  const fetchCartData = useCallback(async () => {
-    try {
-      const tokensRaw = await SecureStore.getItemAsync("tokens");
-      const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
-      const accessToken = tokens?.accessToken;
-
-      setLoading(true);
-      const response = await fetch(
-        `${API_URL}/api/cart/`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      const json = await response.json();
-
-      // console.log("Dữ liệu giỏ hàng nhận được từ API:", json.data);
-      
-      if (json.success && json.data && json.data.items) {
-        // Map chuẩn từ cấu trúc API của bạn sang State
-        const mappedItems = json.data.items.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          restaurant: item.food?.shop?.name || item.restaurant || "Quán ăn",
-          price: item.price, // Tính toán theo giá gốc 'price' theo yêu cầu trước của bạn
-          quantity: item.quantity,
-          image: item.image,
-        }));
-        setCartItems(mappedItems);
-      } else {
-        setCartItems([]);
-      }
-    } catch (error) {
-      console.error("Lỗi khi fetch giỏ hàng:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchCartData();
-    }, [fetchCartData])
-  );
-
-  // Hàm cập nhật số lượng (Bạn nên tối ưu gọi thêm API update số lượng ở đây nếu cần)
-  const updateQuantity = (id: string, change: number) => {
-    setCartItems(items =>
-      items.map(item =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item
-      )
-    );
-  };
-
-  const removeItem = (id: string) => {
-    setCartItems(items => items.filter(item => item.id !== id));
-  };
-
-  const groupCartItems = (items: CartItem[]): CartGroup[] => {
-    const groups: { [key: string]: CartItem[] } = {};
-    
+  const groupCartItems = (items: any[]) => {
+    const groups: { [key: string]: any[] } = {};
     items.forEach(item => {
-      if (!groups[item.restaurant]) {
-        groups[item.restaurant] = [];
-      }
+      if (!groups[item.restaurant]) groups[item.restaurant] = [];
       groups[item.restaurant].push(item);
     });
-
     return Object.keys(groups).map(restaurantName => ({
       restaurantName,
       items: groups[restaurantName],
@@ -149,7 +51,7 @@ export default function CartScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      {/* <StatusBar barStyle="dark-content" /> */}
 
       {/* Kiểm tra giỏ hàng trống bằng cách đưa ra ngoài hẳn ScrollView */}
       {cartItems.length === 0 ? (
@@ -177,13 +79,44 @@ export default function CartScreen() {
             </View>
 
             {cartGroups.map(group => (
-              <ShopCartGroupCard
-                key={group.restaurantName}
-                group={group}
-                onIncrease={updateQuantity}
-                onDecrease={updateQuantity}
-                onRemove={removeItem}
-              />
+              <View key={group.restaurantName} style={styles.cartItemCard}>
+                <View style={styles.cartItemHeader}>
+                  <Text style={styles.restaurantName}>{group.restaurantName}</Text>
+                </View>
+
+                {group.items.map((item: any, index: number) => (
+                  <View key={item.id}>
+                    {index > 0 && <View style={styles.itemDivider} />}
+                    <View style={styles.cartItemContent}>
+                      <Image source={{ uri: item.image }} style={styles.foodImage} />
+                      <View style={styles.itemDetails}>
+                        <Text style={styles.itemName}>{item.name}</Text>
+                        <Text style={styles.itemPrice}>{item.price.toLocaleString('vi-VN')}đ</Text>
+                      </View>
+                      
+                      {/* NÚT XÓA: Gửi Action lên Redux */}
+                      <TouchableOpacity onPress={() => dispatch(deleteCartItem(item.id))}>
+                        <Image source={require('../../assets/images/delete-icon.png')} style={styles.deleteIcon} />
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.quantitySection}>
+                      <Text style={styles.quantityLabel}>Số lượng</Text>
+                      <View style={styles.quantityControls}>
+                        {/* NÚT GIẢM: Gửi Action lên Redux */}
+                        <TouchableOpacity style={styles.quantityButton} onPress={() => dispatch(decrementQuantity(item.id))}>
+                          <Image source={require('../../assets/images/minus-icon.png')} style={styles.quantityIcon} />
+                        </TouchableOpacity>
+                        <Text style={styles.quantityText}>{item.quantity}</Text>
+                        {/* NÚT TĂNG: Gửi Action lên Redux */}
+                        <TouchableOpacity style={styles.quantityButton} onPress={() => dispatch(incrementQuantity(item.id))}>
+                          <Image source={require('../../assets/images/plus-icon.png')} style={styles.quantityIcon} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
             ))}
 
             {/* Price Summary */}
@@ -222,60 +155,6 @@ export default function CartScreen() {
         </>
       )}
     </SafeAreaView>
-  );
-}
-
-interface ShopCartGroupCardProps {
-  group: CartGroup;
-  onIncrease: (id: string, change: number) => void;
-  onDecrease: (id: string, change: number) => void;
-  onRemove: (id: string) => void;
-}
-
-function ShopCartGroupCard({ group, onIncrease, onDecrease, onRemove }: ShopCartGroupCardProps) {
-  return (
-    <View style={styles.cartItemCard}>
-      <View style={styles.cartItemHeader}>
-        <Text style={styles.restaurantName}>{group.restaurantName}</Text>
-      </View>
-
-      {group.items.map((item, index) => (
-        <View key={item.id}>
-          {index > 0 && <View style={styles.itemDivider} />}
-
-          <View style={styles.cartItemContent}>
-            <View style={styles.imageContainer}>
-              <Image source={{ uri: item.image }} style={styles.foodImage} resizeMode="cover" />
-            </View>
-
-            <View style={styles.itemDetails}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>{item.price.toLocaleString('vi-VN')}đ</Text>
-            </View>
-
-            <TouchableOpacity style={styles.deleteButton} onPress={() => onRemove(item.id)}>
-              <Image
-                source={require('../../assets/images/delete-icon.png')}
-                style={styles.deleteIcon}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.quantitySection}>
-            <Text style={styles.quantityLabel}>Số lượng</Text>
-            <View style={styles.quantityControls}>
-              <TouchableOpacity style={styles.quantityButton} onPress={() => onDecrease(item.id, -1)}>
-                <Image source={require('../../assets/images/minus-icon.png')} style={styles.quantityIcon} />
-              </TouchableOpacity>
-              <Text style={styles.quantityText}>{item.quantity}</Text>
-              <TouchableOpacity style={styles.quantityButton} onPress={() => onIncrease(item.id, 1)}>
-                <Image source={require('../../assets/images/plus-icon.png')} style={styles.quantityIcon} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      ))}
-    </View>
   );
 }
 
