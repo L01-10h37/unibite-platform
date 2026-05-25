@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
   Modal,
   Pressable,
 } from 'react-native';
@@ -402,6 +403,7 @@ function AddressEditorModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <SafeAreaView style={editorStyles.safeArea}>
         <View style={editorStyles.container}>
           <View style={editorStyles.header}>
@@ -412,7 +414,12 @@ function AddressEditorModal({
             <View style={{ width: 24 }} />
           </View>
 
-          <ScrollView style={editorStyles.content} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={editorStyles.content}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <View style={editorStyles.section}>
               <Text style={editorStyles.sectionLabel}>Địa chỉ đang chọn</Text>
               <View style={editorStyles.addressBox}>
@@ -484,6 +491,7 @@ function AddressEditorModal({
           </View>
         </View>
       </SafeAreaView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -1304,6 +1312,8 @@ export default function AddressScreen() {
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.searchWrapper}>

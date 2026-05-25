@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   Text,
@@ -466,6 +467,7 @@ export default function VoucherScreen() {
   };
 
   return (
+    <KeyboardAvoidingView behavior="padding" style={styles.safeArea}>
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.container}>
         <View style={styles.header}>
@@ -496,7 +498,13 @@ export default function VoucherScreen() {
           </View>
         </View>
 
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.infoCard}>
             <View style={styles.infoCardHeader}>
               <View style={styles.infoIcon}>
@@ -573,6 +581,7 @@ export default function VoucherScreen() {
         </ScrollView>
       </View>
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 

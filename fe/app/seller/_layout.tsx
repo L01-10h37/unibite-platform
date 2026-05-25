@@ -20,6 +20,7 @@ const TAB_LABEL_STYLE = {
 
 const HIDDEN_TAB_OPTIONS = {
   href: null,
+  animation: "none",
   tabBarStyle: { display: "none" },
 } as const;
 

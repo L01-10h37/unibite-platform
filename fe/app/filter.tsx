@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { type ComponentProps, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -231,7 +232,7 @@ export default function FilterScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <KeyboardAvoidingView behavior="padding" style={styles.screen}>
       <SafeAreaView edges={["top"]} style={styles.safeArea}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} style={styles.backButton}>
@@ -241,7 +242,12 @@ export default function FilterScreen() {
           <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Sắp xếp theo</Text>
             <View style={styles.sortList}>
@@ -457,7 +463,7 @@ export default function FilterScreen() {
       </SafeAreaView>
 
       <AppBottomTabBar />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

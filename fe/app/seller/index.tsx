@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Image,
   ImageSourcePropType,
+  KeyboardAvoidingView,
   Modal,
   ScrollView,
   StyleSheet,
@@ -319,7 +320,7 @@ export default function SellerHomeScreen() {
         visible={showDateFilter}
         onRequestClose={() => setShowDateFilter(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView behavior="padding" style={styles.modalOverlay}>
           <View style={styles.dateModal}>
             <Text {...noFontScale} style={styles.modalTitle}>
               Chọn ngày đơn hàng
@@ -374,7 +375,7 @@ export default function SellerHomeScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

@@ -22,7 +22,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -308,7 +307,7 @@ function ReplyModal({
     >
       <KeyboardAvoidingView
         style={{ flex: 1, backgroundColor: CARD_BG }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior="padding"
       >
         {/* Modal header */}
         <View style={[styles.modalHeader, { paddingTop: insets.top + 8 }]}>

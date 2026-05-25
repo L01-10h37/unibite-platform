@@ -108,11 +108,11 @@ export default function RootLayout() {
     <Provider store={store}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
-          <Stack.Screen name="signin" options={{ presentation: 'modal', headerShown: false, title: 'Sign In' }} />
-          <Stack.Screen name="signup" options={{ presentation: 'modal', headerShown: false, title: 'Sign Up' }} />
+          <Stack.Screen name="signin" options={{ animation: 'none', presentation: 'modal', headerShown: false, title: 'Sign In' }} />
+          <Stack.Screen name="signup" options={{ animation: 'none', presentation: 'modal', headerShown: false, title: 'Sign Up' }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="address" options={{ headerShown: false }} />
-          <Stack.Screen name="seller" options={{ headerShown: false }} />
+          <Stack.Screen name="seller" options={{ animation: 'none', headerShown: false }} />
           <Stack.Screen name="search" options={{ headerShown: false }} />
           <Stack.Screen name="filter" options={{ headerShown: false }} />
           <Stack.Screen name="food-detail" options={{ headerShown: false }} />
