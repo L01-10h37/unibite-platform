@@ -29,12 +29,14 @@ const foodIndexMapping = {
       isAvailble: { type: "boolean" },
       price: { type: "double" },
       average_rating: { type: "double" },
+      createdAt: { type: "date" },
     },
   },
 };
 
 export const mapFoodToSearchDocument = (food) => {
   const formattedFood = food.getFormattedData?.() || food;
+  const createdAt = formattedFood.createdAt || food.createdAt || null;
 
   return {
     id: formattedFood.id?.toString(),
@@ -45,7 +47,49 @@ export const mapFoodToSearchDocument = (food) => {
     isAvailble: formattedFood.isAvailble,
     price: formattedFood.price,
     average_rating: formattedFood.average_rating,
+    createdAt,
   };
+};
+
+const buildFoodSearchSort = (order = "relevant") => {
+  switch (order) {
+    case "price_low":
+    case "price_asc":
+      return [
+        { price: { order: "asc", missing: "_last" } },
+        { createdAt: { order: "desc", missing: "_last" } },
+      ];
+    case "price_high":
+    case "price_desc":
+      return [
+        { price: { order: "desc", missing: "_last" } },
+        { createdAt: { order: "desc", missing: "_last" } },
+      ];
+    case "rating_asc":
+      return [
+        { average_rating: { order: "asc", missing: "_last" } },
+        { createdAt: { order: "desc", missing: "_last" } },
+      ];
+    case "rating_desc":
+    case "rating":
+      return [
+        { average_rating: { order: "desc", missing: "_last" } },
+        { createdAt: { order: "desc", missing: "_last" } },
+      ];
+    case "created_asc":
+    case "oldest":
+      return [{ createdAt: { order: "asc", missing: "_last" } }];
+    case "created_desc":
+    case "newest":
+    case "recent":
+      return [{ createdAt: { order: "desc", missing: "_last" } }];
+    case "relevant":
+    default:
+      return [
+        { _score: { order: "desc" } },
+        { createdAt: { order: "desc", missing: "_last" } },
+      ];
+  }
 };
 
 export const createFoodSearchIndex = async () => {
@@ -156,7 +200,9 @@ export const searchFoodDocuments = async ({
   page = 1,
   limit = 10,
   minRating = 0,
-  order = "desc",
+  minPrice = null,
+  maxPrice = null,
+  order = "relevant",
 } = {}) => {
   const from = (page - 1) * limit;
   const normalizedSearch = search.trim();
@@ -220,6 +266,22 @@ export const searchFoodDocuments = async ({
     filter.push({ range: { average_rating: { gte: minRating } } });
   }
 
+  if (minPrice != null || maxPrice != null) {
+    const priceRange = {};
+
+    if (minPrice != null && !Number.isNaN(minPrice)) {
+      priceRange.gte = minPrice;
+    }
+
+    if (maxPrice != null && !Number.isNaN(maxPrice)) {
+      priceRange.lte = maxPrice;
+    }
+
+    if (Object.keys(priceRange).length > 0) {
+      filter.push({ range: { price: priceRange } });
+    }
+  }
+
   const result = await elasticsearchRequest(`/${FOOD_INDEX}/_search`, {
     method: "POST",
     body: JSON.stringify({
@@ -231,10 +293,7 @@ export const searchFoodDocuments = async ({
           filter,
         },
       },
-      sort: [
-        { average_rating: { order: order === "asc" ? "asc" : "desc" } },
-        { price: { order: "asc" } },
-      ],
+      sort: buildFoodSearchSort(order),
     }),
   });
 

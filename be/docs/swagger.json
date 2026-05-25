@@ -1904,18 +1904,51 @@
             }
           },
           {
+            "name": "minPrice",
+            "in": "query",
+            "description": "Minimum food price",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "example": 10000
+            }
+          },
+          {
+            "name": "maxPrice",
+            "in": "query",
+            "description": "Maximum food price",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "example": 50000
+            }
+          },
+          {
             "name": "order",
             "in": "query",
-            "description": "Sort rating order: desc (high to low), asc (low to high)",
+            "description": "Sort foods by price, rating, or created date",
             "required": false,
             "schema": {
               "type": "string",
               "enum": [
-                "desc",
-                "asc"
+                "relevant",
+                "recent",
+                "newest",
+                "oldest",
+                "created_desc",
+                "created_asc",
+                "price_low",
+                "price_high",
+                "price_asc",
+                "price_desc",
+                "rating",
+                "rating_asc",
+                "rating_desc"
               ],
-              "default": "desc",
-              "example": "desc"
+              "default": "relevant",
+              "example": "price_low"
             }
           },
           {
@@ -3070,17 +3103,50 @@
             }
           },
           {
+            "name": "minPrice",
+            "in": "query",
+            "required": false,
+            "description": "Minimum food price",
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "example": 10000
+            }
+          },
+          {
+            "name": "maxPrice",
+            "in": "query",
+            "required": false,
+            "description": "Maximum food price",
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "example": 50000
+            }
+          },
+          {
             "name": "order",
             "in": "query",
             "required": false,
-            "description": "Sort by average rating",
+            "description": "Sort foods by relevance, price, rating, or created date",
             "schema": {
               "type": "string",
               "enum": [
-                "asc",
-                "desc"
+                "relevant",
+                "recent",
+                "newest",
+                "oldest",
+                "created_desc",
+                "created_asc",
+                "price_low",
+                "price_high",
+                "price_asc",
+                "price_desc",
+                "rating",
+                "rating_asc",
+                "rating_desc"
               ],
-              "default": "desc"
+              "default": "relevant"
             }
           }
         ],

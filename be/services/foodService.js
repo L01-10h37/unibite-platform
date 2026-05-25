@@ -101,6 +101,11 @@ const buildFoodSort = (order = "relevant") => {
     case "rating_desc":
     case "rating":
       return { average_rating: -1, createdAt: -1 };
+    case "created_asc":
+    case "oldest":
+      return { createdAt: 1 };
+    case "created_desc":
+    case "newest":
     case "recent":
     case "relevant":
     default:
@@ -179,7 +184,7 @@ export const searchFoods = async (
   limit = 10,
   search = "",
   minRating = 0,
-  order = "desc",
+  order = "relevant",
   minPrice = null,
   maxPrice = null,
   area = ""
@@ -197,6 +202,8 @@ export const searchFoods = async (
         search,
         limit,
         minRating,
+        minPrice,
+        maxPrice,
         order,
       });
     } catch (error) {
@@ -215,6 +222,8 @@ export const searchFoods = async (
         search,
         limit,
         minRating,
+        minPrice,
+        maxPrice,
         order,
       });
     }
@@ -228,7 +237,29 @@ export const searchFoods = async (
       };
     }
 
-    const foods = await Food.find({ _id: { $in: foodIds }, isDraft: false })
+    const mongoQuery = { _id: { $in: foodIds }, isDraft: false };
+
+    if (minRating > 0) {
+      mongoQuery.average_rating = { $gte: minRating };
+    }
+
+    if (minPrice != null || maxPrice != null) {
+      mongoQuery.price = {};
+
+      if (minPrice != null && !Number.isNaN(minPrice)) {
+        mongoQuery.price.$gte = minPrice;
+      }
+
+      if (maxPrice != null && !Number.isNaN(maxPrice)) {
+        mongoQuery.price.$lte = maxPrice;
+      }
+
+      if (Object.keys(mongoQuery.price).length === 0) {
+        delete mongoQuery.price;
+      }
+    }
+
+    const foods = await Food.find(mongoQuery)
       .populate("category")
       .populate("shop");
 

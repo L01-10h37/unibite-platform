@@ -242,7 +242,7 @@ export const searchFoods = async (req, res, next) => {
     const minPrice = req.query.minPrice != null ? parseFloat(req.query.minPrice) : null;
     const maxPrice = req.query.maxPrice != null ? parseFloat(req.query.maxPrice) : null;
     const area = req.query.area || "";
-    const order = req.query.order || "desc";
+    const order = req.query.order || "relevant";
 
     const result = await foodService.searchFoods(
       page,
