@@ -190,14 +190,14 @@ export const vnpayIpnHandle = async (vnp_Params) => {
 
                     await order.save({ session });
 
-                    // if (payment.voucherId) {
-                    //     await voucherService.consumeVoucherForPayment(
-                    //         payment.voucherId,
-                    //         payment._id,
-                    //         order._id,
-                    //         { session }
-                    //     );
-                    // }
+                    if (payment.voucherId) {
+                        await voucherService.consumeVoucherForPayment(
+                            payment.voucherId,
+                            payment._id,
+                            order._id,
+                            { session }
+                        );
+                    }
 
                     await payment.save({ session });
 
@@ -206,9 +206,9 @@ export const vnpayIpnHandle = async (vnp_Params) => {
             } else {
                 payment.status = "FAILED";
 
-                // if (payment.voucherId) {
-                //     await voucherService.releaseVoucherReservation(payment._id, { session });
-                // }
+                if (payment.voucherId) {
+                    await voucherService.releaseVoucherReservation(payment._id, { session });
+                }
 
                 await payment.save({ session });
 
