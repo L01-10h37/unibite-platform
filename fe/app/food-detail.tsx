@@ -92,6 +92,11 @@ type CommentResponse = {
   data: FoodComment;
 };
 
+type CartAddResponse = {
+  success: boolean;
+  message?: string;
+};
+
 function formatPrice(value: number) {
   return `${value.toLocaleString("vi-VN")}đ`;
 }
@@ -204,6 +209,7 @@ export default function FoodDetailScreen() {
   const [newCommentText, setNewCommentText] = useState("");
   const [newCommentRating, setNewCommentRating] = useState(5);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [failedAvatarIds, setFailedAvatarIds] = useState<Set<string>>(
     () => new Set()
   );
@@ -523,6 +529,51 @@ export default function FoodDetailScreen() {
     });
   };
 
+  const handleAddToCart = async () => {
+    if (!foodId || isAddingToCart) {
+      return;
+    }
+
+    const tokens = await readAuthTokens("tokens");
+    const accessToken = tokens?.accessToken ?? null;
+
+    if (!accessToken) {
+      Alert.alert("Lỗi", "Vui lòng đăng nhập để thêm vào giỏ hàng");
+      return;
+    }
+
+    setIsAddingToCart(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/cart/items`, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          foodId,
+          quantity,
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as CartAddResponse | null;
+
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.message || "Không thêm được món vào giỏ hàng");
+      }
+
+      Alert.alert("Thành công", "Đã thêm món vào giỏ hàng");
+    } catch (error) {
+      Alert.alert(
+        "Lỗi",
+        error instanceof Error ? error.message : "Không thêm được món vào giỏ hàng"
+      );
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
@@ -830,14 +881,25 @@ export default function FoodDetailScreen() {
         <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.85}>
           <Text style={styles.secondaryButtonText}>{formatPrice(totalPrice)}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.primaryButton} activeOpacity={0.9}>
-          <MaterialCommunityIcons
-            name="cart-outline"
-            size={24}
-            color="#FFFFFF"
-            style={styles.cartIcon}
-          />
-          <Text style={styles.primaryButtonText}>Thêm vào giỏ hàng</Text>
+        <TouchableOpacity
+          style={[styles.primaryButton, isAddingToCart ? styles.primaryButtonDisabled : null]}
+          activeOpacity={0.9}
+          disabled={isAddingToCart}
+          onPress={handleAddToCart}
+        >
+          {isAddingToCart ? (
+            <ActivityIndicator size="small" color="#FFFFFF" style={styles.cartIcon} />
+          ) : (
+            <MaterialCommunityIcons
+              name="cart-outline"
+              size={24}
+              color="#FFFFFF"
+              style={styles.cartIcon}
+            />
+          )}
+          <Text style={styles.primaryButtonText}>
+            {isAddingToCart ? "Đang thêm..." : "Thêm vào giỏ hàng"}
+          </Text>
         </TouchableOpacity>
       </SafeAreaView>
     </View>
@@ -1174,6 +1236,9 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     backgroundColor: "#43A560",
     paddingHorizontal: 18,
+  },
+  primaryButtonDisabled: {
+    opacity: 0.72,
   },
   cartIcon: {
     marginRight: 8,
