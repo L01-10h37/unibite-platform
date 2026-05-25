@@ -45,7 +45,7 @@ export const fetchCart = createAsyncThunk('cart/fetchCart', async () => {
     if (json.success && json.data && json.data.items) {
         // Map dữ liệu từ API sang cấu trúc của Redux State
         return json.data.items.map((item: any) => ({
-        id: item.id,
+        id: item.food?._id,
         name: item.name,
         restaurant: item.food?.shop?.name || "Quán ăn",
         price: item.price, 
