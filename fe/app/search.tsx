@@ -22,11 +22,13 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
 
 type SearchParams = {
   query?: string;
+  category?: string;
+  categoryId?: string;
+  categoryName?: string;
   sort?: string;
   minRating?: string;
   minPrice?: string;
   maxPrice?: string;
-  area?: string;
   fromFilter?: string;
 };
 
@@ -76,6 +78,12 @@ function buildRequestUrl(apiUrl: string, pathname: "/api/foods/search" | "/api/f
     url.searchParams.set("search", params.query.trim());
   }
 
+  const categoryId = params.categoryId?.trim() || params.category?.trim();
+
+  if (categoryId) {
+    url.searchParams.set("categoryId", categoryId);
+  }
+
   if (params.sort?.trim()) {
     url.searchParams.set("order", params.sort.trim());
   }
@@ -92,10 +100,6 @@ function buildRequestUrl(apiUrl: string, pathname: "/api/foods/search" | "/api/f
     url.searchParams.set("maxPrice", params.maxPrice.trim());
   }
 
-  if (params.area?.trim()) {
-    url.searchParams.set("area", params.area.trim());
-  }
-
   url.searchParams.set("page", "1");
   url.searchParams.set("limit", "20");
 
@@ -103,6 +107,22 @@ function buildRequestUrl(apiUrl: string, pathname: "/api/foods/search" | "/api/f
 }
 
 async function fetchFoods(apiUrl: string, params: SearchParams) {
+  const hasCategory = Boolean(params.categoryId?.trim() || params.category?.trim());
+
+  if (hasCategory) {
+    const categoryResponse = await fetch(buildRequestUrl(apiUrl, "/api/foods", params), {
+      headers: { accept: "application/json" },
+    });
+
+    const categoryPayload = (await categoryResponse.json()) as SearchResponse;
+
+    if (!categoryResponse.ok || !categoryPayload.success) {
+      throw new Error(categoryPayload.message || "KhÃ´ng tÃ¬m Ä‘Æ°á»£c mÃ³n Äƒn phÃ¹ há»£p");
+    }
+
+    return categoryPayload;
+  }
+
   const searchResponse = await fetch(buildRequestUrl(apiUrl, "/api/foods/search", params), {
     headers: { accept: "application/json" },
   });
@@ -130,11 +150,17 @@ export default function SearchScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<SearchParams>();
   const query = typeof params.query === "string" ? params.query : "";
+  const categoryId =
+    typeof params.categoryId === "string"
+      ? params.categoryId
+      : typeof params.category === "string"
+        ? params.category
+        : "";
   const sort = typeof params.sort === "string" ? params.sort : "relevant";
   const minRating = typeof params.minRating === "string" ? params.minRating : "";
   const minPrice = typeof params.minPrice === "string" ? params.minPrice : "";
   const maxPrice = typeof params.maxPrice === "string" ? params.maxPrice : "";
-  const area = typeof params.area === "string" ? params.area : "";
+  const categoryName = typeof params.categoryName === "string" ? params.categoryName : "";
   const fromFilter = typeof params.fromFilter === "string" ? params.fromFilter : "";
 
   const [searchText, setSearchText] = useState(query);
@@ -157,11 +183,11 @@ export default function SearchScreen() {
 
         const payload = await fetchFoods(API_URL, {
           query,
+          categoryId,
           sort,
           minRating,
           minPrice,
           maxPrice,
-          area,
         });
 
         if (isMounted) {
@@ -186,7 +212,7 @@ export default function SearchScreen() {
     return () => {
       isMounted = false;
     };
-  }, [query, sort, minRating, minPrice, maxPrice, area]);
+  }, [query, categoryId, sort, minRating, minPrice, maxPrice]);
 
   const submitSearch = () => {
     const nextQuery = searchText.trim();
@@ -195,11 +221,12 @@ export default function SearchScreen() {
       pathname: "/search",
       params: {
         query: nextQuery,
+        categoryId,
+        categoryName,
         sort,
         minRating,
         minPrice,
         maxPrice,
-        area,
       },
     });
   };
@@ -209,11 +236,12 @@ export default function SearchScreen() {
       pathname: "/filter",
       params: {
         query: searchText.trim() || query,
+        categoryId,
+        categoryName,
         sort,
         minRating,
         minPrice,
         maxPrice,
-        area,
       },
     });
   };
@@ -227,7 +255,7 @@ export default function SearchScreen() {
     router.back();
   };
 
-  const activeFilterCount = [sort !== "relevant", minRating, minPrice, maxPrice, area].filter(Boolean).length;
+  const activeFilterCount = [sort !== "relevant", categoryId, minRating, minPrice, maxPrice].filter(Boolean).length;
 
   return (
     <View style={styles.screen}>

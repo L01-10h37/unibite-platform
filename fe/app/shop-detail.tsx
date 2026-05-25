@@ -120,6 +120,8 @@ export default function ShopDetailScreen() {
   const [isReviewsLoading, setIsReviewsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [isDescriptionTruncated, setIsDescriptionTruncated] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -273,6 +275,12 @@ export default function ShopDetailScreen() {
   }, [shop?.avatar]);
 
   const rating = shop?.average_rating ? shop.average_rating.toFixed(1) : "0.0";
+  const shopDescription = shop?.about?.trim() || "Qu\u00e1n ch\u01b0a c\u1eadp nh\u1eadt m\u00f4 t\u1ea3.";
+
+  useEffect(() => {
+    setIsDescriptionExpanded(false);
+    setIsDescriptionTruncated(false);
+  }, [shopId, shop?.about]);
 
   return (
     <View style={styles.screen}>
@@ -346,11 +354,34 @@ export default function ShopDetailScreen() {
             </View>
           </View>
 
-          <View style={styles.discountBox}>
-            <MaterialCommunityIcons name="percent" size={18} color="#43A560" />
-            <Text style={styles.discountText}>
-              Tiết kiệm 5.000đ với mã giảm “UNIBITEO”
+          <View style={styles.descriptionBox}>
+            <Text
+              style={styles.descriptionText}
+              numberOfLines={isDescriptionExpanded ? undefined : 2}
+              onTextLayout={(event) => {
+                if (!isDescriptionExpanded) {
+                  setIsDescriptionTruncated(event.nativeEvent.lines.length > 2);
+                }
+              }}
+            >
+              {shopDescription}
             </Text>
+            {isDescriptionTruncated || isDescriptionExpanded ? (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setIsDescriptionExpanded((current) => !current)}
+                style={styles.descriptionToggle}
+              >
+                <Text style={styles.descriptionToggleText}>
+                  {isDescriptionExpanded ? "Thu g\u1ecdn" : "Hi\u1ec3n th\u1ecb th\u00eam"}
+                </Text>
+                <Ionicons
+                  name={isDescriptionExpanded ? "chevron-up" : "chevron-down"}
+                  size={15}
+                  color="#43A560"
+                />
+              </TouchableOpacity>
+            ) : null}
           </View>
 
           <View style={styles.tabs}>
@@ -554,7 +585,7 @@ const styles = StyleSheet.create({
   heroImage: {
     width: "100%",
     height: "100%",
-    resizeMode: "contain",
+    resizeMode: "cover",
   },
   heroOverlay: {
     position: "absolute",
@@ -672,23 +703,31 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Montserrat-SemiBold",
   },
-  discountBox: {
-    alignSelf: "flex-start",
-    marginTop: 21,
-    marginLeft: 44,
-    height: 37,
-    maxWidth: width - 88,
+  descriptionBox: {
+    marginTop: 18,
+    marginHorizontal: 32,
     paddingHorizontal: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 11,
+    paddingVertical: 12,
+    borderRadius: 12,
     backgroundColor: "#F4F5F7",
-    gap: 10,
   },
-  discountText: {
+  descriptionText: {
     color: "#536078",
     fontSize: 12,
-    fontFamily: "Montserrat-SemiBold",
+    lineHeight: 18,
+    fontFamily: "Montserrat-Medium",
+  },
+  descriptionToggle: {
+    alignSelf: "flex-start",
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  descriptionToggleText: {
+    color: "#43A560",
+    fontSize: 12,
+    fontFamily: "Montserrat-Bold",
   },
   tabs: {
     marginTop: 25,
