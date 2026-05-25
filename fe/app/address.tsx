@@ -724,12 +724,12 @@ function PromoCard() {
         <Text style={promoStyles.tagText}>MẸO GIAO HÀNG</Text>
         <Text style={promoStyles.heading}>Lưu địa chỉ giúp bạn đặt hàng nhanh hơn 40%</Text>
       </View>
-      <View style={promoStyles.imageWrapper}>
+      {/* <View style={promoStyles.imageWrapper}>
         <Image
           source={require('../assets/images/veggies.png')}
           style={{ width: '100%', height: '100%', resizeMode: 'cover', borderRadius: 16 }}
         />
-      </View>
+      </View> */}
     </View>
   );
 }
