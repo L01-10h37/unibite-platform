@@ -34,7 +34,7 @@ router.get("/search", foodController.searchFoods);
  *             category: { type: 'string' },
  *             shop: { type: 'string' },
  *             listUrlImg: { type: 'array', items: { type: 'string' } },
- *             isAvailble: { type: 'boolean' },
+ *             isAvailable: { type: 'boolean' },
  *             isDraft: { type: 'boolean' },
  *             startTime: { type: 'string' },
  *             endTime: { type: 'string' },
@@ -86,7 +86,7 @@ router.get("/", foodController.getAllFood);
  *             shopId: { type: 'string' },
  *             shopName: { type: 'string' },
  *             listUrlImg: { type: 'array', items: { type: 'string' } },
- *             isAvailble: { type: 'boolean' },
+ *             isAvailable: { type: 'boolean' },
  *             isDraft: { type: 'boolean' },
  *             startTime: { type: 'string' },
  *             endTime: { type: 'string' },
@@ -134,7 +134,7 @@ router.get("/:id", foodController.getFood);
  *           endTime: { type: 'string', description: 'End time for special price' },
  *           category: { type: 'string', description: 'Category ID' },
  *           listUrlImg: { type: 'array', items: { type: 'string' }, description: 'List of image URLs' },
- *           isAvailble: { type: 'boolean', description: 'Availability status' },
+ *           isAvailable: { type: 'boolean', description: 'Availability status' },
  *           isDraft: { type: 'boolean', description: 'Draft status' }
  *         }
  *       }
@@ -184,7 +184,7 @@ router.post(
  *           endTime: { type: 'string', description: 'End time for special price' },
  *           category: { type: 'string', description: 'Category ID' },
  *           listUrlImg: { type: 'array', items: { type: 'string' }, description: 'List of image URLs' },
- *           isAvailble: { type: 'boolean', description: 'Availability status' },
+ *           isAvailable: { type: 'boolean', description: 'Availability status' },
  *           isDraft: { type: 'boolean', description: 'Draft status' }
  *         }
  *       }

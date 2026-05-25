@@ -4085,7 +4085,7 @@
               "https://example.com/food1.jpg"
             ]
           },
-          "isAvailble": {
+          "isAvailable": {
             "type": "boolean",
             "example": true
           },
@@ -4180,7 +4180,7 @@
               "https://example.com/food1.jpg"
             ]
           },
-          "isAvailble": {
+          "isAvailable": {
             "type": "boolean",
             "default": true
           },
@@ -4235,7 +4235,7 @@
               "https://example.com/food1.jpg"
             ]
           },
-          "isAvailble": {
+          "isAvailable": {
             "type": "boolean",
             "example": true
           },
@@ -4894,7 +4894,7 @@
             "nullable": true,
             "example": "https://example.com/food1.jpg"
           },
-          "isAvailble": {
+          "isAvailable": {
             "type": "boolean",
             "example": true
           },
@@ -4910,7 +4910,7 @@
         "required": [
           "id",
           "name",
-          "isAvailble",
+          "isAvailable",
           "price",
           "average_rating"
         ]
