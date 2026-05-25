@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "fe",
+    "scheme": "unibite",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

@@ -42,9 +42,9 @@ export const vnpayReturnHandle = async (req, res, next) => {
         const isSuccess = vnp_Params['vnp_ResponseCode'] === "00";
 
         if (isSuccess) {
-            return res.redirect("http://localhost:3000/payment-success");
+            return res.redirect("unibite://payment-success");        
         } else {
-            return res.redirect("http://localhost:3000/payment-failed");
+            return res.redirect("unibite://payment-failed");
         }
     } catch (error) {
         next(error);

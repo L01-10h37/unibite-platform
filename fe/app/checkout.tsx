@@ -15,7 +15,11 @@ import {
   StatusBar,
   TextInput,
   Modal,
+  Alert,
+  Linking,
+  ActivityIndicator,
 } from 'react-native';
+import * as SecureStore from "expo-secure-store";
 
 type PaymentMethod = 'ewallet' | 'bankcard' | 'cash';
 
@@ -26,6 +30,7 @@ export default function CheckoutScreen() {
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [orderNotes, setOrderNotes] = useState<Record<string, string>>({});
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
 
   // Lấy dữ liệu giỏ hàng thực tế từ Redux Store
   const cartItems = useSelector((state: RootState) => state.cart.items);
@@ -102,6 +107,94 @@ export default function CheckoutScreen() {
     return 0;
   }, [appliedVoucher, subtotal]);
   const total = subtotal + shippingFee + orderDiscount;
+
+  const handlePlaceOrder = async () => {
+    if (cartItems.length === 0 || isPaying) return;
+
+    setIsPaying(true);
+
+    try {
+      const orderPayload = {
+        phone: "0901234567",
+        deliveryAddress: "Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí Minh",
+        items: cartItems.map((item) => ({
+          food: item.id,
+          quantity: item.quantity,
+        })),
+      };
+
+      const tokensRaw = await SecureStore.getItemAsync("tokens");
+      const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
+      const accessToken = tokens?.accessToken;
+
+      const orderRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/orders/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(orderPayload),
+      });
+
+      const orderJson = await orderRes.json();
+
+      if (!orderRes.ok) {
+        throw new Error(orderJson.message || "Không thể tạo đơn hàng");
+      }
+
+      const order = orderJson.data;
+
+      const paymentMethod =
+        selectedPayment === "cash"
+          ? "COD"
+          : selectedPayment === "bankcard"
+            ? "VNPAY"
+            : "MOMO";
+
+      const paymentPayload = {
+        orderId: order._id || order.id,
+        method: paymentMethod,
+        voucherCode: appliedVoucher?.code,
+        shippingFee,
+      };
+
+      const paymentRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/payments/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(paymentPayload),
+      });
+
+      const paymentJson = await paymentRes.json();
+
+      if (!paymentRes.ok) {
+        throw new Error(paymentJson.message || "Không thể tạo thanh toán");
+      }
+
+      const paymentData = paymentJson.data;
+
+      if (paymentMethod === "VNPAY") {
+        const paymentUrl = String(paymentData.paymentUrl || "")
+          .replace(/^"+|"+$/g, "")
+          .trim();
+
+        if (!paymentUrl.startsWith("http")) {
+          throw new Error("URL thanh toán VNPay không hợp lệ");
+        }
+
+        await Linking.openURL(paymentUrl);
+        return;
+      }
+
+      setSuccessModalVisible(true);
+    } catch (error: any) {
+      Alert.alert("Thanh toán thất bại", error.message || "Vui lòng thử lại sau");
+    } finally {
+      setIsPaying(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -266,12 +359,18 @@ export default function CheckoutScreen() {
             <Text style={styles.footerTotal}>{total.toLocaleString('vi-VN')}đ</Text>
           </View>
           <TouchableOpacity 
-            style={styles.checkoutButton}
-            disabled={cartItems.length === 0}
-            onPress={() => setSuccessModalVisible(true)}
+            style={[styles.checkoutButton, isPaying && styles.checkoutButtonDisabled]}
+            disabled={cartItems.length === 0 || isPaying}
+            onPress={handlePlaceOrder}
           >
-            <Text style={styles.checkoutButtonText}>Thanh toán</Text>
-            <Feather name="lock" size={14} color="white" style={styles.lockIcon} />
+            {isPaying ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <>
+                <Text style={styles.checkoutButtonText}>Thanh toán</Text>
+                <Feather name="lock" size={14} color="white" style={styles.lockIcon} />
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -561,6 +660,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
+  checkoutButtonDisabled: {
+    opacity: 0.7,
+  },
   checkoutButtonText: {
     fontSize: 15,
     fontWeight: '700',
@@ -575,12 +677,12 @@ const styles = StyleSheet.create({
     color: '#1B5E20',
   },
   modalOverlay: {
-  flex: 1,
-  backgroundColor: 'rgba(0, 0, 0, 0.55)',
-  justifyContent: 'center',
-  alignItems: 'center',
-  paddingHorizontal: 40,
-},
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
 
   successModal: {
     width: '100%',
