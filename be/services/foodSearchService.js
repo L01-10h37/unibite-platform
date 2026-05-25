@@ -26,7 +26,7 @@ const foodIndexMapping = {
         },
       },
       UrlImg: { type: "keyword" },
-      isAvailble: { type: "boolean" },
+      isAvailable: { type: "boolean" },
       price: { type: "double" },
       average_rating: { type: "double" },
       createdAt: { type: "date" },
@@ -44,7 +44,7 @@ export const mapFoodToSearchDocument = (food) => {
     category: formattedFood.categoryName || formattedFood.categoryId?.toString() || null,
     shop: formattedFood.shopName || formattedFood.shopId?.toString() || null,
     UrlImg: formattedFood.listUrlImg?.[0] || null,
-    isAvailble: formattedFood.isAvailble,
+    isAvailable: formattedFood.isAvailable,
     price: formattedFood.price,
     average_rating: formattedFood.average_rating,
     createdAt,
@@ -260,7 +260,7 @@ export const searchFoodDocuments = async ({
       ]
     : [{ match_all: {} }];
 
-  const filter = [{ term: { isAvailble: true } }];
+  const filter = [{ term: { isAvailable: true } }];
 
   if (minRating > 0) {
     filter.push({ range: { average_rating: { gte: minRating } } });

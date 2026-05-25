@@ -196,7 +196,7 @@ export default function SellerCreateFoodScreen() {
         category: selectedCategory.id,
         price: parsedPrice,
         specialPrice: parsedSpecialPrice,
-        isAvailble: isAvailable,
+        isAvailable: isAvailable,
         isDraft,
         startTime: startTime.trim() || null,
         endTime: endTime.trim() || null,
