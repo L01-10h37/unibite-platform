@@ -12,6 +12,8 @@ import {
   Dimensions,
   Image,
   ImageSourcePropType,
+  Keyboard,
+  KeyboardAvoidingView,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
@@ -213,11 +215,26 @@ export default function FoodDetailScreen() {
   const [newCommentRating, setNewCommentRating] = useState(5);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [failedAvatarIds, setFailedAvatarIds] = useState<Set<string>>(
     () => new Set()
   );
   const commentsLoadingRef = useRef(false);
   const dispatch = useDispatch<AppDispatch>();
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      setIsKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -579,12 +596,14 @@ export default function FoodDetailScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <KeyboardAvoidingView behavior="padding" style={styles.screen}>
       <StatusBar style="light" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.pageContent}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         scrollEventThrottle={16}
         onScroll={handlePageScroll}
       >
@@ -881,6 +900,7 @@ export default function FoodDetailScreen() {
         </View>
       </ScrollView>
 
+      {!isKeyboardVisible ? (
       <SafeAreaView edges={["bottom"]} style={styles.bottomBar}>
         <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.85}>
           <Text style={styles.secondaryButtonText}>{formatPrice(totalPrice)}</Text>
@@ -906,7 +926,8 @@ export default function FoodDetailScreen() {
           </Text>
         </TouchableOpacity>
       </SafeAreaView>
-    </View>
+      ) : null}
+    </KeyboardAvoidingView>
   );
 }
 

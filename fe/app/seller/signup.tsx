@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import {
   Dimensions,
   Image,
+  KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   Text,
@@ -126,10 +127,15 @@ export default function SellerSignUpScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      behavior="padding"
+      style={styles.container}
+    >
       <ScrollView
         bounces={false}
         contentContainerStyle={styles.contentContainer}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
@@ -374,7 +380,7 @@ export default function SellerSignUpScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

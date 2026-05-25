@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  KeyboardAvoidingView,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -318,7 +319,7 @@ export default function SearchScreen() {
   const activeFilterCount = [sort !== "relevant", categoryId, minRating, minPrice, maxPrice].filter(Boolean).length;
 
   return (
-    <View style={styles.screen}>
+    <KeyboardAvoidingView behavior="padding" style={styles.screen}>
       <SafeAreaView edges={["top"]} style={styles.safeArea}>
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} activeOpacity={0.8} style={styles.backButton}>
@@ -344,6 +345,8 @@ export default function SearchScreen() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           onScroll={handleScroll}
           scrollEventThrottle={16}
         >
@@ -419,7 +422,7 @@ export default function SearchScreen() {
       </SafeAreaView>
 
       <AppBottomTabBar />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

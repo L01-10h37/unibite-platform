@@ -7,7 +7,6 @@ import {
   Image,
   ImageSourcePropType,
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -170,7 +169,7 @@ export default function SellerEditFoodScreen() {
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior="padding"
         style={styles.keyboardView}
       >
         <View style={styles.header}>
@@ -189,6 +188,7 @@ export default function SellerEditFoodScreen() {
 
         <ScrollView
           contentContainerStyle={styles.content}
+          keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
