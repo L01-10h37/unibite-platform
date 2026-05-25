@@ -7,7 +7,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import OnboardingScreen from "./onboarding";
 
 const STORAGE_KEY = "has_launched";
@@ -17,6 +17,8 @@ export default function RootLayout() {
   // Onboarding logic: Kiểm tra lần đầu mở app và lưu trạng thái vào SecureStore
   const [isLoading, setIsLoading] = useState(true);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+
+  const distinctItemsCount = 2;
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -108,12 +110,21 @@ export default function RootLayout() {
               style={[props.style, styles.centerTabButtonWrapper]}
               activeOpacity={0.9}
             >
-              <View style={styles.centerTabButton}>
-                <MaterialCommunityIcons
-                  name="shopping-outline"
-                  size={28}
-                  color="#FFFFFF"
-                />
+              <View style={{ position: 'relative' }}>
+                <View style={styles.centerTabButton}>
+                  <MaterialCommunityIcons
+                    name="shopping-outline"
+                    size={28}
+                    color="#FFFFFF"
+                  />
+                </View>
+
+                {/* HIỂN THỊ BADGE SỐ LƯỢNG KHI LỚN HƠN 0 */}
+                {distinctItemsCount > 0 && (
+                  <View style={localStyles.badge}>
+                    <Text style={localStyles.badgeText}>{distinctItemsCount}</Text>
+                  </View>
+                )}
               </View>
             </TouchableOpacity>
           ),
@@ -170,3 +181,30 @@ export default function RootLayout() {
     </Tabs>
   );
 }
+
+const localStyles = StyleSheet.create({
+  badge: {
+    position: 'absolute',
+    top: -4,                  // Đẩy lên góc trên của hình tròn xanh
+    right: -4,                // Đẩy sang góc phải
+    backgroundColor: '#e20505',
+    minWidth: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    // Hiệu ứng shadow đổ bóng mượt mà giống hệt ảnh mẫu của bạn
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+});

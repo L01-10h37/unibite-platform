@@ -24,6 +24,7 @@ import vouchersRouter from './routes/vouchers.js';
 import { checkElasticsearchConnection } from './config/elasticsearch.js';
 import paymentRouter from './routes/payment.js'
 import { connectRedis, disconnectRedis } from './config/redis.js';
+import cartRouter from './routes/cart.js';
 
 const app = express();
 const port = environment.port;
@@ -75,6 +76,7 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/foods', foodsRouter);
 app.use('/api/vouchers', vouchersRouter);
 app.use('/api/payments', paymentRouter);
+app.use('/api/cart', cartRouter);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Get raw Swagger JSON
