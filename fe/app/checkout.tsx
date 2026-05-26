@@ -119,7 +119,7 @@ export default function CheckoutScreen() {
         phone: "0901234567",
         deliveryAddress: "Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí Minh",
         items: cartItems.map((item) => ({
-          food: item.foodId,
+          food: item.food,
           quantity: item.quantity,
         })),
       };

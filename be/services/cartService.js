@@ -9,12 +9,8 @@ const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 export const getCartByUserId = async (userId) => {
     try {
         const cart = await Cart.findOne({ user: userId }).populate({
-            path: "items.food",
-            select: "name description price listUrlImg isAvailable isDraft",
-            populate: {
-                path: "shop",
-                select: "name avatar address openingHours average_rating"
-            }
+            path: "items.shop",
+            select: "name avatar"
         });
 
         if (!cart) {
@@ -74,11 +70,11 @@ export const addItemToCart = async (userId, foodId, quantity) => {
         } else {
             cart.items.push({ 
                 food: food._id, 
-                shop: food.shop._id || food.shop,
+                shop: food.shop,
                 name: food.name,
                 image: food.listUrlImg?.[0] || null,
                 price: food.price,
-                specialPrice: food.specialPrice,
+                // specialPrice: food.specialPrice,
                 quantity
             });
         }
@@ -128,6 +124,59 @@ export const removeItemFromCart = async (userId, itemId) => {
         };
     } catch (error) {
         logger.error("Error removing item from cart", error);
+        throw error;
+    }
+};
+
+export const updateCart = async (cartId, items) => {
+    try {
+        if (!isValidObjectId(cartId)) {
+            const error = new Error('Invalid cart ID');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const cart = await Cart.findOne({ _id: cartId });
+        if (!cart) {
+            const error = new Error('Cart not found');
+            error.statusCode = 404;
+            throw error;
+        }
+        
+        // Validate items
+        for (const item of items) {
+            if (!isValidObjectId(item.id)) {
+                const error = new Error(`Invalid item ID: ${item.id}`);
+                error.statusCode = 400;
+                throw error;
+            }   
+            if (item.quantity < 1) {
+                const error = new Error(`Quantity must be at least 1 for item ID: ${item.id}`);
+                error.statusCode = 400;
+                throw error;
+            }
+        }
+
+        // Update quantities
+        for (const item of items) {
+            const existingItem = cart.items.find(i => i._id.toString() === item.id);
+            if (existingItem) {
+                existingItem.quantity = item.quantity;
+            } else {
+                const error = new Error(`Cart item not found for ID: ${item.id}`);
+                error.statusCode = 404;
+                throw error;
+            }
+        }
+
+        await cart.save();
+        return {
+            success: true,
+            message: "Cart updated successfully",
+            data: cart.getFormattedData()
+        };
+    } catch (error) {
+        logger.error("Error updating cart", error);
         throw error;
     }
 };
