@@ -9,7 +9,7 @@ const categorySchema = new mongoose.Schema(
     },
     parentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
+      ref: "Category", 
       default: null, // null = category gốc
     },
   },
