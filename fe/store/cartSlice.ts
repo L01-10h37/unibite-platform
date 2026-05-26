@@ -40,7 +40,7 @@ async function getAccessToken() {
 
 // THUNK: Hàm gọi API Async để lấy dữ liệu giỏ hàng từ Backend
 export const fetchCart = createAsyncThunk('cart/fetchCart', async () => {
-    const accessToken = getAccessToken();
+    const accessToken = await getAccessToken();
 
     const response = await fetch(
         `${API_BASE_URL}/api/cart/`,
@@ -62,7 +62,7 @@ export const fetchCart = createAsyncThunk('cart/fetchCart', async () => {
             id: item.id,
             food: item.food,
             name: item.name,
-            seller: item.food?.shop?.name || "Quán ăn",
+            seller: item.shop?.name || "Quán ăn",
             price: item.price, 
             quantity: item.quantity,
             image: item.image,
@@ -114,13 +114,14 @@ export const deleteCartItem = createAsyncThunk(
 export const updateCart = createAsyncThunk(
   'cart/updateCart',
   async ({ items, id }: { items: CartItem[]; id: string }, { rejectWithValue }) => {
+    console.log('🟢 [THUNK] updateCart - Gọi API cập nhật giỏ hàng với dữ liệu:', { items, id }, new Date().toISOString());
     try {
-      const accessToken = getAccessToken();
+      const accessToken = await getAccessToken();
 
       const response = await fetch(
         `${API_BASE_URL}/api/cart/${id}`,
         {
-          method: 'POST',
+          method: 'PATCH',
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
