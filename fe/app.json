@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Unibite",
-    "slug": "unibite",
+    "slug": "fe",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/unibite-icon.png",
