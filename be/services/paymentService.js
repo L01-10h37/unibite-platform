@@ -155,7 +155,7 @@ export const createPayment = async (paymentData, userId) => {
                 );
                 await payment.save({session});   
             } else if (normalizedMethod === "VNPAY") {
-                const paymentUrl = VNPayHelper.buildPaymentUrl(payment[0]._id, payment[0].amount, payment[0]._id);
+                const paymentUrl = VNPayHelper.buildPaymentUrl(payment.amount, payment._id);
 
                 result.paymentUrl = paymentUrl;
             }
@@ -166,7 +166,7 @@ export const createPayment = async (paymentData, userId) => {
     } catch (error) {
         if (error.code === 11000) {
             const existing = await Payment.findOne({
-                orderHash: tempHash,
+                ordersHash: tempHash,
                 status: "PENDING"
             }).session(session);
 
