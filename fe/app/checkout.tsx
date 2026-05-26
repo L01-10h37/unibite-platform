@@ -143,7 +143,7 @@ export default function CheckoutScreen() {
       const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
       const accessToken = tokens?.accessToken;
 
-      const ordersRes = await fetch(`http://127.0.0.1:8080/api/orders/`, {
+      const ordersRes = await fetch(`${API_BASE_URL}/api/orders/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -159,7 +159,7 @@ export default function CheckoutScreen() {
       }
 
       const orders = ordersJson.data;
-      const orderIds = orders.map((order: any) => order._id);
+      const orderIds = orders.map((order: any) => order.id);
 
       const paymentMethod =
         selectedPayment === "cash"
@@ -169,7 +169,7 @@ export default function CheckoutScreen() {
             : "MOMO";
 
       const paymentPayload = {
-        orderId: orderIds,
+        orderIds: orderIds,
         method: paymentMethod,
         voucherCode: appliedVoucher?.code,
         shippingFee,

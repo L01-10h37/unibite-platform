@@ -6,9 +6,9 @@ const paymentSchema = new mongoose.Schema(
         orders: {
             type: [
                 {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "Order",
-                required: true,
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "Order",
+                    required: true,
                 },
             ],
             validate: {
