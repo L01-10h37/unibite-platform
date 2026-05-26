@@ -106,21 +106,21 @@ export const createPayment = async (paymentData, userId) => {
                 finalAmount = benefit.finalAmount;
             }
 
-            const payment = new Payment({
-                orders: sortedOrders,
-                ordersHash: tempHash,
-                amount: finalAmount,
-                baseAmount,
-                shippingFee: shippingValue,
-                discountAmount,
-                shippingDiscount,
-                finalAmount,
-                voucherId: voucherDocument?._id,
-                voucherCode: voucherDocument?.code,
-                voucherType: voucherDocument?.type,
-                method: normalizedMethod,
-                status: 'PENDING',
-            });
+                const payment = new Payment({
+                    orders: sortedOrders,
+                    ordersHash: tempHash,
+                    amount: finalAmount,
+                    baseAmount,
+                    shippingFee: shippingValue,
+                    discountAmount,
+                    shippingDiscount,
+                    finalAmount,
+                    voucherId: voucherDocument?._id,
+                    voucherCode: voucherDocument?.code,
+                    voucherType: voucherDocument?.type,
+                    method: normalizedMethod,
+                    status: 'PENDING',
+                });
 
             await payment.save({ session });
 
@@ -164,6 +164,12 @@ export const createPayment = async (paymentData, userId) => {
         })
         return result;
     } catch (error) {
+        logger.error("Payment create error", {
+  code: error.code,
+  message: error.message,
+  keyPattern: error.keyPattern,
+  keyValue: error.keyValue,
+});
         if (error.code === 11000) {
             const existing = await Payment.findOne({
                 ordersHash: tempHash,
