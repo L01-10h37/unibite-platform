@@ -54,7 +54,7 @@ export default function CartScreen() {
 
   const debouncedSyncCart = useRef(
     debounce((items) => {
-      dispatch(updateCart(items));
+      dispatch(updateCart({ items, id: cartId }))
     }, 1500)
   ).current;
 
