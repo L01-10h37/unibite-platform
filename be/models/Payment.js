@@ -1,12 +1,26 @@
 import mongoose from "mongoose";
+import crypto from 'crypto';
 
 const paymentSchema = new mongoose.Schema(
     {
-        order: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Order",
+        orders: {
+            type: [
+                {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Order",
+                required: true,
+                },
+            ],
+            validate: {
+                validator: (arr) => arr.length > 0,
+                message: "Payment must contain at least one order",
+            },
+        },
+
+        ordersHash: {
+            type: String,
             required: true,
-            index: true,
+            unique: false  // Sẽ tạo compound unique với status
         },
 
         amount: {
@@ -80,22 +94,28 @@ const paymentSchema = new mongoose.Schema(
     }
 );
 
+paymentSchema.index({ orders: 1 });
 paymentSchema.index({ status: 1 });
-paymentSchema.index({ order: 1 });
 paymentSchema.index(
-    { order: 1, status: 1 },
-    {
+    { ordersHash: 1, status: 1 },
+    { 
         unique: true,
-        partialFilterExpression: { status: "PENDING" }
+        partialFilterExpression: { 
+            status: { $in: ["PENDING", "SUCCESS"] } 
+        }
     }
 );
-paymentSchema.index(
-    { order: 1, status: 1 },
-    {
-        unique: true,
-        partialFilterExpression: { status: "SUCCESS" }
+
+paymentSchema.pre('save', function(next) {
+    if (this.isModified('orders')) {
+        const sortedOrders = [...this.orders].sort().map(id => id.toString());
+        this.ordersHash = crypto
+            .createHash('sha256')
+            .update(sortedOrders.join(','))
+            .digest('hex');
     }
-);
+    next();
+});
 
 paymentSchema.methods.getFormattedData = function () {
     return {

@@ -5,100 +5,118 @@ import User from '../models/User.js';
 import Food from '../models/Food.js';
 import * as foodService from './foodService.js';
 import * as shopService from './shopService.js';
+import Cart from '../models/Cart.js';
+import { removeItemFromCart } from './cartService.js';
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 /**
  * Create order
  */
-export const createOrder = async (orderData, userId) => {
+export const createOrder = async (createOrderData, userId) => {
+    const session = await mongoose.startSession();
+
+    const createdOrder = [];
+
+    if (!createOrderData.phone || !createOrderData.deliveryAddress) {
+        const error = new Error('Not enough credentials');
+        error.statusCode = 400;
+        throw error;
+    };
+
     try {
-        logger.info('Service: Creating new order', orderData);
+        await session.withTransaction(async () => {
+            for (const group of createOrderData.groupItems) {
+                logger.info('Service: Creating new order', group);
 
-        if (!orderData.phone || !orderData.deliveryAddress) {
-            const error = new Error('Not enough credentials');
-            error.statusCode = 400;
-            throw error;
-        };
+                if (!group.items || group.items.length === 0) {
+                    const error = new Error('Order must have at least 1 item');
+                    error.statusCode = 400;
+                    throw error;
+                };
 
-        if (!orderData.items || orderData.items.length === 0) {
-            const error = new Error('Order must have at least 1 item');
-            error.statusCode = 400;
-            throw error;
-        };
+                if (group.items.some((item) => item.quantity < 1)) {
+                    const error = new Error('Order must have at least 1 item');
+                    error.statusCode = 400;
+                    throw error;
+                };
 
-        if (orderData.items.some((item) => item.quantity < 1)) {
-            const error = new Error('Order must have at least 1 item');
-            error.statusCode = 400;
-            throw error;
-        };
+                const foods = await Food.find({
+                    _id: { $in: group.items.map(i => i.food) }
+                }).populate("shop").session(session);
 
-        const foods = await Food.find({
-            _id: { $in: orderData.items.map(i => i.food) }
-        }).populate("shop");
+                if (foods.length !== group.items.length) {
+                    const error = new Error('Some foods not found');
+                    error.statusCode = 404;
+                    throw error;
+                };
 
-        if (foods.length !== orderData.items.length) {
-            const error = new Error('Some foods not found');
-            error.statusCode = 404;
-            throw error;
-        };
+                const shopIds = new Set(foods.map((food) => food.shop?._id?.toString()));
+                if (shopIds.size !== 1) {
+                    const error = new Error('Order can only contain foods from one shop');
+                    error.statusCode = 400;
+                    throw error;
+                };
 
-        const shopIds = new Set(foods.map((food) => food.shop?._id?.toString()));
-        if (shopIds.size !== 1) {
-            const error = new Error('Order can only contain foods from one shop');
-            error.statusCode = 400;
-            throw error;
-        };
+                const sellerId = foods[0]?.shop?.userId;
+                if (!sellerId) {
+                    const error = new Error('Seller not found for this order');
+                    error.statusCode = 404;
+                    throw error;
+                };
 
-        const sellerId = foods[0]?.shop?.userId;
-        if (!sellerId) {
-            const error = new Error('Seller not found for this order');
-            error.statusCode = 404;
-            throw error;
-        };
+                let totalPrice = 0;
+                
+                const orderItems = group.items.map(item => {
+                    const food = foods.find(f => f._id.toString() === item.food.toString());
 
-        let totalPrice = 0;
-        
-        const orderItems = orderData.items.map(item => {
-            const food = foods.find(f => f._id.toString() === item.food);
+                    if (!food) {
+                        const error = new Error('Food not found');
+                        error.statusCode = 404;
+                        throw error;    
+                    }
 
-            if (!food) {
-                const error = new Error('Food not found');
-                error.statusCode = 404;
-                throw error;    
-            }
+                    totalPrice += food.price * item.quantity;
 
-            totalPrice += food.price * item.quantity;
+                    return {
+                        food: food._id,
+                        name: food.name,
+                        price: food.price,
+                        quantity: item.quantity,
+                    };
+                });
 
-            return {
-                food: food._id,
-                name: food.name,
-                price: food.price,
-                quantity: item.quantity,
-            };
-        });
-
-        const order = await Order.create({
-            user: userId,
-            seller: sellerId,
-            items: orderItems,
-            totalPrice,
-            deliveryAddress: orderData.deliveryAddress,
-            phone: orderData.phone,
-            status: "PENDING",
-            isPaid: false,
-            statusHistory: [
-                {
+                const [order] = await Order.create([{
+                    user: userId,
+                    seller: sellerId,
+                    items: orderItems,
+                    totalPrice,
+                    deliveryAddress: createOrderData.deliveryAddress,
+                    phone: createOrderData.phone,
                     status: "PENDING",
-                    updatedAt: new Date(),
-                }
-            ],
-        });
+                    isPaid: false,
+                    statusHistory: [
+                        {
+                            status: "PENDING",
+                            updatedAt: new Date(),
+                        }
+                    ],
+                }], {session});
 
-        return order.getFormattedData?.("basic") || order;
+                createdOrder.push(order.getFormattedData?.("basic") || order);
+
+                for (const item of group.items) {
+                    await removeItemFromCart(userId, item.id, { session });
+                }
+            }
+        })
+
+        return createdOrder;
     } catch (error) {
         logger.error('Service: Error creating new order', error);
 		throw error;
+    } finally {
+        await session.endSession();
     }
 };
 

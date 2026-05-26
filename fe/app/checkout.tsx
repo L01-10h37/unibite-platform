@@ -37,7 +37,6 @@ export default function CheckoutScreen() {
 
   // Lấy dữ liệu giỏ hàng thực tế từ Redux Store
   const cartItems = useSelector((state: RootState) => state.cart.items);
-  const totalQuantity = useSelector((state: RootState) => state.cart.totalQuantity);
   const totalPrice = useSelector((state: RootState) => state.cart.totalPrice);
   const cartId = useSelector((state: RootState) => state.cart.id);
 
@@ -98,12 +97,12 @@ export default function CheckoutScreen() {
   const groupCartItems = (items: any[]) => {
     const groups: { [key: string]: any[] } = {};
     items.forEach(item => {
-      if (!groups[item.restaurant]) groups[item.restaurant] = [];
-      groups[item.restaurant].push(item);
+      if (!groups[item.seller]) groups[item.seller] = [];
+      groups[item.seller].push(item);
     });
-    return Object.keys(groups).map(restaurantName => ({
-      restaurantName,
-      items: groups[restaurantName],
+    return Object.keys(groups).map(seller => ({
+      seller,
+      items: groups[seller],
     }));
   };
 
@@ -136,17 +135,15 @@ export default function CheckoutScreen() {
       const orderPayload = {
         phone: "0901234567",
         deliveryAddress: "Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí Minh",
-        items: cartItems.map((item) => ({
-          food: item.food,
-          quantity: item.quantity,
-        })),
+        cartId,
+        groupItems: cartGroups
       };
 
       const tokensRaw = await SecureStore.getItemAsync("tokens");
       const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
       const accessToken = tokens?.accessToken;
 
-      const orderRes = await fetch(`${API_BASE_URL}/api/orders/`, {
+      const ordersRes = await fetch(`http://127.0.0.1:8080/api/orders/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -155,13 +152,14 @@ export default function CheckoutScreen() {
         body: JSON.stringify(orderPayload),
       });
 
-      const orderJson = await orderRes.json();
+      const ordersJson = await ordersRes.json();
 
-      if (!orderRes.ok) {
-        throw new Error(orderJson.message || "Không thể tạo đơn hàng");
+      if (!ordersRes.ok) {
+        throw new Error(ordersJson.message || "Không thể tạo đơn hàng");
       }
 
-      const order = orderJson.data;
+      const orders = ordersJson.data;
+      const orderIds = orders.map((order: any) => order._id);
 
       const paymentMethod =
         selectedPayment === "cash"
@@ -171,7 +169,7 @@ export default function CheckoutScreen() {
             : "MOMO";
 
       const paymentPayload = {
-        orderId: order._id || order.id,
+        orderId: orderIds,
         method: paymentMethod,
         voucherCode: appliedVoucher?.code,
         shippingFee,
@@ -256,7 +254,7 @@ export default function CheckoutScreen() {
                   <Feather name="shopping-bag" size={18} color="#295D38" />
                   <Text style={styles.sectionTitle}>Tóm tắt đơn hàng</Text>
                 </View>
-                <Text style={styles.restaurantName}>{group.restaurantName}</Text>
+                <Text style={styles.restaurantName}>{group.seller}</Text>
                 
                 {group.items.map((item) => (
                   <View style={[styles.orderItemRow, { marginBottom: 12 }]} key={item.id}>
@@ -279,11 +277,11 @@ export default function CheckoutScreen() {
                   <TextInput
                     placeholder="Để lại lời nhắn"
                     placeholderTextColor="#A0A5A8"
-                    value={orderNotes[group.restaurantName] || ""}
+                    value={orderNotes[group.seller] || ""}
                     onChangeText={(text) =>
                       setOrderNotes((prev) => ({
                         ...prev,
-                        [group.restaurantName]: text,
+                        [group.seller]: text,
                       }))
                     }
                     style={styles.noteInput}
