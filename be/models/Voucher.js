@@ -57,9 +57,9 @@ const voucherSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Payment",
     },
-    usedByOrder: {
+    usedByUser: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Order",
+      ref: "User",
     },
     usedAt: {
       type: Date,

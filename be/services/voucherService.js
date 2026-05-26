@@ -165,7 +165,7 @@ export async function reserveVoucherForPayment(voucherId, paymentId, options = {
   return voucher;
 }
 
-export async function consumeVoucherForPayment(voucherId, paymentId, orderId, options = {}) {
+export async function consumeVoucherForPayment(voucherId, paymentId, userId, options = {}) {
   if (!mongoose.Types.ObjectId.isValid(voucherId)) {
     return null;
   }
@@ -182,7 +182,7 @@ export async function consumeVoucherForPayment(voucherId, paymentId, orderId, op
       $set: {
         status: "USED",
         usedByPayment: paymentId,
-        usedByOrder: orderId,
+        usedByUser: userId,
         usedAt: new Date(),
       },
       $unset: {

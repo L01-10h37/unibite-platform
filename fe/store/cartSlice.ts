@@ -114,7 +114,6 @@ export const deleteCartItem = createAsyncThunk(
 export const updateCart = createAsyncThunk(
   'cart/updateCart',
   async ({ items, id }: { items: CartItem[]; id: string }, { rejectWithValue }) => {
-    console.log('🟢 [THUNK] updateCart - Gọi API cập nhật giỏ hàng với dữ liệu:', { items, id }, new Date().toISOString());
     try {
       const accessToken = await getAccessToken();
 
