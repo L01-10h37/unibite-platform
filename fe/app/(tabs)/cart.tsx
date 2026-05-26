@@ -67,9 +67,6 @@ export default function CartScreen() {
   useEffect(() => {
     return () => {
       debouncedSyncCart.cancel();
-      if (cartItems.length > 0) {
-        dispatch(updateCart({ items: cartItems, id: cartId }));
-      }
     }
   }, [debouncedSyncCart]);
 

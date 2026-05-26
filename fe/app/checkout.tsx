@@ -32,9 +32,14 @@ export default function CheckoutScreen() {
   const [orderNotes, setOrderNotes] = useState<Record<string, string>>({});
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
+  const [voucherModalVisible, setVoucherModalVisible] = useState(false);
+  const [voucherModalMessage, setVoucherModalMessage] = useState("");
 
   // Lấy dữ liệu giỏ hàng thực tế từ Redux Store
   const cartItems = useSelector((state: RootState) => state.cart.items);
+  const totalQuantity = useSelector((state: RootState) => state.cart.totalQuantity);
+  const totalPrice = useSelector((state: RootState) => state.cart.totalPrice);
+  const cartId = useSelector((state: RootState) => state.cart.id);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -49,6 +54,20 @@ export default function CheckoutScreen() {
           if (code) {
             const voucherDetail = await lookupVoucherByCode(code);
             if (!isActive) return;
+
+            if (totalPrice < voucherDetail.minOrderValue) {
+              await clearSelectedVoucherCode();
+
+              setAppliedVoucher(null);
+              setVoucherError(null);
+
+              setVoucherModalMessage(
+                `Đơn hàng cần tối thiểu ${voucherDetail.minOrderValue.toLocaleString("vi-VN")}đ để áp dụng voucher này.`
+              );
+              setVoucherModalVisible(true);
+
+              return;
+            }
 
             setAppliedVoucher(voucherDetail);
             setVoucherError(null);
@@ -91,13 +110,12 @@ export default function CheckoutScreen() {
   const cartGroups = groupCartItems(cartItems);
 
   // Tự động tính toán giá tiền dựa trên giỏ hàng thực tế
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shippingFee = cartItems.length > 0 ? 15000 : 0;
   const orderDiscount = useMemo(() => {
-    if (!appliedVoucher || subtotal < appliedVoucher.minOrderValue) return 0;
+    if (!appliedVoucher || totalPrice < appliedVoucher.minOrderValue) return 0;
     
     if (appliedVoucher.type === 'PERCENT') {
-      return -Math.round((subtotal * appliedVoucher.value) / 100);
+      return -Math.round((totalPrice * appliedVoucher.value) / 100);
     }
     if (appliedVoucher.type === 'FIXED') {
       return -appliedVoucher.value;
@@ -106,8 +124,8 @@ export default function CheckoutScreen() {
       return -shippingFee;
     }
     return 0;
-  }, [appliedVoucher, subtotal]);
-  const total = subtotal + shippingFee + orderDiscount;
+  }, [appliedVoucher, totalPrice]);
+  const total = totalPrice + shippingFee + orderDiscount;
 
   const handlePlaceOrder = async () => {
     if (cartItems.length === 0 || isPaying) return;
@@ -341,7 +359,7 @@ export default function CheckoutScreen() {
           <View style={styles.sectionCard}>
             <View style={styles.pricingRow}>
               <Text style={styles.pricingLabel}>Tạm tính</Text>
-              <Text style={styles.pricingValue}>{subtotal.toLocaleString('vi-VN')}đ</Text>
+              <Text style={styles.pricingValue}>{totalPrice.toLocaleString('vi-VN')}đ</Text>
             </View>
             <View style={styles.pricingRow}>
               <Text style={styles.pricingLabel}>Phí vận chuyển</Text>
@@ -376,6 +394,43 @@ export default function CheckoutScreen() {
         </View>
 
       </View>
+
+      <Modal
+        visible={voucherModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVoucherModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.successModal}>
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setVoucherModalVisible(false)}
+            >
+              <Feather name="x" size={18} color="#6E767D" />
+            </TouchableOpacity>
+
+            <View style={[styles.successIconCircle, { backgroundColor: "#FFF4E5" }]}>
+              <Feather name="alert-circle" size={24} color="#E67700" />
+            </View>
+
+            <Text style={[styles.successTitle, { color: "#E67700" }]}>
+              Voucher không đủ điều kiện
+            </Text>
+
+            <Text style={styles.successMessage}>
+              {voucherModalMessage}
+            </Text>
+
+            <TouchableOpacity
+              style={styles.orderBtn}
+              onPress={() => setVoucherModalVisible(false)}
+            >
+              <Text style={styles.orderBtnText}>Đã hiểu</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={successModalVisible}

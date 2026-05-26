@@ -197,7 +197,6 @@ const cartSlice = createSlice({
         state.error = action.payload as string;
       })
       .addCase(updateCart.fulfilled, (state, action) => {
-        state.items = action.payload.items;
         state.totalQuantity = action.payload.totalQuantity;
         state.totalPrice = action.payload.totalPrice;
       })
