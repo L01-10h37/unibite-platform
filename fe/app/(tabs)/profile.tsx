@@ -29,7 +29,7 @@ import {
 import { router } from 'expo-router';
 
 // API URL và các hằng số khác
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://20.255.57.186:8080";
 const PROFILE_CACHE_KEY = "profile-cache-v1";
 const AVATAR_FALLBACK = { uri: "https://cdn-icons-png.flaticon.com/512/149/149071.png" };
 

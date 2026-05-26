@@ -22,7 +22,7 @@ import {
   User,
 } from "lucide-react-native";
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080";
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || "http://20.255.57.186:8080";
 const imgLogo = require("../../assets/images/logo.png");
 
 const COLORS = {

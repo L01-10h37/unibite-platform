@@ -9,7 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,6 +27,7 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.fe",
       "permissions": [
+        "android.permission.INTERNET",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ]
@@ -31,6 +37,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/with-cleartext-traffic",
       "expo-router",
       [
         "expo-splash-screen",
@@ -59,7 +66,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "f23f84fe-1924-448c-950e-8d413fe5615a"
+        "projectId": "03b104c9-4b29-410f-be1f-6fbe92dc3643"
       }
     }
   }

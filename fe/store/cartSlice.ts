@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import * as SecureStore from "expo-secure-store";
+import { API_BASE_URL } from "@/constants/api";
 
 
 // Định nghĩa cấu trúc Item chuẩn theo API của bạn
@@ -31,7 +32,7 @@ export const fetchCart = createAsyncThunk('cart/fetchCart', async () => {
     const accessToken = tokens?.accessToken;
 
     const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/cart/`,
+        `${API_BASE_URL}/api/cart/`,
         {
           method: 'GET',
           headers: {
@@ -66,7 +67,7 @@ export const deleteCartItem = createAsyncThunk(
 
       // Gọi đến API route đúng cấu trúc: /api/cart/items/:id
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/cart/items/${itemId}`,
+        `${API_BASE_URL}/api/cart/items/${itemId}`,
         {
           method: 'DELETE',
           headers: {
