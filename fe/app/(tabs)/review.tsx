@@ -50,7 +50,7 @@ export default function WriteReviewScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
+  const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://20.255.57.186:8080";
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>

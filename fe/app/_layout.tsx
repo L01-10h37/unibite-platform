@@ -118,6 +118,7 @@ export default function RootLayout() {
           <Stack.Screen name="food-detail" options={{ headerShown: false }} />
           <Stack.Screen name="shop-detail" options={{ headerShown: false }} />
           <Stack.Screen name="history-order" options={{ headerShown: false }} />
+          <Stack.Screen name="order-detail" options={{ headerShown: false }} />
           <Stack.Screen name="delivering-orders" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false, title: 'Thông tin' }} />
           <Stack.Screen name="checkout" options={{ headerShown: false }} />

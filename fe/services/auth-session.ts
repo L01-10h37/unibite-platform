@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "http://20.255.57.186:8080";
 
 const AUTH_STORAGE_KEYS = ["tokens", "sellerTokens"] as const;
 

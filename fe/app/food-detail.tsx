@@ -26,7 +26,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://20.255.57.186:8080";
 const DEFAULT_FOOD_ID = "69f73f1b97a704ff41e13e32";
 const COMMENT_PAGE_SIZE = 5;
 const DEFAULT_REVIEW_AVATAR = require("@/assets/images/review-avatar.png");

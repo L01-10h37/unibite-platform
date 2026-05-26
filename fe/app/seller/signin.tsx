@@ -17,7 +17,7 @@ import { Eye, EyeOff, KeyRound, Store, User } from "lucide-react-native";
 
 import { getMySellerShop } from "@/services/seller-shop";
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080";
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || "http://20.255.57.186:8080";
 const imgLogo = require("../../assets/images/logo.png");
 
 const SELLER_COLOR = "#9DBCF0";

@@ -421,7 +421,10 @@ export const cancelOrder = async (orderId, userId) => {
             throw error;
         };
 
-        if (order.user.toString() !== userId && order.seller.toString() !== userId) {
+        const isBuyer = order.user.toString() === userId;
+        const isSeller = order.seller.toString() === userId;
+
+        if (!isBuyer && !isSeller) {
             const error = new Error('Not your order');
             error.statusCode = 403;
             throw error;
@@ -431,10 +434,14 @@ export const cancelOrder = async (orderId, userId) => {
             return order.getFormattedData?.("detail") || order;
         }
 
-        const cancellableStatuses = ["PENDING", "CONFIRMED"];
+        const cancellableStatuses = isBuyer ? ["PENDING"] : ["PENDING", "CONFIRMED"];
 
         if (!cancellableStatuses.includes(order.status)) {
-            const error = new Error("Order cannot be cancelled at this stage");
+            const error = new Error(
+                isBuyer
+                    ? "Order can only be cancelled before seller confirmation"
+                    : "Order cannot be cancelled at this stage"
+            );
             error.statusCode = 400;
             throw error;
         }

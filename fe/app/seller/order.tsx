@@ -35,12 +35,13 @@ const BORDER = "#E2EDE5";
 const TEXT_DARK = "#2A3E2F";
 const TEXT_MUTED = "#7C9A82";
 
-type OrderTab = "all" | "pending" | "delivering" | "completed" | "failed";
+type OrderTab = "all" | "pending" | "preparing" | "delivering" | "completed" | "failed";
 
 const TABS: { key: OrderTab; label: string; statuses: OrderStatus[] }[] = [
   { key: "all", label: "Tất cả", statuses: [] },
-  { key: "pending", label: "Chờ xác nhận", statuses: ["PENDING", "CONFIRMED"] },
-  { key: "delivering", label: "Đang giao", statuses: ["PREPARING", "DELIVERING"] },
+  { key: "pending", label: "Chờ xác nhận", statuses: ["PENDING"] },
+  { key: "preparing", label: "Chuẩn bị", statuses: ["CONFIRMED", "PREPARING"] },
+  { key: "delivering", label: "Đang giao", statuses: ["DELIVERING"] },
   { key: "completed", label: "Thành công", statuses: ["COMPLETED"] },
   { key: "failed", label: "Thất bại", statuses: ["CANCELLED"] },
 ];
@@ -81,9 +82,11 @@ function OrderCard({
   
   // Custom display status labels to match the screenshots
   let statusText = getStatusLabel(order.status);
-  if (order.status === "PENDING" || order.status === "CONFIRMED") {
+  if (order.status === "PENDING") {
     statusText = "Chờ xác nhận";
-  } else if (order.status === "PREPARING" || order.status === "DELIVERING") {
+  } else if (order.status === "CONFIRMED" || order.status === "PREPARING") {
+    statusText = "Đang chuẩn bị";
+  } else if (order.status === "DELIVERING") {
     statusText = "Đang giao";
   } else if (order.status === "COMPLETED") {
     statusText = "Hoàn thành";

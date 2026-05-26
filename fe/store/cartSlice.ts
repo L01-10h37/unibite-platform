@@ -1,10 +1,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import * as SecureStore from "expo-secure-store";
 
+import { API_BASE_URL } from "@/constants/api";
 
 // Định nghĩa cấu trúc Item chuẩn theo API của bạn
 export interface CartItem {
   id: string;
+  food: string; 
   name: string;
   seller: string;
   price: number;
@@ -30,14 +32,18 @@ const initialState: CartState = {
   error: null,
 };
 
+async function getAccessToken() {
+  const tokensRaw = await SecureStore.getItemAsync("tokens");
+  const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
+  return tokens?.accessToken as string | undefined;
+}
+
 // THUNK: Hàm gọi API Async để lấy dữ liệu giỏ hàng từ Backend
 export const fetchCart = createAsyncThunk('cart/fetchCart', async () => {
-    const tokensRaw = await SecureStore.getItemAsync("tokens");
-    const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
-    const accessToken = tokens?.accessToken;
+    const accessToken = getAccessToken();
 
     const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/cart/`,
+        `${API_BASE_URL}/api/cart/`,
         {
           method: 'GET',
           headers: {
@@ -77,21 +83,15 @@ export const deleteCartItem = createAsyncThunk(
   'cart/deleteCartItem',
   async (itemId: string, { rejectWithValue }) => {
     try {
-      const tokensRaw = await SecureStore.getItemAsync("tokens");
-      const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
-      const accessToken = tokens?.accessToken;
+      const accessToken = await getAccessToken();
 
-      // Gọi đến API route đúng cấu trúc: /api/cart/items/:id
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/cart/items/${itemId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/cart/items/${itemId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       const json = await response.json();
 
@@ -115,12 +115,10 @@ export const updateCart = createAsyncThunk(
   'cart/updateCart',
   async ({ items, id }: { items: CartItem[]; id: string }, { rejectWithValue }) => {
     try {
-      const tokensRaw = await SecureStore.getItemAsync("tokens");
-      const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
-      const accessToken = tokens?.accessToken;
+      const accessToken = getAccessToken();
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/cart/${id}`,
+        `${API_BASE_URL}/api/cart/${id}`,
         {
           method: 'POST',
           headers: {
@@ -163,7 +161,6 @@ const cartSlice = createSlice({
     decrementQuantity: (state, action: PayloadAction<{ id: string; price: number }>) => {
       const item = state.items.find(i => i.id === action.payload.id);
       if (item && item.quantity > 1) item.quantity -= 1;
-      // Cập nhật tổng giá trị khi giảm số lượng
       state.totalPrice -= action.payload.price;
       state.totalQuantity -= 1;
     },

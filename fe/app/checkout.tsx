@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { type VoucherDto, getSelectedVoucherCode, lookupVoucherByCode, clearSelectedVoucherCode } from "@/services/voucher-service";
+import { API_BASE_URL } from "@/constants/api";
 import {
   View,
   Text,
@@ -127,7 +128,7 @@ export default function CheckoutScreen() {
       const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
       const accessToken = tokens?.accessToken;
 
-      const orderRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/orders/`, {
+      const orderRes = await fetch(`${API_BASE_URL}/api/orders/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -158,7 +159,7 @@ export default function CheckoutScreen() {
         shippingFee,
       };
 
-      const paymentRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/payments/`, {
+      const paymentRes = await fetch(`${API_BASE_URL}/api/payments/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
