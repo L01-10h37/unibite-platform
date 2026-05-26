@@ -105,6 +105,7 @@ orderSchema.methods.getFormattedData = function (type = "basic") {
 			seller: this.seller,
 			totalPrice: this.totalPrice,
 			status: this.status,
+			createdAt: this.createdAt,
 		};
 	};
 
@@ -119,6 +120,8 @@ orderSchema.methods.getFormattedData = function (type = "basic") {
 			phone: this.phone,
 			deliveryAddress: this.deliveryAddress,
 			statusHistory: this.statusHistory,
+			createdAt: this.createdAt,
+			note: this.note,
 		};
 	};
 };

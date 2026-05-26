@@ -1,11 +1,11 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import * as SecureStore from "expo-secure-store";
+
 import { API_BASE_URL } from "@/constants/api";
 
-
-// Định nghĩa cấu trúc Item chuẩn theo API của bạn
 export interface CartItem {
   id: string;
+  foodId: string;
   name: string;
   restaurant: string;
   price: number;
@@ -25,95 +25,92 @@ const initialState: CartState = {
   error: null,
 };
 
-// THUNK: Hàm gọi API Async để lấy dữ liệu giỏ hàng từ Backend
-export const fetchCart = createAsyncThunk('cart/fetchCart', async () => {
-    const tokensRaw = await SecureStore.getItemAsync("tokens");
-    const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
-    const accessToken = tokens?.accessToken;
+async function getAccessToken() {
+  const tokensRaw = await SecureStore.getItemAsync("tokens");
+  const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
+  return tokens?.accessToken as string | undefined;
+}
 
-    const response = await fetch(
-        `${API_BASE_URL}/api/cart/`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-    const json = await response.json();
-    
-    if (json.success && json.data && json.data.items) {
-        // Map dữ liệu từ API sang cấu trúc của Redux State
-        return json.data.items.map((item: any) => ({
-        id: item.food?._id,
-        name: item.name,
-        restaurant: item.food?.shop?.name || "Quán ăn",
-        price: item.price, 
-        quantity: item.quantity,
-        image: item.image,
-        }));
-    }
-    return [];
+export const fetchCart = createAsyncThunk("cart/fetchCart", async () => {
+  const accessToken = await getAccessToken();
+
+  const response = await fetch(`${API_BASE_URL}/api/cart/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const json = await response.json();
+
+  if (json.success && json.data && json.data.items) {
+    return json.data.items.map((item: any) => ({
+      id: item.id || item._id,
+      foodId: item.food?._id || item.food,
+      name: item.name,
+      restaurant: item.food?.shop?.name || "Quán ăn",
+      price: item.finalPrice ?? item.specialPrice ?? item.price,
+      quantity: item.quantity,
+      image: item.image,
+    })) as CartItem[];
+  }
+
+  return [];
 });
 
 export const deleteCartItem = createAsyncThunk(
-  'cart/deleteCartItem',
+  "cart/deleteCartItem",
   async (itemId: string, { rejectWithValue }) => {
     try {
-      const tokensRaw = await SecureStore.getItemAsync("tokens");
-      const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
-      const accessToken = tokens?.accessToken;
+      const accessToken = await getAccessToken();
 
-      // Gọi đến API route đúng cấu trúc: /api/cart/items/:id
-      const response = await fetch(
-        `${API_BASE_URL}/api/cart/items/${itemId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/cart/items/${itemId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       const json = await response.json();
 
       if (json.success) {
-        // Trả về id vừa xóa thành công để extraReducers cập nhật UI
         return itemId;
-      } else {
-        return rejectWithValue(json.message || 'Không thể xóa món ăn');
       }
+
+      return rejectWithValue(json.message || "Không thể xóa món ăn");
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Lỗi kết nối server');
+      return rejectWithValue(error.message || "Lỗi kết nối server");
     }
-  }
+  },
 );
 
 const cartSlice = createSlice({
-  name: 'cart',
+  name: "cart",
   initialState,
   reducers: {
-    // Tăng số lượng Local (mượt giao diện trước khi đồng bộ API)
     incrementQuantity: (state, action: PayloadAction<string>) => {
-      const item = state.items.find(i => i.id === action.payload);
-      if (item) item.quantity += 1;
+      const item = state.items.find((entry) => entry.id === action.payload);
+      if (item) {
+        item.quantity += 1;
+      }
     },
-    // Giảm số lượng Local
     decrementQuantity: (state, action: PayloadAction<string>) => {
-      const item = state.items.find(i => i.id === action.payload);
-      if (item && item.quantity > 1) item.quantity -= 1;
+      const item = state.items.find((entry) => entry.id === action.payload);
+      if (item && item.quantity > 1) {
+        item.quantity -= 1;
+      }
     },
-    // Xóa item Local
     removeItem: (state, action: PayloadAction<string>) => {
-      state.items = state.items.filter(i => i.id !== action.payload);
+      state.items = state.items.filter((item) => item.id !== action.payload);
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchCart.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.loading = false;
@@ -121,14 +118,12 @@ const cartSlice = createSlice({
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Lỗi tải giỏ hàng';
+        state.error = action.error.message || "Lỗi tải giỏ hàng";
       })
       .addCase(deleteCartItem.fulfilled, (state, action: PayloadAction<string>) => {
-        // Khi API trả về success, tiến hành lọc bỏ item khỏi mảng state cục bộ
-        state.items = state.items.filter(item => item.id !== action.payload);
+        state.items = state.items.filter((item) => item.id !== action.payload);
       })
       .addCase(deleteCartItem.rejected, (state, action) => {
-        // Xử lý lỗi nếu xóa thất bại trên server (Ví dụ: thông báo lỗi)
         state.error = action.payload as string;
       });
   },
