@@ -1,5 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -217,6 +217,8 @@ export default function OrderHistoryScreen() {
   const pageRef = useRef(1);
   const hasMoreRef = useRef(true);
 
+  const { fromCheckout } = useLocalSearchParams();
+
   const enrichOrders = useCallback(async (token: string, orderIds: string[]) => {
     const details = await Promise.allSettled(
       orderIds.map(async (orderId) => {
@@ -335,7 +337,13 @@ export default function OrderHistoryScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconBtn} activeOpacity={0.8} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.iconBtn} activeOpacity={0.8} onPress={() => {
+          if (fromCheckout === 'true') {
+            router.replace('/');
+          } else {
+            router.back();
+          }
+        }}>
           <Ionicons name="chevron-back" size={22} color="#1A1A1A" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Đơn hàng</Text>

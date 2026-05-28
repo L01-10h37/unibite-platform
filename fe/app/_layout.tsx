@@ -125,6 +125,7 @@ export default function RootLayout() {
           <Stack.Screen name="voucher" options={{ headerShown: false }} />
           <Stack.Screen name="payment-success" options={{ headerShown: false }} />
           <Stack.Screen name="payment-failed" options={{ headerShown: false }} />
+          <Stack.Screen name="voucher-select" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

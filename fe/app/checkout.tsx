@@ -330,7 +330,9 @@ export default function CheckoutScreen() {
           <View style={styles.sectionCard}>
             <TouchableOpacity 
               style={styles.voucherContainer} 
-              onPress={() => router.push('/voucher')}
+              onPress={() =>
+                router.push("/voucher-select")
+              }
             >
               <View style={styles.voucherLeft}>
                 <Feather name="tag" size={20} color="#295D38" />
@@ -438,12 +440,6 @@ export default function CheckoutScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.successModal}>
-            <TouchableOpacity
-              style={styles.modalCloseBtn}
-              onPress={() => setSuccessModalVisible(false)}
-            >
-              <Feather name="x" size={18} color="#6E767D" />
-            </TouchableOpacity>
 
             <View style={styles.successIconCircle}>
               <Feather name="check-circle" size={24} color="#2F9E44" />
@@ -469,7 +465,13 @@ export default function CheckoutScreen() {
                 style={styles.orderBtn}
                 onPress={() => {
                   setSuccessModalVisible(false);
-                  router.push('/history-order');
+                  router.dismissAll();
+                  router.replace({
+                    pathname: '/history-order',
+                    params: {
+                      fromCheckout: 'true',
+                    },
+                  });
                 }}
               >
                 <Text style={styles.orderBtnText}>Đơn mua</Text>

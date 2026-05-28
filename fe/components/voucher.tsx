@@ -1,5 +1,5 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -97,10 +97,12 @@ function VoucherCard({
   voucher,
   selected,
   onPress,
+  selectable,
 }: {
   voucher: VoucherDto;
   selected: boolean;
   onPress: (voucher: VoucherDto) => void;
+  selectable: boolean;
 }) {
   const expired = isExpired(voucher) || voucher.status !== "ACTIVE";
   const iconName = voucher.type === "FREE_SHIPPING" ? "truck" : "tag";
@@ -132,7 +134,7 @@ function VoucherCard({
           </View>
 
           {/* Trạng thái nút bấm lựa chọn theo thiết kế hình tròn Radio mượt mà giống Checkout */}
-          {!expired ? (
+          {!expired && selectable ? (
             <TouchableOpacity
               onPress={() => onPress(voucher)}
               activeOpacity={0.7}
@@ -143,15 +145,11 @@ function VoucherCard({
               </Text>
               <View style={[voucherCardStyles.radioCircle, selected && voucherCardStyles.radioCircleSelected]} />
             </TouchableOpacity>
-          ) : (
-            <View style={[voucherCardStyles.statusPill,
-                voucher.status === "USED" && voucherCardStyles.statusUsed,
-                voucher.status === "EXPIRED" && voucherCardStyles.statusExpired,
-                voucher.status === "RESERVED" && voucherCardStyles.statusReserved,
-            ]}>
+          ) : expired ? (
+            <View style={voucherCardStyles.statusPill}>
               <Text style={voucherCardStyles.statusPillText}>{getStatusLabel(voucher.status)}</Text>
             </View>
-          )}
+          ) : null}
         </View>
 
         <Text style={voucherCardStyles.subtitle} numberOfLines={2}>
@@ -362,7 +360,7 @@ function SectionHeader({ title, count }: { title: string; count?: number }) {
   );
 }
 
-export default function VoucherScreen() {
+export default function VoucherScreen({ mode }: { mode: string }) {
   const [voucherCode, setVoucherCode] = useState("");
   const [vouchers, setVouchers] = useState<VoucherDto[]>([]);
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
@@ -370,6 +368,8 @@ export default function VoucherScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageTone, setMessageTone] = useState<"success" | "error" | "info">("info");
+
+  const isSelectMode = mode === "select";
 
   useEffect(() => {
     let mounted = true;
@@ -472,31 +472,41 @@ export default function VoucherScreen() {
         
         {/* HEADER CHUẨN SÁNG NHẸ CỦA TRANG CHECKOUT */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} activeOpacity={0.7} onPress={() => router.back()}>
-            <Feather name="chevron-left" size={24} color="#223131" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chọn Voucher</Text>
+          {isSelectMode ? (
+            <TouchableOpacity style={styles.backBtn} activeOpacity={0.7} onPress={() => router.back()}>
+              <Feather name="chevron-left" size={24} color="#223131" />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.headerRight} />
+          )}
+
+          <Text style={styles.headerTitle}>
+            {isSelectMode ? "Chọn Voucher" : "Voucher"}
+          </Text>
+
           <View style={styles.headerRight} />
         </View>
 
         {/* THANH Ô NHẬP MÃ VOUCHER */}
-        <View style={styles.inputSection}>
-          <View style={styles.inputRow}>
-            <Feather name="tag" size={18} color={C.textLight} style={styles.inputIcon} />
-            <TextInput
-              style={styles.textInput}
-              placeholder="Nhập mã giảm giá..."
-              placeholderTextColor="#A0A5A8"
-              value={voucherCode}
-              onChangeText={setVoucherCode}
-              returnKeyType="done"
-              autoCapitalize="characters"
-            />
-            <TouchableOpacity style={styles.applyBtn} activeOpacity={0.8} onPress={handleApplyCode} disabled={submitting}>
-              {submitting ? <ActivityIndicator size="small" color={C.white} /> : <Text style={styles.applyBtnText}>Áp dụng</Text>}
-            </TouchableOpacity>
+        {isSelectMode && (
+          <View style={styles.inputSection}>
+            <View style={styles.inputRow}>
+              <Feather name="tag" size={18} color={C.textLight} style={styles.inputIcon} />
+              <TextInput
+                style={styles.textInput}
+                placeholder="Nhập mã giảm giá..."
+                placeholderTextColor="#A0A5A8"
+                value={voucherCode}
+                onChangeText={setVoucherCode}
+                returnKeyType="done"
+                autoCapitalize="characters"
+              />
+              <TouchableOpacity style={styles.applyBtn} activeOpacity={0.8} onPress={handleApplyCode} disabled={submitting}>
+                {submitting ? <ActivityIndicator size="small" color={C.white} /> : <Text style={styles.applyBtnText}>Áp dụng</Text>}
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
 
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
@@ -508,7 +518,7 @@ export default function VoucherScreen() {
             </View>
             <Text style={styles.infoText}>{infoBannerText}</Text>
             
-            {selectedVoucher ? (
+            {isSelectMode && selectedVoucher ? (
               <View style={styles.selectedChip}>
                 <Feather name="check-circle" size={14} color={C.primaryDeep} />
                 <Text style={styles.selectedChipText}>Đang chọn: {selectedVoucher.code}</Text>
@@ -550,7 +560,8 @@ export default function VoucherScreen() {
                 <VoucherCard
                   key={voucher.id}
                   voucher={voucher}
-                  selected={selectedCode === voucher.code}
+                  selected={isSelectMode && selectedCode === voucher.code}
+                  selectable={isSelectMode}
                   onPress={applySelectedVoucher}
                 />
               ))}
@@ -573,7 +584,8 @@ export default function VoucherScreen() {
                   <VoucherCard
                     key={voucher.id}
                     voucher={voucher}
-                    selected={selectedCode === voucher.code}
+                    selected={isSelectMode && selectedCode === voucher.code}
+                    selectable={isSelectMode}
                     onPress={applySelectedVoucher}
                   />
                 ))}
