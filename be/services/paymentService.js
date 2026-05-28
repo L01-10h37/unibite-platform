@@ -164,12 +164,6 @@ export const createPayment = async (paymentData, userId) => {
         })
         return result;
     } catch (error) {
-        logger.error("Payment create error", {
-  code: error.code,
-  message: error.message,
-  keyPattern: error.keyPattern,
-  keyValue: error.keyValue,
-});
         if (error.code === 11000) {
             const existing = await Payment.findOne({
                 ordersHash: tempHash,
