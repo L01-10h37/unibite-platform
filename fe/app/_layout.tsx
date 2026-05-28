@@ -122,7 +122,7 @@ export default function RootLayout() {
           <Stack.Screen name="delivering-orders" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false, title: 'Thông tin' }} />
           <Stack.Screen name="checkout" options={{ headerShown: false }} />
-          <Stack.Screen name="voucher" options={{ headerShown: false }} />
+          {/* <Stack.Screen name="voucher" options={{ headerShown: false }} /> */}
           <Stack.Screen name="payment-success" options={{ headerShown: false }} />
           <Stack.Screen name="payment-failed" options={{ headerShown: false }} />
           <Stack.Screen name="voucher-select" options={{ headerShown: false }} />

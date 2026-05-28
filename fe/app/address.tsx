@@ -840,7 +840,7 @@ export default function AddressScreen() {
     const readable = parts.join(', ') || place.formattedAddress || '';
     geocodeCacheRef.current[cacheKey] = readable;
     return readable;
-    };
+  };
 
   const fetchProfileAddresses = React.useCallback(async () => {
     setIsLoadingProfile(true);

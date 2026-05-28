@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { debounce } from 'lodash';
 import { RootState, AppDispatch } from "../../store/store";
@@ -23,6 +23,14 @@ import {
   ActivityIndicator,
 } from "react-native";
 
+import {
+  fetchAndCacheCurrentUserProfile,
+  getCachedUserProfile,
+  UserProfile,
+} from "@/services/user-profile";
+
+import { resolveReadableAddress } from "@/services/get-address";
+
 const C = {
   bgMain: "#C5E0CD",
   white: "#FFFFFF",
@@ -38,8 +46,17 @@ const C = {
   priceDeep: "#1B4332",
 };
 
+async function getDeliveryAddressLabel(profile: UserProfile | null) {
+  const preferredAddress = profile?.addresses?.find((address) => address.isDefault) ?? profile?.addresses?.[0];
+  const readable = await resolveReadableAddress(preferredAddress?.latitude ?? 0, preferredAddress?.longitude ?? 0);
+  return readable;
+}
+
 export default function CartScreen() {
   const dispatch = useDispatch<AppDispatch>();
+
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [readableAddress, setReadableAddress] = useState<string>("");
 
   const cartId = useSelector((state: RootState) => state.cart.id);
   const cartItems = useSelector((state: RootState) => state.cart.items);
@@ -47,6 +64,31 @@ export default function CartScreen() {
   const totalPrice = useSelector((state: RootState) => state.cart.totalPrice);
 
   const shippingFee = cartItems.length > 0 ? 15000 : 0;
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const cached = await getCachedUserProfile();
+
+        if (cached) {
+          setProfile(cached);
+          setReadableAddress(await getDeliveryAddressLabel(cached));
+        }
+
+        const freshProfile = await fetchAndCacheCurrentUserProfile();
+
+        if (freshProfile) {
+          setProfile(freshProfile);
+          setReadableAddress(await getDeliveryAddressLabel(freshProfile));
+        }
+
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   useEffect(() => {
     dispatch(fetchCart());
@@ -140,11 +182,10 @@ export default function CartScreen() {
                   <Text style={styles.sectionTitle}>Địa chỉ giao hàng</Text>
                 </View>
                 <Text style={styles.addressName}>
-                  Nguyễn Văn A | 0901234567
+                  {profile?.name} | {profile?.phone}
                 </Text>
                 <Text style={styles.addressDetail}>
-                  Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí
-                  Minh
+                  {readableAddress || "Đang tải địa chỉ..."}
                 </Text>
               </View>
 

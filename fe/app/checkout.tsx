@@ -1,6 +1,6 @@
 import { router, useFocusEffect,  } from 'expo-router';
 import Feather from '@expo/vector-icons/build/Feather';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { type VoucherDto, getSelectedVoucherCode, lookupVoucherByCode, clearSelectedVoucherCode } from "@/services/voucher-service";
@@ -20,9 +20,22 @@ import {
   Linking,
   ActivityIndicator,
 } from 'react-native';
+import {
+  fetchAndCacheCurrentUserProfile,
+  getCachedUserProfile,
+  UserProfile,
+} from "@/services/user-profile";
+
+import { resolveReadableAddress } from "@/services/get-address";
 import * as SecureStore from "expo-secure-store";
 
 type PaymentMethod = 'ewallet' | 'bankcard' | 'cash';
+
+async function getDeliveryAddressLabel(profile: UserProfile | null) {
+  const preferredAddress = profile?.addresses?.find((address) => address.isDefault) ?? profile?.addresses?.[0];
+  const readable = await resolveReadableAddress(preferredAddress?.latitude ?? 0, preferredAddress?.longitude ?? 0);
+  return readable;
+}
 
 export default function CheckoutScreen() {
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>('ewallet');
@@ -34,11 +47,38 @@ export default function CheckoutScreen() {
   const [isPaying, setIsPaying] = useState(false);
   const [voucherModalVisible, setVoucherModalVisible] = useState(false);
   const [voucherModalMessage, setVoucherModalMessage] = useState("");
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [readableAddress, setReadableAddress] = useState<string>("");
 
   // Lấy dữ liệu giỏ hàng thực tế từ Redux Store
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const totalPrice = useSelector((state: RootState) => state.cart.totalPrice);
   const cartId = useSelector((state: RootState) => state.cart.id);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const cached = await getCachedUserProfile();
+
+        if (cached) {
+          setProfile(cached);
+          setReadableAddress(await getDeliveryAddressLabel(cached));
+        }
+
+        const freshProfile = await fetchAndCacheCurrentUserProfile();
+
+        if (freshProfile) {
+          setProfile(freshProfile);
+          setReadableAddress(await getDeliveryAddressLabel(freshProfile));
+        }
+
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -133,8 +173,8 @@ export default function CheckoutScreen() {
 
     try {
       const orderPayload = {
-        phone: "0901234567",
-        deliveryAddress: "Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí Minh",
+        phone: profile?.phone || "0901234567",
+        deliveryAddress: readableAddress || "Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí Minh",
         cartId,
         groupItems: cartGroups
       };
@@ -236,8 +276,8 @@ export default function CheckoutScreen() {
               <Feather name="map-pin" size={18} color="#295D38" />
               <Text style={styles.sectionTitle}>Địa chỉ giao hàng</Text>
             </View>
-            <Text style={styles.addressName}>Nguyễn Văn A | 0901234567</Text>
-            <Text style={styles.addressDetail}>Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí Minh</Text>
+            <Text style={styles.addressName}>{profile?.name || "Nguyễn Văn A"} | {profile?.phone || "0901234567"}</Text>
+            <Text style={styles.addressDetail}>{readableAddress || "Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí Minh"}</Text>
           </View>
 
           {/* Tóm tắt đơn hàng */}
