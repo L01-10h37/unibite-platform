@@ -1063,7 +1063,7 @@ export default function AddressScreen() {
       return;
     }
 
-    if (isSameRegion(region, nextRegion)) {
+    if (region && isSameRegion(region, nextRegion)) {
       return;
     }
 
