@@ -127,12 +127,12 @@ function MainTabsLayout() {
         }}
       />
 
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="orders"
         options={{
           href: null,
         }}
-      />
+      /> */}
 
       <Tabs.Screen
         name="explore"

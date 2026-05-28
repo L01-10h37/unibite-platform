@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from "expo-secure-store";
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useMemo, useState } from 'react';
@@ -28,29 +27,15 @@ import {
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 
-// API URL và các hằng số khác
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://20.255.57.186:8080";
-const PROFILE_CACHE_KEY = "profile-cache-v1";
+import {
+  cacheUserProfile,
+  fetchAndCacheCurrentUserProfile,
+  getCachedUserProfile,
+  UserProfile,
+} from "@/services/user-profile";
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "http://20.255.57.186:8080";
 const AVATAR_FALLBACK = { uri: "https://cdn-icons-png.flaticon.com/512/149/149071.png" };
-
-// User Profile Type (để định nghĩa kiểu dữ liệu của hồ sơ người dùng)
-type UserProfile = {
-  id: string;
-  name: string;
-  username: string;
-  phone?: string | null;
-  avatar?: string | null;
-  role?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  completedOrders: number; // Số lượng đơn hàng đã hoàn thành
-};
-
-type ProfileResponse = {
-  success: boolean;
-  message: string;
-  data: UserProfile;
-};
 
 type AvatarResponse = {
   success: boolean;
@@ -60,11 +45,6 @@ type AvatarResponse = {
     avatar?: string;
     user?: UserProfile;
   };
-};
-
-type CachedProfile = {
-  profile: UserProfile;
-  cachedAt: string;
 };
 
 export default function ProfileScreen() {
@@ -78,52 +58,22 @@ export default function ProfileScreen() {
     const loadProfile = async () => {
       setIsLoading(true);
 
-
       try {
-        const cached = await AsyncStorage.getItem(PROFILE_CACHE_KEY);
-        if (cached) {
-          const parsed = JSON.parse(cached) as CachedProfile;
-          if (parsed?.profile && isMounted) {
-            setProfile(parsed.profile);
-          }
+        const cachedProfile = await getCachedUserProfile();
+
+        if (cachedProfile && isMounted) {
+          setProfile(cachedProfile);
         }
       } catch (error) {
         console.warn("Failed to read cached profile", error);
       }
 
       try {
-        const tokensRaw = await SecureStore.getItemAsync("tokens");
-        const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
-        const accessToken = tokens?.accessToken;
+        const freshProfile = await fetchAndCacheCurrentUserProfile();
 
-        if (!accessToken) {
-          throw new Error("Missing access token");
+        if (freshProfile && isMounted) {
+          setProfile(freshProfile);
         }
-
-        const response = await fetch(`${API_URL}/api/users/me`, {
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-
-        const payload = (await response.json()) as ProfileResponse;
-
-        if (!response.ok || !payload?.success) {
-          throw new Error(payload?.message || "Không lấy được thông tin tài khoản");
-        }
-
-        if (isMounted) {
-          setProfile(payload.data);
-        }
-
-        await AsyncStorage.setItem(
-          PROFILE_CACHE_KEY,
-          JSON.stringify({
-            profile: payload.data,
-            cachedAt: new Date().toISOString(),
-          }),
-        );
       } catch (error) {
         console.error("Failed to load profile", error);
       } finally {
@@ -192,7 +142,7 @@ export default function ProfileScreen() {
         type: asset.mimeType || "image/jpeg",
       } as unknown as Blob);
 
-      const response = await fetch(`${API_URL}/api/users/me/avatar`, {
+      const response = await fetch(`${API_BASE}/api/users/me/avatar`, {
         method: "PATCH",
         headers: {
           accept: "application/json",
@@ -218,13 +168,7 @@ export default function ProfileScreen() {
         const updated = nextProfile || (current ? { ...current, avatar: nextAvatar } : current);
 
         if (updated) {
-          void AsyncStorage.setItem(
-            PROFILE_CACHE_KEY,
-            JSON.stringify({
-              profile: updated,
-              cachedAt: new Date().toISOString(),
-            }),
-          );
+          void cacheUserProfile(updated);
         }
 
         return updated;

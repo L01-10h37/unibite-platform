@@ -17,6 +17,8 @@ import Svg, { ClipPath, Defs, Image as ImageSVG, Path } from "react-native-svg";
 
 import { Eye, EyeOff, KeyRound, Store, User } from "lucide-react-native";
 
+import { cacheUserProfile, fetchUserProfile } from "@/services/user-profile";
+
 const imgLogo = require("../assets/images/logo.png");
 
 const noFontScale = {
@@ -95,6 +97,13 @@ export default function SignInScreen() {
         });
 
         await SecureStore.setItemAsync("tokens", tokens);
+
+        try {
+          const profile = await fetchUserProfile(payload.accessToken);
+          await cacheUserProfile(profile);
+        } catch (profileError) {
+          console.warn("Unable to prefill user profile cache", profileError);
+        }
 
         router.push("/");
       } catch (error) {
