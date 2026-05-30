@@ -36,6 +36,7 @@ COPY --from=builder --chown=nodejs:nodejs /app/routes ./routes
 COPY --from=builder --chown=nodejs:nodejs /app/services ./services
 COPY --from=builder --chown=nodejs:nodejs /app/utils ./utils
 COPY --from=builder --chown=nodejs:nodejs /app/docs ./docs
+COPY --from=builder --chown=nodejs:nodejs /app/instrument.js ./
 
 USER nodejs
 
