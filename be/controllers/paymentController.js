@@ -42,7 +42,8 @@ export const vnpayReturnHandle = async (req, res, next) => {
         const paymentId = vnp_Params["vnp_TxnRef"];
 
         return res.redirect(
-            `exp://192.168.1.5:8081/--/payment-result?paymentId=${paymentId}`
+            // `exp://192.168.1.5:8081/--/payment-result?paymentId=${paymentId}`
+            `unibite://payment-result?paymentId=${paymentId}`
         );
     } catch (error) {
         next(error);
