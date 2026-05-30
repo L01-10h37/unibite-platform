@@ -1,7 +1,8 @@
 import { Provider } from 'react-redux';
 import { store } from '../store/store';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, useRouter } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
@@ -33,15 +34,19 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { initSentry, setSentryScreen, trackException, trackUserEngagement } from '@/services/sentry';
 // import '@/services/auth-session';
+
+initSentry();
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-export default function RootLayout() {
+function RootLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
+  const pathname = usePathname();
   
   // 1. Tất cả các Hook khai báo ở trên cùng
   const [fontsLoaded] = useFonts({
@@ -92,9 +97,14 @@ export default function RootLayout() {
   // Hook xử lý Auth
   useEffect(() => {
     const checkAuth = async () => {
-      const tokens = await SecureStore.getItemAsync('tokens');
-      if (tokens) {
-        router.replace('/(tabs)');
+      try {
+        const tokens = await SecureStore.getItemAsync('tokens');
+        if (tokens) {
+          router.replace('/(tabs)');
+          trackUserEngagement('session_restored', { hasTokens: true });
+        }
+      } catch (error) {
+        trackException(error, 'root_layout_check_auth');
       }
     };
     
@@ -103,6 +113,14 @@ export default function RootLayout() {
       checkAuth();
     }
   }, [fontsLoaded, router]);
+
+  useEffect(() => {
+    if (!pathname) {
+      return;
+    }
+
+    setSentryScreen(pathname);
+  }, [pathname]);
 
   return (
     <Provider store={store}>
@@ -132,3 +150,7 @@ export default function RootLayout() {
     </Provider>
   );
 }
+
+const WrappedRootLayout = Sentry.wrap(RootLayout);
+
+export default WrappedRootLayout;

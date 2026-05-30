@@ -8,6 +8,7 @@
     "dev": "node --watch app.js"
   },
   "dependencies": {
+    "@sentry/node": "^10.55.0",
     "axios": "^1.4.0",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.7.0",

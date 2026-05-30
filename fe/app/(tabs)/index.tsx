@@ -13,6 +13,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import {
+  setSentryScreen,
+  trackException,
+  trackPerformanceMetric,
+  trackUserEngagement,
+} from "@/services/sentry";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 52) / 2;
@@ -109,6 +115,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     let isMounted = true;
+    const requestStartedAt = Date.now();
 
     const loadFoods = async () => {
       try {
@@ -126,11 +133,22 @@ export default function HomeScreen() {
 
         if (isMounted) {
           setFoods(payload.data ?? []);
+          trackPerformanceMetric("home_foods_fetch_duration_ms", Date.now() - requestStartedAt, {
+            result: "success",
+            itemCount: payload.data?.length ?? 0,
+          });
+          trackUserEngagement("home_feed_loaded", {
+            itemCount: payload.data?.length ?? 0,
+          });
         }
       } catch (error) {
         if (isMounted) {
           setFoods([]);
           setErrorMessage(error instanceof Error ? error.message : "Không lấy được món ăn");
+          trackException(error, "home_load_foods");
+          trackPerformanceMetric("home_foods_fetch_duration_ms", Date.now() - requestStartedAt, {
+            result: "failed",
+          });
         }
       } finally {
         if (isMounted) {
@@ -146,12 +164,20 @@ export default function HomeScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    setSentryScreen("/(tabs)");
+  }, []);
+
   const openSearch = () => {
     const query = searchText.trim();
 
     if (!query) {
       return;
     }
+
+    trackUserEngagement("home_search_submitted", {
+      queryLength: query.length,
+    });
 
     router.push({
       pathname: "/search",
@@ -160,10 +186,16 @@ export default function HomeScreen() {
   };
 
   const openAllFoods = () => {
+    trackUserEngagement("home_see_all_clicked");
     router.push("/search");
   };
 
   const openQuickSearch = (categoryId: string, label: string) => {
+    trackUserEngagement("home_category_clicked", {
+      categoryId,
+      label,
+    });
+
     if (categoryId === "all") {
       openAllFoods();
       return;
@@ -270,10 +302,17 @@ export default function HomeScreen() {
               style={styles.card}
               activeOpacity={0.9}
               onPress={() =>
-                router.push({
-                  pathname: "/food-detail",
-                  params: { id: food.id },
-                })
+                {
+                  trackUserEngagement("home_food_detail_opened", {
+                    foodId: food.id,
+                    foodName: food.name,
+                  });
+
+                  router.push({
+                    pathname: "/food-detail",
+                    params: { id: food.id },
+                  });
+                }
               }
             >
               <Image source={getFoodImageSource(food)} style={styles.cardImage} />

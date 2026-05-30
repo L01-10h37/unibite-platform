@@ -15,6 +15,7 @@ import {
 import Svg, { ClipPath, Defs, Image as ImageSVG, Path } from "react-native-svg";
 
 import { Eye, EyeOff, KeyRound, Smartphone, Store, User } from "lucide-react-native";
+import { trackException, trackPerformanceMetric, trackUserEngagement } from "@/services/sentry";
 
 const imgLogo = require("../assets/images/logo.png");
 
@@ -49,6 +50,7 @@ export default function SignUpScreen() {
   };
 
   const handleSubmit = async () => {
+    const startedAt = Date.now();
     const normalizedUsername = username.trim();
     const normalizedPhone = phoneNumber.trim();
     const newErrors: {
@@ -111,11 +113,29 @@ export default function SignUpScreen() {
           throw new Error(message);
         }
 
+        trackUserEngagement("signup_success", {
+          username: normalizedUsername,
+          screen: "signup",
+        });
+        trackPerformanceMetric("signup_flow_duration_ms", Date.now() - startedAt, {
+          result: "success",
+        });
         router.replace("/signin");
       } catch (error) {
         console.error("Error during sign up:", error);
         const message = error instanceof Error ? error.message : "Có lỗi xảy ra. Vui lòng thử lại.";
         const lowerMessage = message.toLowerCase();
+
+        trackException(error, "signup_submit", {
+          username: normalizedUsername,
+          phoneNumber: normalizedPhone,
+        });
+        trackUserEngagement("signup_failed", {
+          screen: "signup",
+        });
+        trackPerformanceMetric("signup_flow_duration_ms", Date.now() - startedAt, {
+          result: "failed",
+        });
 
         setErrors(lowerMessage.includes("phone") ? { phoneNumber: message } : { username: message });
       }
