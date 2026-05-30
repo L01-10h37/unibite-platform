@@ -231,6 +231,22 @@ export default function BuyerOrderDetailScreen() {
         </View>
 
         <View style={styles.card}>
+          <View style={styles.paymentStatusRow}>
+            <MaterialCommunityIcons
+              name={order.isPaid ? "check-circle" : "clock-outline"}
+              size={20}
+              color={order.isPaid ? PRIMARY : TEXT_MUTED}
+            />
+            <View style={styles.paymentStatusTextWrap}>
+              <Text style={styles.paymentStatusLabel}>Trạng thái thanh toán</Text>
+              <Text style={[styles.paymentStatusValue, { color: order.isPaid ? PRIMARY : TEXT_MUTED }]}>
+                {order.isPaid ? "Đã thanh toán" : "Chưa thanh toán"}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.card}>
           <View style={styles.summaryHeader}>
             <Text style={styles.summaryTitle}>Tóm tắt đơn hàng</Text>
             <Text style={styles.totalText}>{formatMoney(order.totalPrice)}</Text>
@@ -407,6 +423,10 @@ const styles = StyleSheet.create({
   infoTextWrap: { flex: 1 },
   infoLabel: { fontSize: 11, fontWeight: "800", color: TEXT_MUTED, textTransform: "uppercase" },
   infoValue: { marginTop: 3, fontSize: 14, fontWeight: "600", color: TEXT_DARK, lineHeight: 19 },
+  paymentStatusRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  paymentStatusTextWrap: { flex: 1 },
+  paymentStatusLabel: { fontSize: 11, fontWeight: "800", color: TEXT_MUTED, textTransform: "uppercase" },
+  paymentStatusValue: { marginTop: 3, fontSize: 14, fontWeight: "700", lineHeight: 19 },
   historyRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   historyDot: { width: 10, height: 10, borderRadius: 5 },
   historyStatus: { fontSize: 14, fontWeight: "700", color: TEXT_DARK },

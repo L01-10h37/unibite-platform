@@ -103,6 +103,7 @@ export interface OrderBasic {
     id: string;
     totalPrice: number;
     status: OrderStatus;
+    isPaid: boolean;
     user?: {
         id?: string;
         _id?: string;
@@ -123,6 +124,7 @@ export interface OrderDetail {
     items: OrderItem[];
     totalPrice: number;
     status: OrderStatus;
+    isPaid: boolean;
     phone: string;
     deliveryAddress: string;
     statusHistory: StatusHistoryEntry[];

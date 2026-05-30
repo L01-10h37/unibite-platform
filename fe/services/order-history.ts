@@ -26,6 +26,7 @@ export type OrderHistorySummary = {
   id: string;
   totalPrice: number;
   status: OrderStatus;
+  isPaid: boolean;
   seller?: string;
 };
 
@@ -43,6 +44,7 @@ export type OrderHistoryDetail = {
   items: OrderHistoryItem[];
   totalPrice: number;
   status: OrderStatus;
+  isPaid: boolean;
   phone?: string;
   deliveryAddress?: string;
   statusHistory?: Array<{ status: OrderStatus; updatedAt: string }>;

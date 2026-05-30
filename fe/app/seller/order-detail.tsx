@@ -441,6 +441,25 @@ export default function OrderDetailScreen() {
             </View>
           </View>
         </View>
+
+        {/* Payment Status Card */}
+        <View style={styles.card}>
+          <View style={styles.deliveryRow}>
+            <View style={[styles.infoIconBox, { backgroundColor: order.isPaid ? SOFT_GREEN : SOFT_BLUE }]}>
+              <MaterialCommunityIcons 
+                name={order.isPaid ? "check-circle" : "clock-outline"} 
+                size={20} 
+                color={order.isPaid ? PRIMARY : "#4A90E2"} 
+              />
+            </View>
+            <View style={styles.deliveryText}>
+              <Text style={styles.deliveryLabel}>TRẠNG THÁI THANH TOÁN</Text>
+              <Text style={[styles.deliveryValue, { color: order.isPaid ? PRIMARY : "#4A90E2" }]}>
+                {order.isPaid ? "Đã thanh toán" : "Chưa thanh toán"}
+              </Text>
+            </View>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Solid Dark Navy Button at bottom */}
