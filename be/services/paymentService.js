@@ -142,18 +142,15 @@ export const createPayment = async (paymentData, userId) => {
             }
 
             if (normalizedMethod === "COD") {
-                payment.status = "SUCCESS";
-                payment.paidAt = new Date();
                 await Order.updateMany(
                     {
                         _id: { $in: orderIds }
                     },
                     {
-                        $set: { isPaid: true }
+                        $set: { isPaid: false }
                     },
                     { session }
                 );
-                await payment.save({session});   
             } else if (normalizedMethod === "VNPAY") {
                 const paymentUrl = VNPayHelper.buildPaymentUrl(payment.amount, payment._id);
 
