@@ -16,6 +16,12 @@ import {
 import Svg, { ClipPath, Defs, Image as ImageSVG, Path } from "react-native-svg";
 
 import { Eye, EyeOff, KeyRound, Store, User } from "lucide-react-native";
+import {
+  setSentryUserFromAccessToken,
+  trackException,
+  trackPerformanceMetric,
+  trackUserEngagement,
+} from "@/services/sentry";
 
 const imgLogo = require("../assets/images/logo.png");
 
@@ -41,6 +47,7 @@ export default function SignInScreen() {
   };
 
   const handleSubmit = async () => {
+    const startedAt = Date.now();
     const newErrors: { username?: string; password?: string } = {};
 
     if (!username) {
@@ -95,10 +102,28 @@ export default function SignInScreen() {
         });
 
         await SecureStore.setItemAsync("tokens", tokens);
+        setSentryUserFromAccessToken(payload.accessToken);
+        trackUserEngagement("login_success", {
+          username,
+          screen: "signin",
+          rememberPassword,
+        });
+        trackPerformanceMetric("login_flow_duration_ms", Date.now() - startedAt, {
+          result: "success",
+        });
 
         router.push("/");
       } catch (error) {
         console.error("Error during sign in:", error);
+        trackException(error, "signin_submit", {
+          username,
+        });
+        trackUserEngagement("login_failed", {
+          screen: "signin",
+        });
+        trackPerformanceMetric("login_flow_duration_ms", Date.now() - startedAt, {
+          result: "failed",
+        });
         setErrors({ username: "Đăng nhập thất bại. Vui lòng thử lại." });
       }
     }

@@ -46,6 +46,12 @@
       ],
       "expo-secure-store",
       [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/"
+        }
+      ],
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "App cần vị trí của bạn để giao đồ ăn chính xác đến nơi."

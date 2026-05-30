@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { trackException, trackPerformanceMetric } from "@/services/sentry";
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
 
@@ -70,6 +71,7 @@ export async function findAuthStorageKeyByAccessToken(
 export async function refreshStoredAccessToken(
   storageKey: AuthStorageKey,
 ): Promise<AuthTokens | null> {
+  const startedAt = Date.now();
   const pending = refreshRequests.get(storageKey);
 
   if (pending) {
@@ -94,6 +96,10 @@ export async function refreshStoredAccessToken(
       });
 
       if (!response.ok) {
+        trackPerformanceMetric("auth_refresh_duration_ms", Date.now() - startedAt, {
+          result: "failed",
+          statusCode: response.status,
+        });
         return null;
       }
 
@@ -111,8 +117,15 @@ export async function refreshStoredAccessToken(
 
       await writeAuthTokens(storageKey, nextTokens);
 
+      trackPerformanceMetric("auth_refresh_duration_ms", Date.now() - startedAt, {
+        result: "success",
+      });
+
       return nextTokens;
     } catch {
+      trackPerformanceMetric("auth_refresh_duration_ms", Date.now() - startedAt, {
+        result: "failed",
+      });
       return null;
     } finally {
       refreshRequests.delete(storageKey);
@@ -206,6 +219,7 @@ function installFetchInterceptor() {
 
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const requestUrl = getRequestUrl(input);
+    const startedAt = Date.now();
     const requestForFetch = input instanceof Request ? new Request(input, init) : input;
     const requestForRetry = input instanceof Request ? new Request(input, init) : input;
 
@@ -220,6 +234,12 @@ function installFetchInterceptor() {
     }
 
     const response = await originalFetch(requestForFetch as RequestInfo, input instanceof Request ? undefined : init);
+    trackPerformanceMetric("api_request_duration_ms", Date.now() - startedAt, {
+      url: requestUrl,
+      method: init?.method ?? (input instanceof Request ? input.method : "GET"),
+      statusCode: response.status,
+      retried: false,
+    });
 
     if (response.status !== 401) {
       return response;
@@ -247,6 +267,9 @@ function installFetchInterceptor() {
     const refreshedTokens = await refreshStoredAccessToken(storageKey);
 
     if (!refreshedTokens?.accessToken) {
+      trackException(new Error("Access token refresh failed after 401"), "fetch_interceptor_refresh_failed", {
+        url: requestUrl,
+      });
       return response;
     }
 
@@ -256,10 +279,20 @@ function installFetchInterceptor() {
     const retryRequest = createRetryRequest(requestForRetry, init, retryHeaders);
 
     if (retryRequest instanceof Request) {
-      return originalFetch(retryRequest);
+      const retriedResponse = await originalFetch(retryRequest);
+      trackPerformanceMetric("api_request_retry_duration_ms", Date.now() - startedAt, {
+        url: requestUrl,
+        statusCode: retriedResponse.status,
+      });
+      return retriedResponse;
     }
 
-    return originalFetch(retryRequest.input, retryRequest.init);
+    const retriedResponse = await originalFetch(retryRequest.input, retryRequest.init);
+    trackPerformanceMetric("api_request_retry_duration_ms", Date.now() - startedAt, {
+      url: requestUrl,
+      statusCode: retriedResponse.status,
+    });
+    return retriedResponse;
   }) as typeof fetch;
 
   globalTarget.__authFetchInterceptorInstalled = true;

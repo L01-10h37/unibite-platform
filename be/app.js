@@ -1,3 +1,4 @@
+import './instrument.js';
 import express from 'express';
 import 'dotenv/config';
 import morgan from 'morgan';
@@ -25,6 +26,14 @@ import { checkElasticsearchConnection } from './config/elasticsearch.js';
 import paymentRouter from './routes/payment.js'
 import { connectRedis, disconnectRedis } from './config/redis.js';
 import cartRouter from './routes/cart.js';
+import Sentry from './instrument.js';
+
+Sentry.init({
+  dsn: environment.sentry_dsn,
+  enabled: Boolean(environment.sentry_dsn),
+  environment: environment.node_env,
+  tracesSampleRate: Number(environment.sentry_traces_sample_rate),
+});
 
 const app = express();
 const port = environment.port;
@@ -108,8 +117,20 @@ app.get('/health/elasticsearch', async (req, res) => {
   }
 });
 
+if (environment.sentry_enable_debug_endpoint && environment.node_env !== 'production') {
+  app.get('/debug/sentry/message', (req, res) => {
+    Sentry.captureMessage('backend_manual_sentry_test_message', 'info');
+    res.json({ ok: true, message: 'Sentry message sent' });
+  });
+
+  app.get('/debug/sentry/error', () => {
+    throw new Error('backend_manual_sentry_test_error');
+  });
+}
+
 // Error handling middleware
 app.use(notFoundHandler);
+Sentry.setupExpressErrorHandler(app);
 app.use(errorHandler);
 
 // Start server

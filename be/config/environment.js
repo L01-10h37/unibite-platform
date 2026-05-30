@@ -15,6 +15,10 @@ const environment = {
   log_level: process.env.LOG_LEVEL || 'info',
   elasticsearch_url: process.env.ELASTICSEARCH_URL,
   elastic_api_key: process.env.ELASTIC_API_KEY,
+  sentry_dsn: process.env.SENTRY_DSN,
+  sentry_release: process.env.SENTRY_RELEASE,
+  sentry_traces_sample_rate: process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1,
+  sentry_enable_debug_endpoint: process.env.SENTRY_ENABLE_DEBUG_ENDPOINT === '1',
   // Redis Configuration
   redis_url: process.env.REDIS_URL,
   // Cloudinary Configuration
