@@ -23,4 +23,6 @@ router.get('/vnpay-return', paymentController.vnpayReturnHandle);
  */
 router.get('/vnpay-ipn', paymentController.vnpayIpnHandle);
 
+router.get("/:paymentId", authenticate, paymentController.getPaymentById);
+
 export default router;

@@ -1,4 +1,4 @@
-import { router, useFocusEffect,  } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import Feather from '@expo/vector-icons/build/Feather';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
@@ -49,11 +49,22 @@ export default function CheckoutScreen() {
   const [voucherModalMessage, setVoucherModalMessage] = useState("");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [readableAddress, setReadableAddress] = useState<string>("");
+  const { paymentSuccess, paymentFailed } = useLocalSearchParams();
 
   // Lấy dữ liệu giỏ hàng thực tế từ Redux Store
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const totalPrice = useSelector((state: RootState) => state.cart.totalPrice);
   const cartId = useSelector((state: RootState) => state.cart.id);
+
+  useEffect(() => {
+    if (paymentSuccess === "true") {
+      setSuccessModalVisible(true);
+    }
+
+    if (paymentFailed === "true") {
+      Alert.alert("Thanh toán thất bại", "Giao dịch VNPay không thành công.");
+    }
+  }, [paymentSuccess, paymentFailed]);
 
   useEffect(() => {
     const loadProfile = async () => {
