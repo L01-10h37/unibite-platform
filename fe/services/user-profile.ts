@@ -91,6 +91,10 @@ export async function cacheUserProfile(profile: UserProfile): Promise<void> {
   );
 }
 
+export async function clearCachedUserProfile(): Promise<void> {
+  await AsyncStorage.removeItem(PROFILE_CACHE_KEY);
+}
+
 export async function fetchUserProfile(accessToken: string): Promise<UserProfile> {
   const response = await fetch(`${API_BASE}/api/users/me`, {
     headers: {

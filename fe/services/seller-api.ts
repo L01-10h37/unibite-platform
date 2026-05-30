@@ -139,6 +139,12 @@ export interface OrderDetail {
     };
 }
 
+export type FoodPreview = {
+    id: string;
+    name: string;
+    listUrlImg?: string[];
+};
+
 // ─────────────────────────────────────────────
 //  REVIEW / COMMENT APIs
 // ─────────────────────────────────────────────
@@ -325,6 +331,21 @@ export async function cancelOrder(
         headers: authHeaders(token),
     });
     return handleResponse<OrderDetail>(res);
+}
+
+export async function getFoodPreview(foodId: string): Promise<FoodPreview | null> {
+    const res = await fetch(`${API_BASE}/api/foods/${foodId}`, {
+        method: "GET",
+        headers: {
+            Accept: "application/json",
+        },
+    });
+
+    if (!res.ok) {
+        return null;
+    }
+
+    return handleResponse<FoodPreview>(res);
 }
 
 // ─────────────────────────────────────────────

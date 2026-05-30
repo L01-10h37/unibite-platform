@@ -23,7 +23,7 @@ import {
   trackUserEngagement,
 } from "@/services/sentry";
 
-import { cacheUserProfile, fetchUserProfile } from "@/services/user-profile";
+import { cacheUserProfile, clearCachedUserProfile, fetchUserProfile } from "@/services/user-profile";
 
 const imgLogo = require("../assets/images/logo.png");
 
@@ -103,6 +103,8 @@ export default function SignInScreen() {
           refreshToken: payload.refreshToken,
         });
 
+        await SecureStore.deleteItemAsync("sellerTokens");
+        await clearCachedUserProfile();
         await SecureStore.setItemAsync("tokens", tokens);
         setSentryUserFromAccessToken(payload.accessToken);
         trackUserEngagement("login_success", {
@@ -121,7 +123,7 @@ export default function SignInScreen() {
           console.warn("Unable to prefill user profile cache", profileError);
         }
 
-        router.push("/");
+        router.replace("/(tabs)");
       } catch (error) {
         console.error("Error during sign in:", error);
         trackException(error, "signin_submit", {

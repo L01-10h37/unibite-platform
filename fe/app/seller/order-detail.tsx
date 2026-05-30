@@ -6,11 +6,13 @@ import {
   ALLOWED_NEXT_STATUSES,
   cancelOrder,
   formatOrderTime,
+  getFoodPreview,
   getOrderById,
   getProgressStep,
   getStatusColor,
   getStatusLabel,
   updateOrderStatus,
+  type FoodPreview,
   type OrderDetail,
   type OrderStatus,
 } from "@/services/seller-api";
@@ -41,6 +43,7 @@ const SOFT_BLUE = "#EBF1FA";
 const SOFT_GREEN = "#EAF6EE";
 const TEXT_DARK = "#2A3E2F";
 const TEXT_MUTED = "#7C9A82";
+type SellerOrderDetail = OrderDetail & { foodPreviews: Record<string, FoodPreview | null> };
 
 const STEPS: { status: OrderStatus; icon: string; label: string }[] = [
   { status: "CONFIRMED", icon: "check", label: "Đã xác nhận" },
@@ -110,12 +113,29 @@ function Skeleton({ w, h, radius = 8 }: { w: string | number; h: number; radius?
   );
 }
 
+async function enrichOrderFoodPreviews(order: OrderDetail): Promise<SellerOrderDetail> {
+  const foodIds = [...new Set((order.items ?? []).map((item) => item.food).filter(Boolean))];
+  const previewEntries = await Promise.all(
+    foodIds.map(async (foodId) => [foodId, await getFoodPreview(foodId)] as const)
+  );
+
+  return {
+    ...order,
+    foodPreviews: Object.fromEntries(previewEntries),
+  };
+}
+
+function getFoodImage(order: SellerOrderDetail, item: OrderDetail["items"][number]) {
+  const image = item.image || order.foodPreviews[item.food]?.listUrlImg?.find(Boolean);
+  return image ? { uri: image } : require("@/assets/images/bun-bo-hue-detail-1.png");
+}
+
 export default function OrderDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id: orderId } = useLocalSearchParams<{ id: string }>();
 
-  const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [order, setOrder] = useState<SellerOrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -129,7 +149,7 @@ export default function OrderDetailScreen() {
           return;
         }
         const data = await getOrderById(orderId, tokens.accessToken);
-        setOrder(data);
+        setOrder(await enrichOrderFoodPreviews(data));
       } catch (e: any) {
         if (e.statusCode === 401 || e.message?.includes("401")) {
           router.replace("/seller/signin" as any);
@@ -161,7 +181,7 @@ export default function OrderDetailScreen() {
               }
 
               const updated = await updateOrderStatus(order.id, next, tokens.accessToken);
-              setOrder(updated);
+              setOrder({ ...updated, foodPreviews: order.foodPreviews });
             } catch {
               Alert.alert("Lỗi", "Không thể cập nhật. Thử lại sau.");
             } finally {
@@ -190,7 +210,7 @@ export default function OrderDetailScreen() {
             }
 
             const updated = await cancelOrder(order.id, tokens.accessToken);
-            setOrder(updated);
+            setOrder({ ...updated, foodPreviews: order.foodPreviews });
           } catch {
             Alert.alert("Lỗi", "Không thể hủy đơn.");
           } finally {
@@ -383,11 +403,7 @@ export default function OrderDetailScreen() {
           {order.items?.map((item, idx) => (
             <View key={idx} style={[styles.itemRow, idx > 0 && { marginTop: 14 }]}>
               <Image
-                source={
-                  item.image
-                    ? { uri: item.image }
-                    : require("@/assets/images/bun-bo-hue-detail-1.png")
-                }
+                source={getFoodImage(order, item)}
                 style={styles.foodImage}
               />
               <View style={styles.itemInfo}>

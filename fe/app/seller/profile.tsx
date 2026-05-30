@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as SecureStore from "expo-secure-store";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   ActivityIndicator,
@@ -41,46 +41,53 @@ export default function SellerProfileScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-    const loadShop = async () => {
-      try {
-        const tokens = parseSellerTokens(
-          await SecureStore.getItemAsync("sellerTokens"),
-        );
+      const loadShop = async () => {
+        setIsLoading(true);
 
-        if (!tokens) {
+        try {
+          const tokens = parseSellerTokens(
+            await SecureStore.getItemAsync("sellerTokens"),
+          );
+
+          if (!tokens) {
+            setShop(null);
+            router.replace("/seller/signin" as any);
+            return;
+          }
+
+          const currentShop = await getMySellerShop(tokens.accessToken);
+
+          if (!currentShop) {
+            setShop(null);
+            router.replace("/seller/create-shop" as any);
+            return;
+          }
+
+          if (isActive) {
+            setShop(currentShop);
+          }
+        } catch (error) {
+          console.error("Failed to load seller profile:", error);
+          setShop(null);
           router.replace("/seller/signin" as any);
-          return;
+        } finally {
+          if (isActive) {
+            setIsLoading(false);
+          }
         }
+      };
 
-        const currentShop = await getMySellerShop(tokens.accessToken);
+      loadShop();
 
-        if (!currentShop) {
-          router.replace("/seller/create-shop" as any);
-          return;
-        }
-
-        if (isMounted) {
-          setShop(currentShop);
-        }
-      } catch (error) {
-        console.error("Failed to load seller profile:", error);
-        router.replace("/seller/signin" as any);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadShop();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+      return () => {
+        isActive = false;
+      };
+    }, []),
+  );
 
   const avatarSource = useMemo<ImageSourcePropType>(() => {
     if (shop?.avatar) {
@@ -147,6 +154,7 @@ export default function SellerProfileScreen() {
   };
 
   const handleLogout = async () => {
+    setShop(null);
     await SecureStore.deleteItemAsync("sellerTokens");
     router.replace("/seller/signin" as any);
   };

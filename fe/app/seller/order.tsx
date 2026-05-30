@@ -4,9 +4,11 @@
 
 import {
   formatOrderTime,
+  getFoodPreview,
   getMyOrders,
   getStatusColor,
   getStatusLabel,
+  type FoodPreview,
   type OrderBasic,
   type OrderStatus,
 } from "@/services/seller-api";
@@ -36,6 +38,7 @@ const TEXT_DARK = "#2A3E2F";
 const TEXT_MUTED = "#7C9A82";
 
 type OrderTab = "all" | "pending" | "preparing" | "delivering" | "completed" | "failed";
+type SellerOrder = OrderBasic & { foodPreviews: Record<string, FoodPreview | null> };
 
 const TABS: { key: OrderTab; label: string; statuses: OrderStatus[] }[] = [
   { key: "all", label: "Tất cả", statuses: [] },
@@ -75,7 +78,7 @@ function OrderCard({
   order,
   onPress,
 }: {
-  order: OrderBasic;
+  order: SellerOrder;
   onPress: () => void;
 }) {
   const statusColor = getStatusColor(order.status);
@@ -96,6 +99,10 @@ function OrderCard({
 
   const customerName = order.user?.name ?? order.user?.username ?? "Khách hàng";
   const formattedTime = order.createdAt ? formatOrderTime(order.createdAt) : "";
+  const getFoodImage = (item: NonNullable<OrderBasic["items"]>[number]) => {
+    const image = item.image || order.foodPreviews[item.food]?.listUrlImg?.find(Boolean);
+    return image ? { uri: image } : require("@/assets/images/bun-bo-hue-detail-1.png");
+  };
 
   return (
     <TouchableOpacity
@@ -118,11 +125,7 @@ function OrderCard({
         {order.items?.map((item, idx) => (
           <View key={idx} style={[styles.itemRow, idx > 0 && { marginTop: 14 }]}>
             <Image
-              source={
-                item.image
-                  ? { uri: item.image }
-                  : require("@/assets/images/bun-bo-hue-detail-1.png")
-              }
+              source={getFoodImage(item)}
               style={styles.foodImage}
             />
             <View style={styles.itemInfo}>
@@ -165,7 +168,7 @@ export default function OrderListScreen() {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<OrderTab>("all");
-  const [orders, setOrders] = useState<OrderBasic[]>([]);
+  const [orders, setOrders] = useState<SellerOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -195,10 +198,23 @@ export default function OrderListScreen() {
         pageRef.current,
         LIMIT
       );
+      const enriched = await Promise.all(
+        fetched.map(async (order) => {
+          const foodIds = [...new Set((order.items ?? []).map((item) => item.food).filter(Boolean))];
+          const previewEntries = await Promise.all(
+            foodIds.map(async (foodId) => [foodId, await getFoodPreview(foodId)] as const)
+          );
 
-      setOrders((prev) => (reset ? fetched : [...prev, ...fetched]));
+          return {
+            ...order,
+            foodPreviews: Object.fromEntries(previewEntries),
+          };
+        })
+      );
 
-      const totalLoaded = (pageRef.current - 1) * LIMIT + fetched.length;
+      setOrders((prev) => (reset ? enriched : [...prev, ...enriched]));
+
+      const totalLoaded = (pageRef.current - 1) * LIMIT + enriched.length;
       hasMoreRef.current = totalLoaded < (pagination.total ?? 0);
       pageRef.current += 1;
     } catch (e: any) {
