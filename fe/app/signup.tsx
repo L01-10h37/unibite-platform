@@ -89,7 +89,7 @@ export default function SignUpScreen() {
     if (Object.keys(newErrors).length === 0) {
       try {
         const apiBase =
-          process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080";
+          process.env.EXPO_PUBLIC_API_URL || "http://20.255.57.186:8080";
         const res = await fetch(`${apiBase}/api/auth/register`, {
           method: "POST",
           headers: {

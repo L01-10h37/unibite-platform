@@ -45,3 +45,18 @@ export const removeItemFromCart = async (req, res, next) => {
         errorResponse(res, error, error.message || "Failed to remove item from cart", statusCode);
     }   
 };
+
+export const updateCart = async (req, res, next) => {
+    try {
+        const cartId = req.params.id;
+        const { items } = req.body;
+
+        const result = await cartService.updateCart(cartId, items);
+
+        successResponse(res, result.data, result.message, 200);
+    } catch (error) {
+        logger.error("Error updating cart", error);
+        const statusCode = error.statusCode || 500;
+        errorResponse(res, error, error.message || "Failed to update cart", statusCode);
+    }
+};

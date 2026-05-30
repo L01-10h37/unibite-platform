@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "http://20.255.57.186:8080";
 const SELECTED_VOUCHER_STORAGE_KEY = "voucher-selection-v1";
 
 export type VoucherType = "PERCENT" | "FIXED" | "FREE_SHIPPING";

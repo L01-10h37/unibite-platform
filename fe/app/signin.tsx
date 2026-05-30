@@ -23,6 +23,8 @@ import {
   trackUserEngagement,
 } from "@/services/sentry";
 
+import { cacheUserProfile, fetchUserProfile } from "@/services/user-profile";
+
 const imgLogo = require("../assets/images/logo.png");
 
 const noFontScale = {
@@ -67,7 +69,7 @@ export default function SignInScreen() {
     if (Object.keys(newErrors).length === 0) {
       try {
         const apiBase =
-          process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080";
+          process.env.EXPO_PUBLIC_API_URL || "http://20.255.57.186:8080";
         console.log("Attempting login to", apiBase + "/api/auth/login");
 
         const res = await fetch(`${apiBase}/api/auth/login`, {
@@ -111,6 +113,13 @@ export default function SignInScreen() {
         trackPerformanceMetric("login_flow_duration_ms", Date.now() - startedAt, {
           result: "success",
         });
+
+        try {
+          const profile = await fetchUserProfile(payload.accessToken);
+          await cacheUserProfile(profile);
+        } catch (profileError) {
+          console.warn("Unable to prefill user profile cache", profileError);
+        }
 
         router.push("/");
       } catch (error) {

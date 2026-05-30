@@ -152,7 +152,11 @@ export default function DeliveringOrdersScreen() {
                   <Text style={styles.shipperText}>Shipper: Đang cập nhật</Text>
                 </View>
 
-                <TouchableOpacity style={[styles.actionButton, styles.primaryButton]} onPress={() => router.push("/history-order")} activeOpacity={0.85}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.primaryButton]}
+                  onPress={() => router.push({ pathname: "/order-detail", params: { id: order.id } })}
+                  activeOpacity={0.85}
+                >
                   <Text style={styles.primaryButtonText}>Xem chi tiết</Text>
                 </TouchableOpacity>
               </View>

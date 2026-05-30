@@ -1,11 +1,13 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { debounce } from 'lodash';
 import { RootState, AppDispatch } from "../../store/store";
 import {
   fetchCart,
   incrementQuantity,
   decrementQuantity,
   deleteCartItem,
+  updateCart
 } from "../../store/cartSlice";
 import { router } from "expo-router";
 import Feather from "@expo/vector-icons/build/Feather";
@@ -20,6 +22,14 @@ import {
   StatusBar,
   ActivityIndicator,
 } from "react-native";
+
+import {
+  fetchAndCacheCurrentUserProfile,
+  getCachedUserProfile,
+  UserProfile,
+} from "@/services/user-profile";
+
+import { resolveReadableAddress } from "@/services/get-address";
 
 const C = {
   bgMain: "#C5E0CD",
@@ -36,36 +46,96 @@ const C = {
   priceDeep: "#1B4332",
 };
 
+async function getDeliveryAddressLabel(profile: UserProfile | null) {
+  const preferredAddress = profile?.addresses?.find((address) => address.isDefault) ?? profile?.addresses?.[0];
+  const readable = await resolveReadableAddress(preferredAddress?.latitude ?? 0, preferredAddress?.longitude ?? 0);
+  return readable;
+}
+
 export default function CartScreen() {
   const dispatch = useDispatch<AppDispatch>();
 
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [readableAddress, setReadableAddress] = useState<string>("");
+
+  const cartId = useSelector((state: RootState) => state.cart.id);
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const loading = useSelector((state: RootState) => state.cart.loading);
+  const totalPrice = useSelector((state: RootState) => state.cart.totalPrice);
 
   const shippingFee = cartItems.length > 0 ? 15000 : 0;
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const cached = await getCachedUserProfile();
+
+        if (cached) {
+          setProfile(cached);
+          setReadableAddress(await getDeliveryAddressLabel(cached));
+        }
+
+        const freshProfile = await fetchAndCacheCurrentUserProfile();
+
+        if (freshProfile) {
+          setProfile(freshProfile);
+          setReadableAddress(await getDeliveryAddressLabel(freshProfile));
+        }
+
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   useEffect(() => {
     dispatch(fetchCart());
   }, [dispatch]);
 
+  const debouncedSyncCart = useRef(
+    debounce((items) => {
+      dispatch(updateCart({ items, id: cartId }))
+    }, 1500)
+  ).current;
+
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      debouncedSyncCart(cartItems);
+    }
+  }, [cartItems, debouncedSyncCart]);
+
+  useEffect(() => {
+    return () => {
+      debouncedSyncCart.cancel();
+    }
+  }, [debouncedSyncCart]);
+
+  const handleCheckout = async () => {
+    // Sync lần cuối trước khi checkout
+    await dispatch(updateCart({ items: cartItems, id: cartId })).unwrap();
+    router.push('/checkout');
+  };
+
   const groupCartItems = (items: any[]) => {
     const groups: { [key: string]: any[] } = {};
     items.forEach((item) => {
-      if (!groups[item.restaurant]) groups[item.restaurant] = [];
-      groups[item.restaurant].push(item);
+      if (!groups[item.seller]) groups[item.seller] = [];
+      groups[item.seller].push(item);
     });
-    return Object.keys(groups).map((restaurantName) => ({
-      restaurantName,
-      items: groups[restaurantName],
+    return Object.keys(groups).map((seller) => ({
+      seller,
+      items: groups[seller],
     }));
   };
 
   const cartGroups = groupCartItems(cartItems);
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
-  const total = subtotal + shippingFee;
+  // const subtotal = cartItems.reduce(
+  //   (sum, item) => sum + item.price * item.quantity,
+  //   0,
+  // );
+  const total = totalPrice + shippingFee;
 
   if (loading && cartItems.length === 0) {
     return (
@@ -112,16 +182,15 @@ export default function CartScreen() {
                   <Text style={styles.sectionTitle}>Địa chỉ giao hàng</Text>
                 </View>
                 <Text style={styles.addressName}>
-                  Nguyễn Văn A | 0901234567
+                  {profile?.name} | {profile?.phone}
                 </Text>
                 <Text style={styles.addressDetail}>
-                  Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí
-                  Minh
+                  {readableAddress || "Đang tải địa chỉ..."}
                 </Text>
               </View>
 
               {cartGroups.map((group) => (
-                <View key={group.restaurantName} style={styles.sectionCard}>
+                <View key={group.seller} style={styles.sectionCard}>
                   <View style={styles.sectionHeader}>
                     <Feather
                       name="shopping-bag"
@@ -132,7 +201,7 @@ export default function CartScreen() {
                   </View>
 
                   <Text style={styles.restaurantName}>
-                    {group.restaurantName}
+                    {group.seller}
                   </Text>
 
                   {group.items.map((item, index) => (
@@ -167,7 +236,7 @@ export default function CartScreen() {
                             activeOpacity={0.75}
                             onPress={() => {
                               if (item.quantity > 1) {
-                                dispatch(decrementQuantity(item.id));
+                                dispatch(decrementQuantity({ id: item.id, price: item.price }));
                               } else {
                                 dispatch(deleteCartItem(item.id));
                               }
@@ -187,7 +256,7 @@ export default function CartScreen() {
                           <TouchableOpacity
                             style={styles.quantityButton}
                             activeOpacity={0.75}
-                            onPress={() => dispatch(incrementQuantity(item.id))}
+                            onPress={() => dispatch(incrementQuantity({ id: item.id, price: item.price }))}
                           >
                             <Feather name="plus" size={14} color={C.textMid} />
                           </TouchableOpacity>
@@ -221,7 +290,7 @@ export default function CartScreen() {
                 <View style={styles.pricingRow}>
                   <Text style={styles.pricingLabel}>Tổng tiền món ăn</Text>
                   <Text style={styles.pricingValue}>
-                    {subtotal.toLocaleString("vi-VN")}đ
+                    {totalPrice.toLocaleString("vi-VN")}đ
                   </Text>
                 </View>
 
@@ -247,7 +316,7 @@ export default function CartScreen() {
               <TouchableOpacity
                 style={styles.nextButton}
                 activeOpacity={0.85}
-                onPress={() => router.push("/checkout")}
+                onPress={handleCheckout}
               >
                 <Text style={styles.nextButtonText}>Mua hàng</Text>
                 <Feather name="arrow-right" size={15} color={C.white} />

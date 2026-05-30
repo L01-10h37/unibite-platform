@@ -21,7 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 52) / 2;
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://20.255.57.186:8080";
 const PAGE_SIZE = 10;
 
 type SearchParams = {

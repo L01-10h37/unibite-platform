@@ -19,7 +19,7 @@ import * as Location from 'expo-location';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080';
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://20.255.57.186:8080';
 const SEARCH_DEBOUNCE_MS = 450;
 const REVERSE_GEOCODE_DEBOUNCE_MS = 600;
 
@@ -840,7 +840,7 @@ export default function AddressScreen() {
     const readable = parts.join(', ') || place.formattedAddress || '';
     geocodeCacheRef.current[cacheKey] = readable;
     return readable;
-    };
+  };
 
   const fetchProfileAddresses = React.useCallback(async () => {
     setIsLoadingProfile(true);
@@ -1063,7 +1063,7 @@ export default function AddressScreen() {
       return;
     }
 
-    if (isSameRegion(region, nextRegion)) {
+    if (region && isSameRegion(region, nextRegion)) {
       return;
     }
 

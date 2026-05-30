@@ -1,9 +1,10 @@
 import { router, useFocusEffect,  } from 'expo-router';
 import Feather from '@expo/vector-icons/build/Feather';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { type VoucherDto, getSelectedVoucherCode, lookupVoucherByCode, clearSelectedVoucherCode } from "@/services/voucher-service";
+import { API_BASE_URL } from "@/constants/api";
 import {
   View,
   Text,
@@ -19,9 +20,22 @@ import {
   Linking,
   ActivityIndicator,
 } from 'react-native';
+import {
+  fetchAndCacheCurrentUserProfile,
+  getCachedUserProfile,
+  UserProfile,
+} from "@/services/user-profile";
+
+import { resolveReadableAddress } from "@/services/get-address";
 import * as SecureStore from "expo-secure-store";
 
 type PaymentMethod = 'ewallet' | 'bankcard' | 'cash';
+
+async function getDeliveryAddressLabel(profile: UserProfile | null) {
+  const preferredAddress = profile?.addresses?.find((address) => address.isDefault) ?? profile?.addresses?.[0];
+  const readable = await resolveReadableAddress(preferredAddress?.latitude ?? 0, preferredAddress?.longitude ?? 0);
+  return readable;
+}
 
 export default function CheckoutScreen() {
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>('ewallet');
@@ -31,9 +45,40 @@ export default function CheckoutScreen() {
   const [orderNotes, setOrderNotes] = useState<Record<string, string>>({});
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
+  const [voucherModalVisible, setVoucherModalVisible] = useState(false);
+  const [voucherModalMessage, setVoucherModalMessage] = useState("");
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [readableAddress, setReadableAddress] = useState<string>("");
 
   // Lấy dữ liệu giỏ hàng thực tế từ Redux Store
   const cartItems = useSelector((state: RootState) => state.cart.items);
+  const totalPrice = useSelector((state: RootState) => state.cart.totalPrice);
+  const cartId = useSelector((state: RootState) => state.cart.id);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const cached = await getCachedUserProfile();
+
+        if (cached) {
+          setProfile(cached);
+          setReadableAddress(await getDeliveryAddressLabel(cached));
+        }
+
+        const freshProfile = await fetchAndCacheCurrentUserProfile();
+
+        if (freshProfile) {
+          setProfile(freshProfile);
+          setReadableAddress(await getDeliveryAddressLabel(freshProfile));
+        }
+
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -48,6 +93,20 @@ export default function CheckoutScreen() {
           if (code) {
             const voucherDetail = await lookupVoucherByCode(code);
             if (!isActive) return;
+
+            if (totalPrice < voucherDetail.minOrderValue) {
+              await clearSelectedVoucherCode();
+
+              setAppliedVoucher(null);
+              setVoucherError(null);
+
+              setVoucherModalMessage(
+                `Đơn hàng cần tối thiểu ${voucherDetail.minOrderValue.toLocaleString("vi-VN")}đ để áp dụng voucher này.`
+              );
+              setVoucherModalVisible(true);
+
+              return;
+            }
 
             setAppliedVoucher(voucherDetail);
             setVoucherError(null);
@@ -78,25 +137,24 @@ export default function CheckoutScreen() {
   const groupCartItems = (items: any[]) => {
     const groups: { [key: string]: any[] } = {};
     items.forEach(item => {
-      if (!groups[item.restaurant]) groups[item.restaurant] = [];
-      groups[item.restaurant].push(item);
+      if (!groups[item.seller]) groups[item.seller] = [];
+      groups[item.seller].push(item);
     });
-    return Object.keys(groups).map(restaurantName => ({
-      restaurantName,
-      items: groups[restaurantName],
+    return Object.keys(groups).map(seller => ({
+      seller,
+      items: groups[seller],
     }));
   };
 
   const cartGroups = groupCartItems(cartItems);
 
   // Tự động tính toán giá tiền dựa trên giỏ hàng thực tế
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shippingFee = cartItems.length > 0 ? 15000 : 0;
   const orderDiscount = useMemo(() => {
-    if (!appliedVoucher || subtotal < appliedVoucher.minOrderValue) return 0;
+    if (!appliedVoucher || totalPrice < appliedVoucher.minOrderValue) return 0;
     
     if (appliedVoucher.type === 'PERCENT') {
-      return -Math.round((subtotal * appliedVoucher.value) / 100);
+      return -Math.round((totalPrice * appliedVoucher.value) / 100);
     }
     if (appliedVoucher.type === 'FIXED') {
       return -appliedVoucher.value;
@@ -105,8 +163,8 @@ export default function CheckoutScreen() {
       return -shippingFee;
     }
     return 0;
-  }, [appliedVoucher, subtotal]);
-  const total = subtotal + shippingFee + orderDiscount;
+  }, [appliedVoucher, totalPrice]);
+  const total = totalPrice + shippingFee + orderDiscount;
 
   const handlePlaceOrder = async () => {
     if (cartItems.length === 0 || isPaying) return;
@@ -115,19 +173,17 @@ export default function CheckoutScreen() {
 
     try {
       const orderPayload = {
-        phone: "0901234567",
-        deliveryAddress: "Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí Minh",
-        items: cartItems.map((item) => ({
-          food: item.id,
-          quantity: item.quantity,
-        })),
+        phone: profile?.phone || "0901234567",
+        deliveryAddress: readableAddress || "Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí Minh",
+        cartId,
+        groupItems: cartGroups
       };
 
       const tokensRaw = await SecureStore.getItemAsync("tokens");
       const tokens = tokensRaw ? JSON.parse(tokensRaw) : null;
       const accessToken = tokens?.accessToken;
 
-      const orderRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/orders/`, {
+      const ordersRes = await fetch(`${API_BASE_URL}/api/orders/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,13 +192,14 @@ export default function CheckoutScreen() {
         body: JSON.stringify(orderPayload),
       });
 
-      const orderJson = await orderRes.json();
+      const ordersJson = await ordersRes.json();
 
-      if (!orderRes.ok) {
-        throw new Error(orderJson.message || "Không thể tạo đơn hàng");
+      if (!ordersRes.ok) {
+        throw new Error(ordersJson.message || "Không thể tạo đơn hàng");
       }
 
-      const order = orderJson.data;
+      const orders = ordersJson.data;
+      const orderIds = orders.map((order: any) => order.id);
 
       const paymentMethod =
         selectedPayment === "cash"
@@ -152,13 +209,13 @@ export default function CheckoutScreen() {
             : "MOMO";
 
       const paymentPayload = {
-        orderId: order._id || order.id,
+        orderIds: orderIds,
         method: paymentMethod,
         voucherCode: appliedVoucher?.code,
         shippingFee,
       };
 
-      const paymentRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/payments/`, {
+      const paymentRes = await fetch(`${API_BASE_URL}/api/payments/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -219,8 +276,8 @@ export default function CheckoutScreen() {
               <Feather name="map-pin" size={18} color="#295D38" />
               <Text style={styles.sectionTitle}>Địa chỉ giao hàng</Text>
             </View>
-            <Text style={styles.addressName}>Nguyễn Văn A | 0901234567</Text>
-            <Text style={styles.addressDetail}>Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí Minh</Text>
+            <Text style={styles.addressName}>{profile?.name || "Nguyễn Văn A"} | {profile?.phone || "0901234567"}</Text>
+            <Text style={styles.addressDetail}>{readableAddress || "Cổng sau KTX Khu B - ĐHQG TPHCM, Thạnh Xuân, Quận 12, Hồ Chí Minh"}</Text>
           </View>
 
           {/* Tóm tắt đơn hàng */}
@@ -237,7 +294,7 @@ export default function CheckoutScreen() {
                   <Feather name="shopping-bag" size={18} color="#295D38" />
                   <Text style={styles.sectionTitle}>Tóm tắt đơn hàng</Text>
                 </View>
-                <Text style={styles.restaurantName}>{group.restaurantName}</Text>
+                <Text style={styles.restaurantName}>{group.seller}</Text>
                 
                 {group.items.map((item) => (
                   <View style={[styles.orderItemRow, { marginBottom: 12 }]} key={item.id}>
@@ -260,11 +317,11 @@ export default function CheckoutScreen() {
                   <TextInput
                     placeholder="Để lại lời nhắn"
                     placeholderTextColor="#A0A5A8"
-                    value={orderNotes[group.restaurantName] || ""}
+                    value={orderNotes[group.seller] || ""}
                     onChangeText={(text) =>
                       setOrderNotes((prev) => ({
                         ...prev,
-                        [group.restaurantName]: text,
+                        [group.seller]: text,
                       }))
                     }
                     style={styles.noteInput}
@@ -313,7 +370,9 @@ export default function CheckoutScreen() {
           <View style={styles.sectionCard}>
             <TouchableOpacity 
               style={styles.voucherContainer} 
-              onPress={() => router.push('/voucher')}
+              onPress={() =>
+                router.push("/voucher-select")
+              }
             >
               <View style={styles.voucherLeft}>
                 <Feather name="tag" size={20} color="#295D38" />
@@ -340,7 +399,7 @@ export default function CheckoutScreen() {
           <View style={styles.sectionCard}>
             <View style={styles.pricingRow}>
               <Text style={styles.pricingLabel}>Tạm tính</Text>
-              <Text style={styles.pricingValue}>{subtotal.toLocaleString('vi-VN')}đ</Text>
+              <Text style={styles.pricingValue}>{totalPrice.toLocaleString('vi-VN')}đ</Text>
             </View>
             <View style={styles.pricingRow}>
               <Text style={styles.pricingLabel}>Phí vận chuyển</Text>
@@ -377,6 +436,43 @@ export default function CheckoutScreen() {
       </View>
 
       <Modal
+        visible={voucherModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVoucherModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.successModal}>
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setVoucherModalVisible(false)}
+            >
+              <Feather name="x" size={18} color="#6E767D" />
+            </TouchableOpacity>
+
+            <View style={[styles.successIconCircle, { backgroundColor: "#FFF4E5" }]}>
+              <Feather name="alert-circle" size={24} color="#E67700" />
+            </View>
+
+            <Text style={[styles.successTitle, { color: "#E67700" }]}>
+              Voucher không đủ điều kiện
+            </Text>
+
+            <Text style={styles.successMessage}>
+              {voucherModalMessage}
+            </Text>
+
+            <TouchableOpacity
+              style={styles.orderBtn}
+              onPress={() => setVoucherModalVisible(false)}
+            >
+              <Text style={styles.orderBtnText}>Đã hiểu</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={successModalVisible}
         transparent
         animationType="fade"
@@ -384,12 +480,6 @@ export default function CheckoutScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.successModal}>
-            <TouchableOpacity
-              style={styles.modalCloseBtn}
-              onPress={() => setSuccessModalVisible(false)}
-            >
-              <Feather name="x" size={18} color="#6E767D" />
-            </TouchableOpacity>
 
             <View style={styles.successIconCircle}>
               <Feather name="check-circle" size={24} color="#2F9E44" />
@@ -415,7 +505,13 @@ export default function CheckoutScreen() {
                 style={styles.orderBtn}
                 onPress={() => {
                   setSuccessModalVisible(false);
-                  router.push('/history-order');
+                  router.dismissAll();
+                  router.replace({
+                    pathname: '/history-order',
+                    params: {
+                      fromCheckout: 'true',
+                    },
+                  });
                 }}
               >
                 <Text style={styles.orderBtnText}>Đơn mua</Text>

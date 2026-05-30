@@ -4,6 +4,7 @@ import Payment from '../models/Payment.js';
 import mongoose from 'mongoose';
 import VNPayHelper from '../config/vnpay.js';
 import * as voucherService from './voucherService.js';
+import crypto from 'crypto'
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -12,13 +13,19 @@ export const createPayment = async (paymentData, userId) => {
 
     let result = {};
 
-    const { orderId, method, voucherCode, shippingFee = 0 } = paymentData;
+    const { orderIds, method, voucherCode, shippingFee = 0 } = paymentData;
+
+    const sortedOrders = [...orderIds].sort();
+    const tempHash = crypto
+        .createHash('sha256')
+        .update(sortedOrders.map(id => id.toString()).join(','))
+        .digest('hex');
 
     try {
         await session.withTransaction(async () => { 
             logger.info('Service: Creating new payment', paymentData);
 
-            if (!isValidObjectId(orderId)) {
+            if (orderIds.some(id => !isValidObjectId(id))) {
                 const error = new Error('Invalid orderId format');
                 error.statusCode = 400;
                 throw error;
@@ -34,34 +41,38 @@ export const createPayment = async (paymentData, userId) => {
                 throw error;
             }
 
-            const order = await Order.findById(orderId).session(session);
+            const orders = await Order.find({
+                _id: { $in: orderIds }
+            }).session(session);
 
-            if (!order) {
-                const error = new Error('Order not found');
+            if (orders.length !== orderIds.length) {
+                const error = new Error('Some orders not found');
                 error.statusCode = 404;
                 throw error;
-            };
+            }
 
-            if (order.user.toString() !== userId) {
+            if (orders.some(order => order.user.toString() !== userId.toString())) {
                 const error = new Error('Not your order');
                 error.statusCode = 403;
                 throw error;
-            };
+            }
 
-            if (order.isPaid) {
-                const error = new Error('Order already paid');
+            if (orders.some(order => order.isPaid)) {
+                const error = new Error('Some orders already paid');
                 error.statusCode = 400;
                 throw error;
-            };
+            }
 
-            if (["CANCELLED", "COMPLETED"].includes(order.status)) {
-                const error = new Error('Cannot pay this order');
+            if (orders.some(order =>
+                ["CANCELLED", "COMPLETED"].includes(order.status)
+            )) {
+                const error = new Error('Some orders cannot be paid');
                 error.statusCode = 400;
                 throw error;
             }
 
             const existing = await Payment.findOne({
-                order: orderId,
+                ordersHash: tempHash,
                 status: { $in: ["PENDING", "SUCCESS"] }
             }).session(session);
 
@@ -70,7 +81,10 @@ export const createPayment = async (paymentData, userId) => {
                 return;
             }
 
-            const baseAmount = Number(order.totalPrice) || 0;
+            const baseAmount = orders.reduce(
+                (sum, order) => sum + order.totalPrice,
+                0
+            );            
             const shippingValue = Number(shippingFee) || 0;
 
             let voucherDocument = null;
@@ -92,60 +106,69 @@ export const createPayment = async (paymentData, userId) => {
                 finalAmount = benefit.finalAmount;
             }
 
-            const payment = await Payment.create([{
-                order: order._id,
-                amount: finalAmount,
-                baseAmount,
-                shippingFee: shippingValue,
-                discountAmount,
-                shippingDiscount,
-                finalAmount,
-                voucherId: voucherDocument?._id,
-                voucherCode: voucherDocument?.code,
-                voucherType: voucherDocument?.type,
-                method: normalizedMethod,
-                status: 'PENDING',
-            }], {session});
+                const payment = new Payment({
+                    orders: sortedOrders,
+                    ordersHash: tempHash,
+                    amount: finalAmount,
+                    baseAmount,
+                    shippingFee: shippingValue,
+                    discountAmount,
+                    shippingDiscount,
+                    finalAmount,
+                    voucherId: voucherDocument?._id,
+                    voucherCode: voucherDocument?.code,
+                    voucherType: voucherDocument?.type,
+                    method: normalizedMethod,
+                    status: 'PENDING',
+                });
+
+            await payment.save({ session });
 
             if (voucherDocument) {
                 if (normalizedMethod === "COD") {
                     await voucherService.consumeVoucherForPayment(
                         voucherDocument._id,
-                        payment[0]._id,
-                        order._id,
+                        payment._id,
+                        userId,
                         { session }
                     );
                 } else {
                     await voucherService.reserveVoucherForPayment(
                         voucherDocument._id,
-                        payment[0]._id,
+                        payment._id,
                         { session }
                     );
                 }
             }
 
             if (normalizedMethod === "COD") {
-                payment[0].status = "SUCCESS";
-                payment[0].paidAt = new Date();
-                order.isPaid = true;
-
-                await order.save({session});
-                await payment[0].save({session});   
+                payment.status = "SUCCESS";
+                payment.paidAt = new Date();
+                await Order.updateMany(
+                    {
+                        _id: { $in: orderIds }
+                    },
+                    {
+                        $set: { isPaid: true }
+                    },
+                    { session }
+                );
+                await payment.save({session});   
             } else if (normalizedMethod === "VNPAY") {
-                const paymentUrl = VNPayHelper.buildPaymentUrl(order._id, payment[0].amount, payment[0]._id);
+                const paymentUrl = VNPayHelper.buildPaymentUrl(payment.amount, payment._id);
 
                 result.paymentUrl = paymentUrl;
             }
 
-            result.payment = payment[0].getFormattedData?.() || payment[0];
+            result.payment = payment.getFormattedData?.() || payment;
         })
         return result;
     } catch (error) {
         if (error.code === 11000) {
             const existing = await Payment.findOne({
-                order: orderId,
+                ordersHash: tempHash,
                 status: "PENDING"
-            });
+            }).session(session);
 
             return existing.getFormattedData?.() || existing;
         }
@@ -157,7 +180,6 @@ export const createPayment = async (paymentData, userId) => {
 };
 
 export const vnpayIpnHandle = async (vnp_Params) => {
-    console.log("IPN HIT");
     const session = await mongoose.startSession();
     
     try {

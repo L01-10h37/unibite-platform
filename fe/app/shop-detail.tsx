@@ -19,7 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://20.255.57.186:8080";
 const DEFAULT_SHOP_ID = "69f628db4e1b85b5b8730673";
 const FALLBACK_IMAGE = require("@/assets/images/bun-bo-hue-detail-2.png");
 const SHOP_HERO_FALLBACK = require("@/assets/images/shop-hero-fallback.png");

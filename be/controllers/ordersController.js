@@ -7,11 +7,11 @@ import * as orderService from '../services/ordersService.js';
  */
 export const createOrder = async (req, res, next) => {
     try {
-        const orderData = req.body;
+        const createOrderData = req.body;
 
-        logger.info('Creating new order', orderData);
+        logger.info('Creating new orders');
 
-        const order = await orderService.createOrder(orderData, req.user.id);
+        const order = await orderService.createOrder(createOrderData, req.user.id);
 
         successResponse(res, order, 'Order created successfully', 201);
     } catch (error) {

@@ -4,7 +4,7 @@ import qs from 'qs'
 import crypto from 'crypto'
 
 class VNPayHelper {
-    static buildPaymentUrl(orderId, amount, paymentId) {
+    static buildPaymentUrl(amount, paymentId) {
         const createDate = moment.tz('Asia/Ho_Chi_Minh').format('YYYYMMDDHHmmss');
         const expireDate = moment.tz('Asia/Ho_Chi_Minh').add(15, 'minutes').format('YYYYMMDDHHmmss');
 

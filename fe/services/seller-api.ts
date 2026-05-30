@@ -6,7 +6,7 @@
  *   - Trạng thái đơn hàng → /api/orders/:orderId
  */
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "http://20.255.57.186:8080";
 
 // ─────────────────────────────────────────────
 //  Helpers
@@ -333,7 +333,7 @@ export async function cancelOrder(
 export function getStatusLabel(status: OrderStatus): string {
     const map: Record<OrderStatus, string> = {
         PENDING: "Chờ xác nhận",
-        CONFIRMED: "Đã xác nhận",
+        CONFIRMED: "Đang chuẩn bị",
         PREPARING: "Đang chuẩn bị",
         DELIVERING: "Đang giao",
         COMPLETED: "Hoàn thành",
@@ -346,7 +346,7 @@ export function getStatusLabel(status: OrderStatus): string {
 export function getStatusColor(status: OrderStatus): string {
     const map: Record<OrderStatus, string> = {
         PENDING: "#FF9500",
-        CONFIRMED: "#007AFF",
+        CONFIRMED: "#5856D6",
         PREPARING: "#5856D6",
         DELIVERING: "#34AADC",
         COMPLETED: "#1EA64A",
