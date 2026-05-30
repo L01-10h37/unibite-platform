@@ -29,6 +29,7 @@ import { router } from 'expo-router';
 
 import {
   cacheUserProfile,
+  clearCachedUserProfile,
   fetchAndCacheCurrentUserProfile,
   getCachedUserProfile,
   UserProfile,
@@ -59,16 +60,6 @@ export default function ProfileScreen() {
       setIsLoading(true);
 
       try {
-        const cachedProfile = await getCachedUserProfile();
-
-        if (cachedProfile && isMounted) {
-          setProfile(cachedProfile);
-        }
-      } catch (error) {
-        console.warn("Failed to read cached profile", error);
-      }
-
-      try {
         const freshProfile = await fetchAndCacheCurrentUserProfile();
 
         if (freshProfile && isMounted) {
@@ -76,6 +67,16 @@ export default function ProfileScreen() {
         }
       } catch (error) {
         console.error("Failed to load profile", error);
+
+        try {
+          const cachedProfile = await getCachedUserProfile();
+
+          if (cachedProfile && isMounted) {
+            setProfile(cachedProfile);
+          }
+        } catch (cacheError) {
+          console.warn("Failed to read cached profile", cacheError);
+        }
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -286,8 +287,11 @@ export default function ProfileScreen() {
           style={styles.logoutButton}
           onPress={() => {
             // Xóa token và chuyển hướng về trang đăng nhập
-            SecureStore.deleteItemAsync('tokens').then(() => {
-              router.push('/signin');
+            Promise.all([
+              SecureStore.deleteItemAsync('tokens'),
+              clearCachedUserProfile(),
+            ]).then(() => {
+              router.replace('/signin');
             });
           }}
         >

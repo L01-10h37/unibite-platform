@@ -98,10 +98,18 @@ function RootLayout() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        const sellerTokens = await SecureStore.getItemAsync('sellerTokens');
+
+        if (sellerTokens) {
+          router.replace('/seller');
+          trackUserEngagement('session_restored', { hasTokens: true, role: 'seller' });
+          return;
+        }
+
         const tokens = await SecureStore.getItemAsync('tokens');
         if (tokens) {
           router.replace('/(tabs)');
-          trackUserEngagement('session_restored', { hasTokens: true });
+          trackUserEngagement('session_restored', { hasTokens: true, role: 'user' });
         }
       } catch (error) {
         trackException(error, 'root_layout_check_auth');
