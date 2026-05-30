@@ -200,24 +200,33 @@ export const vnpayIpnHandle = async (vnp_Params) => {
             } else if (payment.status === "SUCCESS") {
                 result = { RspCode: "00", Message: "Already processed" };
             } else if (isSuccess) {
-                const order = await Order.findById(payment.order).session(session);
+                const orders = await Order.find({
+                    _id: { $in: payment.orders },
+                }).session(session);
 
-                if (!order) {
-                    result = { RspCode: "01", Message: "Order not found" };
+                if (orders.length !== payment.orders.length) {
+                    result = { RspCode: "01", Message: "Some orders not found" };
                 } else {
                     payment.status = "SUCCESS";
                     payment.paidAt = new Date();
 
-                    order.isPaid = true;
-
-                    await order.save({ session });
+                    await Order.updateMany(
+                        { _id: { $in: payment.orders } },
+                        {
+                        $set: {
+                            isPaid: true,
+                            status: "PENDING",
+                        },
+                        },
+                        { session }
+                    );
 
                     if (payment.voucherId) {
                         await voucherService.consumeVoucherForPayment(
-                            payment.voucherId,
-                            payment._id,
-                            order._id,
-                            { session }
+                        payment.voucherId,
+                        payment._id,
+                        userId,
+                        { session }
                         );
                     }
 
@@ -247,3 +256,31 @@ export const vnpayIpnHandle = async (vnp_Params) => {
         session.endSession();
     }
 }; 
+
+export const getPaymentById = async (paymentId, userId) => {
+    if (!isValidObjectId(paymentId)) {
+        const error = new Error("Invalid paymentId format");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const payment = await Payment.findById(paymentId).populate("orders");
+
+    if (!payment) {
+        const error = new Error("Payment not found");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    const isOwner = payment.orders.every(
+        (order) => order.user.toString() === userId.toString()
+    );
+
+    if (!isOwner) {
+        const error = new Error("Not your payment");
+        error.statusCode = 403;
+        throw error;
+    }
+
+    return payment.getFormattedData?.() || payment;
+};

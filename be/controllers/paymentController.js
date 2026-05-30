@@ -39,15 +39,11 @@ export const vnpayReturnHandle = async (req, res, next) => {
     try {
         const vnp_Params = req.query;
 
-        const isSuccess = vnp_Params['vnp_ResponseCode'] === "00";
+        const paymentId = vnp_Params["vnp_TxnRef"];
 
-        if (isSuccess) {
-            // return res.redirect("unibite://payment-success");     
-            return res.redirect("exp://192.168.1.92:8081/--/payment-success");   
-        } else {
-            // return res.redirect("unibite://payment-failed");
-            return res.redirect("exp:///1923.168.1.92:8081/--/payment-failed");
-        }
+        return res.redirect(
+            `exp://192.168.1.5:8081/--/payment-result?paymentId=${paymentId}`
+        );
     } catch (error) {
         next(error);
     }
@@ -64,3 +60,16 @@ export const vnpayIpnHandle = async (req, res, next) => {
         next(error);
     }
 };
+
+export const getPaymentById = async (req, res, next) => {
+    try {
+        const payment = await paymentService.getPaymentById(
+            req.params.paymentId,
+            req.user.id
+        );
+
+        successResponse(res, payment, "Payment fetched successfully", 200);
+    } catch (error) {
+        next(error);
+    }
+}
