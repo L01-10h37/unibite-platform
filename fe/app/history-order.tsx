@@ -37,7 +37,7 @@ const TEXT_MUTED = "#7C9A82";
 const LIMIT = 20;
 
 type OrderTab = "all" | "pending" | "preparing" | "delivering" | "completed" | "failed";
-type BuyerOrder = OrderHistoryDetail & { primaryFood: FoodPreview | null };
+type BuyerOrder = OrderHistoryDetail & { foodPreviews: Record<string, FoodPreview | null> };
 
 const TABS: { key: OrderTab; label: string; statuses: OrderStatus[] }[] = [
   { key: "all", label: "Tất cả", statuses: [] },
@@ -83,8 +83,8 @@ function getDisplayStatus(status: OrderStatus) {
   return getOrderStatusLabel(status);
 }
 
-function getFoodImage(order: BuyerOrder) {
-  const image = order.primaryFood?.listUrlImg?.find(Boolean) || order.items?.[0]?.image;
+function getFoodImage(order: BuyerOrder, item: OrderHistoryDetail["items"][number]) {
+  const image = item.image || order.foodPreviews[item.food]?.listUrlImg?.find(Boolean);
   return image ? { uri: image } : require("@/assets/images/bun-bo-hue-detail-1.png");
 }
 
@@ -141,7 +141,7 @@ function OrderCard({
       <View style={styles.itemsList}>
         {order.items?.map((item, index) => (
           <View key={`${item.food}-${index}`} style={[styles.itemRow, index > 0 && { marginTop: 14 }]}>
-            <Image source={index === 0 ? getFoodImage(order) : require("@/assets/images/bun-bo-hue-detail-1.png")} style={styles.foodImage} />
+            <Image source={getFoodImage(order, item)} style={styles.foodImage} />
             <View style={styles.itemInfo}>
               <View style={styles.itemNameRow}>
                 <Text style={styles.itemName} numberOfLines={1}>
@@ -223,9 +223,15 @@ export default function OrderHistoryScreen() {
     const details = await Promise.allSettled(
       orderIds.map(async (orderId) => {
         const detail = await getOrderHistoryDetail(token, orderId);
-        const firstFoodId = detail.items?.[0]?.food;
-        const primaryFood = firstFoodId ? await getFoodPreview(firstFoodId) : null;
-        return { ...detail, primaryFood } satisfies BuyerOrder;
+        const foodIds = [...new Set((detail.items ?? []).map((item) => item.food).filter(Boolean))];
+        const previewEntries = await Promise.all(
+          foodIds.map(async (foodId) => [foodId, await getFoodPreview(foodId)] as const),
+        );
+
+        return {
+          ...detail,
+          foodPreviews: Object.fromEntries(previewEntries),
+        } satisfies BuyerOrder;
       }),
     );
 
@@ -319,7 +325,7 @@ export default function OrderHistoryScreen() {
               const updated = await cancelBuyerOrder(tokens.accessToken, order.id);
               setOrders((current) =>
                 current.map((item) =>
-                  item.id === order.id ? { ...item, ...updated, primaryFood: item.primaryFood } : item,
+                  item.id === order.id ? { ...item, ...updated, foodPreviews: item.foodPreviews } : item,
                 ),
               );
             } catch (issue) {
