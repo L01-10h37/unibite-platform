@@ -15,9 +15,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { readAuthTokens } from "@/services/auth-session";
 import {
+  FoodPreview,
   OrderHistoryDetail,
   OrderStatus,
   cancelBuyerOrder,
+  getFoodPreview,
   getOrderHistoryDetail,
   getOrderProgressStep,
   getOrderStatusColor,
@@ -31,6 +33,7 @@ const PRIMARY = "#1EA64A";
 const NAVY = "#2B4162";
 const TEXT_DARK = "#2A3E2F";
 const TEXT_MUTED = "#7C9A82";
+type BuyerOrderDetail = OrderHistoryDetail & { foodPreviews: Record<string, FoodPreview | null> };
 
 const STEPS: { status: Exclude<OrderStatus, "PENDING" | "CANCELLED">; icon: string; label: string }[] = [
   { status: "CONFIRMED", icon: "check", label: "Xác nhận" },
@@ -107,10 +110,27 @@ function ProgressTracker({ status }: { status: OrderStatus }) {
   );
 }
 
+async function enrichOrderFoodPreviews(order: OrderHistoryDetail): Promise<BuyerOrderDetail> {
+  const foodIds = [...new Set((order.items ?? []).map((item) => item.food).filter(Boolean))];
+  const previewEntries = await Promise.all(
+    foodIds.map(async (foodId) => [foodId, await getFoodPreview(foodId)] as const),
+  );
+
+  return {
+    ...order,
+    foodPreviews: Object.fromEntries(previewEntries),
+  };
+}
+
+function getFoodImage(order: BuyerOrderDetail, item: OrderHistoryDetail["items"][number]) {
+  const image = item.image || order.foodPreviews[item.food]?.listUrlImg?.find(Boolean);
+  return image ? { uri: image } : require("@/assets/images/bun-bo-hue-detail-1.png");
+}
+
 export default function BuyerOrderDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [order, setOrder] = useState<OrderHistoryDetail | null>(null);
+  const [order, setOrder] = useState<BuyerOrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
@@ -126,7 +146,7 @@ export default function BuyerOrderDetailScreen() {
 
       setError("");
       const data = await getOrderHistoryDetail(tokens.accessToken, id);
-      setOrder(data);
+      setOrder(await enrichOrderFoodPreviews(data));
     } catch (issue) {
       const message = issue instanceof Error ? issue.message : "Không thể tải đơn hàng.";
       setError(message);
@@ -163,7 +183,7 @@ export default function BuyerOrderDetailScreen() {
 
               setUpdating(true);
               const updated = await cancelBuyerOrder(tokens.accessToken, order.id);
-              setOrder(updated);
+              setOrder({ ...updated, foodPreviews: order.foodPreviews });
             } catch (issue) {
               const message = issue instanceof Error ? issue.message : "Không thể hủy đơn hàng.";
               Alert.alert("Không thể hủy", message);
@@ -255,7 +275,7 @@ export default function BuyerOrderDetailScreen() {
           {order.items?.map((item, index) => (
             <View key={`${item.food}-${index}`} style={[styles.itemRow, index > 0 && { marginTop: 14 }]}>
               <Image
-                source={item.image ? { uri: item.image } : require("@/assets/images/bun-bo-hue-detail-1.png")}
+                source={getFoodImage(order, item)}
                 style={styles.foodImage}
               />
               <View style={styles.itemInfo}>
