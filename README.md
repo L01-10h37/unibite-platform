@@ -330,5 +330,5 @@ The project includes an automated [Jenkinsfile](Jenkinsfile) pipeline for contin
 ---
 
 <p align="center">
-  Made with ❤️ by the <b>UniBite Team</b>
+  Made by the <b>10h37 Team</b>
 </p>
